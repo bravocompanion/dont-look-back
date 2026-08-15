@@ -393,7 +393,7 @@ func _update_status_hud(player: CharacterBody3D, daylight: float) -> void:
     if status_label == null:
         return
 
-    var hour: int = int(game_minutes) / 60
+    var hour: int = int(floor(game_minutes / 60.0))
     var minute: int = int(game_minutes) % 60
     var phase: String = "DAY"
     if daylight < 0.18:
