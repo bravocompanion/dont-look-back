@@ -25,6 +25,7 @@ func interact() -> void:
     if system == null:
         return
 
+    var was_powered: bool = powered
     var network: Node = get_node_or_null("/root/NetworkManager")
     var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
     if network_client:
@@ -42,6 +43,7 @@ func interact() -> void:
             network.call("request_shared_shelter_action", "generator_fuel")
         if objective != null:
             objective.text = "Fuel request sent to host."
+        _report_ai_noise(0.62 if was_powered else 1.20, "generator fuel" if was_powered else "generator start")
         return
 
     var accepted: bool = false
@@ -53,6 +55,7 @@ func interact() -> void:
     if accepted:
         powered = bool(system.call("is_generator_running")) if system.has_method("is_generator_running") else true
         _set_indicator(powered)
+        _report_ai_noise(0.62 if was_powered else 1.20, "generator fuel" if was_powered else "generator start")
 
 func set_powered_from_restore(value: bool) -> void:
     powered = value
@@ -69,6 +72,12 @@ func _set_indicator(value: bool) -> void:
         indicator_material.albedo_color = Color(0.55, 0.10, 0.07, 1.0)
         indicator_material.emission = Color(0.42, 0.03, 0.02, 1.0)
         indicator_material.emission_energy_multiplier = 1.5
+
+func _report_ai_noise(strength: float, label: String) -> void:
+    var noise_relay: Node = get_node_or_null("/root/AINoiseRelaySystem")
+    if noise_relay == null or not noise_relay.has_method("report_noise"):
+        return
+    noise_relay.call("report_noise", global_position, strength, label)
 
 func _build_visual() -> void:
     var body_mesh: BoxMesh = BoxMesh.new()
