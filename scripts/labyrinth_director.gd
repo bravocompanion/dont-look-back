@@ -2,7 +2,7 @@ extends Node
 
 var configured_scene_id: int = 0
 var relay_script: Script
-var finish_script: Script
+var transition_script: Script
 var expansion_root: Node3D
 var relay_lights: Dictionary = {}
 var active_relays: Dictionary = {}
@@ -15,7 +15,7 @@ const CHECKPOINT_POSITION := Vector3(-7.0, 0.92, -34.4)
 
 func _ready() -> void:
     relay_script = load("res://scripts/light_relay.gd") as Script
-    finish_script = load("res://scripts/finish_trigger.gd") as Script
+    transition_script = load("res://scripts/outside_exit_trigger.gd") as Script
 
 func _process(_delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -65,7 +65,7 @@ func activate_relay(relay_id: int) -> bool:
         if objective != null:
             var count: int = _active_relay_count()
             if count >= 3:
-                objective.text = "All emergency relays are online. The final gate has opened."
+                objective.text = "All emergency relays are online. The final gate has opened. Follow the beacon OUTSIDE."
             else:
                 objective.text = "Emergency power restored: %d / 3 relays." % count
 
@@ -209,21 +209,20 @@ func _create_power_gate(parent: Node3D) -> void:
     parent.add_child(final_beacon)
 
 func _create_final_exit(parent: Node3D) -> void:
-    if finish_script == null:
+    if transition_script == null:
         return
 
-    var finish: Area3D = Area3D.new()
-    finish.name = "ExpandedFinishTrigger"
-    finish.position = Vector3(-7.0, 1.2, -49.6)
-    finish.set_script(finish_script)
-    finish.set("end_panel_path", NodePath("../../Player/HUD/EndPanel"))
-    parent.add_child(finish)
+    var transition: Area3D = Area3D.new()
+    transition.name = "OutsideTransition"
+    transition.position = Vector3(-7.0, 1.2, -49.6)
+    transition.set_script(transition_script)
+    parent.add_child(transition)
 
     var collision: CollisionShape3D = CollisionShape3D.new()
     var shape: BoxShape3D = BoxShape3D.new()
     shape.size = Vector3(5.2, 2.5, 1.0)
     collision.shape = shape
-    finish.add_child(collision)
+    transition.add_child(collision)
 
 func _activate_checkpoint(player: CharacterBody3D) -> void:
     checkpoint_registered = true
