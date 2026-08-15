@@ -26,7 +26,7 @@ SurvivalDepthSystem="*res://scripts/survival_depth_system.gd"
 JournalSystem="*res://scripts/journal_system.gd"
 SaveSystem="*res://scripts/save_system_v181.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system.gd"
+FrontEndSystem="*res://scripts/front_end_system_v181.gd"
 
 [display]
 window/size/viewport_width=1280
