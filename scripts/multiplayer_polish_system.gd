@@ -39,6 +39,7 @@ var session_panel: PanelContainer
 var name_edit: LineEdit
 var ready_button: Button
 var start_button: Button
+var leave_button: Button
 var reconnect_button: Button
 var roster_label: Label
 var connection_label: Label
@@ -58,6 +59,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
     var network: Node = get_node_or_null("/root/NetworkManager")
     var online: bool = _network_online(network)
+    var connecting: bool = network != null and bool(network.get("connecting"))
 
     if online != previous_online:
         previous_online = online
@@ -88,7 +90,8 @@ func _process(delta: float) -> void:
         _update_remote_avatar_labels(network)
         _set_pre_game_lock(not session_started)
     else:
-        _set_pre_game_lock(false)
+        var recovering: bool = connecting or reconnect_timer >= 0.0
+        _set_pre_game_lock(recovering)
 
     _update_revive_progress(delta)
     _update_downed_state()
@@ -194,6 +197,7 @@ func _enter_online_session(network: Node) -> void:
     profile_sync_timer = 0.0
     ping_ms = 0 if _network_server(network) else -1
     local_ready = false
+    _hide_legacy_lobby(network)
 
     if _network_server(network):
         profiles.clear()
@@ -217,7 +221,8 @@ func _leave_online_session() -> void:
     revive_target_peer = 0
     revive_progress = 0.0
     checkpoint_signature = ""
-    _set_pre_game_lock(false)
+    if reconnect_timer < 0.0:
+        _set_pre_game_lock(false)
     if revive_box != null:
         revive_box.visible = false
 
@@ -310,11 +315,7 @@ func _apply_session_started(host_transform: Transform3D, host_local: bool) -> vo
         player.rotation.y = host_transform.basis.get_euler().y
         player.velocity = Vector3.ZERO
 
-    var network: Node = get_node_or_null("/root/NetworkManager")
-    if network != null:
-        var lobby: PanelContainer = network.get("lobby_panel") as PanelContainer
-        if lobby != null:
-            lobby.visible = false
+    _hide_legacy_lobby(get_node_or_null("/root/NetworkManager"))
     if session_panel != null:
         session_panel.visible = false
 
@@ -525,16 +526,23 @@ func _peer_position(peer_id: int) -> Variant:
         return null
 
     var network: Node = get_node_or_null("/root/NetworkManager")
-    if network == null:
-        return null
-    var targets: Dictionary = Dictionary(network.get("remote_targets"))
-    var target: Dictionary = Dictionary(targets.get(peer_id, {}))
-    if target.is_empty():
-        return null
-    var transform_value: Variant = target.get("transform", null)
-    if transform_value is Transform3D:
-        var target_transform: Transform3D = transform_value
-        return target_transform.origin
+    if network != null:
+        var targets: Dictionary = Dictionary(network.get("remote_targets"))
+        var target: Dictionary = Dictionary(targets.get(peer_id, {}))
+        if not target.is_empty():
+            var transform_value: Variant = target.get("transform", null)
+            if transform_value is Transform3D:
+                var target_transform: Transform3D = transform_value
+                return target_transform.origin
+
+    var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
+    if coop != null:
+        var states: Dictionary = Dictionary(coop.get("survivor_states"))
+        var survivor_state: Dictionary = Dictionary(states.get(peer_id, {}))
+        var survivor_transform_value: Variant = survivor_state.get("transform", null)
+        if survivor_transform_value is Transform3D:
+            var survivor_transform: Transform3D = survivor_transform_value
+            return survivor_transform.origin
     return null
 
 func _update_downed_state() -> void:
@@ -625,13 +633,9 @@ func _update_ui(network: Node) -> void:
 
     var online: bool = _network_online(network)
     var connecting: bool = network != null and bool(network.get("connecting"))
-    var network_lobby_visible: bool = false
-    if network != null:
-        var lobby: PanelContainer = network.get("lobby_panel") as PanelContainer
-        network_lobby_visible = lobby != null and lobby.visible
-
+    var recovering: bool = reconnect_timer >= 0.0 or connecting
     var reconnect_available: bool = not online and not connecting and not last_host_address.is_empty() and reconnect_attempted
-    session_panel.visible = network_lobby_visible or (online and not session_started) or reconnect_available
+    session_panel.visible = (online and not session_started) or recovering or reconnect_available
 
     if name_edit != null:
         if not name_edit.has_focus():
@@ -643,6 +647,8 @@ func _update_ui(network: Node) -> void:
     if start_button != null:
         start_button.visible = _network_server(network) and not session_started
         start_button.disabled = profiles.size() < 2 or not _all_profiles_ready()
+    if leave_button != null:
+        leave_button.visible = online or connecting
     if reconnect_button != null:
         reconnect_button.visible = reconnect_available
         reconnect_button.text = "RECONNECT %s" % last_host_address
@@ -664,13 +670,17 @@ func _update_roster(network: Node) -> void:
         var profile: Dictionary = Dictionary(profiles.get(peer_id, {}))
         var ready_text: String = "READY" if bool(profile.get("ready", false)) else "WAITING"
         var host_text: String = " HOST" if peer_id == 1 else ""
-        lines.append("%s%s — %s" % [str(profile.get("name", "Survivor")), host_text, ready_text])
+        var reported_ping: int = int(profile.get("ping", -1))
+        var ping_text: String = "" if peer_id == 1 or reported_ping < 0 else " • %dms" % reported_ping
+        lines.append("%s%s — %s%s" % [str(profile.get("name", "Survivor")), host_text, ready_text, ping_text])
     roster_label.text = "\n".join(lines) if not lines.is_empty() else "No survivors connected."
 
     if network == null:
         connection_label.text = "OFFLINE"
     elif bool(network.get("connecting")):
         connection_label.text = "CONNECTING..."
+    elif reconnect_timer >= 0.0:
+        connection_label.text = "HOST LOST • reconnecting soon"
     elif _network_server(network):
         connection_label.text = "HOST  •  %d/%d" % [profiles.size(), int(network.get("max_clients"))]
     elif _network_online(network):
@@ -709,7 +719,10 @@ func _update_teammate_hud(network: Node) -> void:
         var downed: bool = coop != null and coop.has_method("is_survivor_downed") and bool(coop.call("is_survivor_downed", peer_id))
         var you: String = " (YOU)" if peer_id == multiplayer.get_unique_id() else ""
         var condition: String = "DOWNED" if downed else "HP %d" % int(round(health))
-        lines.append("%s%s  •  %s" % [get_player_name(peer_id), you, condition])
+        var profile: Dictionary = Dictionary(profiles.get(peer_id, {}))
+        var reported_ping: int = int(profile.get("ping", -1))
+        var ping_text: String = "" if peer_id == 1 or reported_ping < 0 else " • %dms" % reported_ping
+        lines.append("%s%s  •  %s%s" % [get_player_name(peer_id), you, condition, ping_text])
 
     teammate_label.text = "TEAM\n%s" % "\n".join(lines)
     var journal: Node = get_node_or_null("/root/JournalSystem")
@@ -717,6 +730,13 @@ func _update_teammate_hud(network: Node) -> void:
     if journal != null and journal.has_method("_get_current_mission"):
         mission = str(journal.call("_get_current_mission"))
     mission_label.text = "TEAM OBJECTIVE\n%s" % mission
+
+func _hide_legacy_lobby(network: Node) -> void:
+    if network == null:
+        return
+    var lobby: PanelContainer = network.get("lobby_panel") as PanelContainer
+    if lobby != null:
+        lobby.visible = false
 
 func _capture_last_host_address(network: Node) -> void:
     if network == null:
@@ -739,6 +759,13 @@ func _manual_reconnect() -> void:
     reconnect_attempted = true
     reconnect_timer = -1.0
     _attempt_reconnect(get_node_or_null("/root/NetworkManager"))
+
+func _leave_session() -> void:
+    reconnect_timer = -1.0
+    reconnect_attempted = false
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("disconnect_game"):
+        network.call("disconnect_game", true)
 
 func _commit_name_from_ui() -> void:
     if name_edit != null:
@@ -774,12 +801,14 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _on_connected_to_server() -> void:
     var network: Node = get_node_or_null("/root/NetworkManager")
     _capture_last_host_address(network)
+    _hide_legacy_lobby(network)
     reconnect_attempted = false
     reconnect_timer = -1.0
 
 func _on_connection_failed() -> void:
     reconnect_timer = -1.0
     reconnect_attempted = true
+    _set_pre_game_lock(false)
     _set_connection_text("Reconnect failed. Check LAN connection and host address.")
 
 func _on_server_disconnected() -> void:
@@ -788,6 +817,7 @@ func _on_server_disconnected() -> void:
     reconnect_attempted = false
     if not last_host_address.is_empty():
         reconnect_timer = reconnect_delay
+        _set_pre_game_lock(true)
         _set_connection_text("Host lost. Automatic reconnect in %.1fs..." % reconnect_delay)
 
 func _network_online(network: Node) -> bool:
@@ -896,6 +926,11 @@ func _build_ui() -> void:
     start_button.pressed.connect(_start_session)
     buttons.add_child(start_button)
 
+    leave_button = Button.new()
+    leave_button.text = "LEAVE"
+    leave_button.pressed.connect(_leave_session)
+    buttons.add_child(leave_button)
+
     reconnect_button = Button.new()
     reconnect_button.text = "RECONNECT"
     reconnect_button.pressed.connect(_manual_reconnect)
@@ -929,7 +964,7 @@ func _layout_ui() -> void:
 
     if compact:
         session_panel.position = Vector2(size.x * 0.5 - 155.0, 96.0)
-        session_panel.size = Vector2(310.0, 205.0)
+        session_panel.size = Vector2(310.0, 225.0)
         teammate_panel.position = Vector2(12.0, 98.0)
         teammate_panel.size = Vector2(minf(280.0, size.x - 24.0), 126.0)
         teammate_label.add_theme_font_size_override("font_size", 12)
@@ -937,8 +972,8 @@ func _layout_ui() -> void:
         revive_box.position = Vector2(size.x * 0.5 - 120.0, size.y - 168.0)
         revive_box.size = Vector2(240.0, 56.0)
     else:
-        session_panel.position = Vector2(size.x * 0.5 + 245.0, size.y * 0.5 - 160.0)
-        session_panel.size = Vector2(260.0, 260.0)
+        session_panel.position = Vector2(size.x * 0.5 - 150.0, size.y * 0.5 - 160.0)
+        session_panel.size = Vector2(300.0, 270.0)
         teammate_panel.position = Vector2(size.x - 330.0, 330.0)
         teammate_panel.size = Vector2(300.0, 170.0)
         teammate_label.add_theme_font_size_override("font_size", 14)
