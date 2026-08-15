@@ -28,7 +28,11 @@ func _configure_scene(scene: Node) -> void:
 
     var end_subtitle: Label = scene.get_node_or_null("Player/HUD/EndPanel/Subtitle") as Label
     if end_subtitle != null:
-        end_subtitle.text = "DON'T LOOK BACK — v0.5: LIGHT & DARKNESS"
+        end_subtitle.text = "DON'T LOOK BACK — v0.6: LABYRINTH EXPANSION"
+
+    var end_title: Label = scene.get_node_or_null("Player/HUD/EndPanel/Title") as Label
+    if end_title != null:
+        end_title.text = "YOU FOUND THE WAY OUT"
 
     var dark_corridor_light: OmniLight3D = scene.get_node_or_null("CeilingLight3") as OmniLight3D
     if dark_corridor_light != null:
@@ -39,6 +43,11 @@ func _configure_scene(scene: Node) -> void:
     _spawn_pickup(scene, "SurvivalMedkit", "medkit", "Medkit", Vector3(-6.95, 0.02, -6.55))
     _spawn_pickup(scene, "FlashlightBatteryA", "flashlight_battery", "Flashlight Battery", Vector3(-4.25, 0.02, -6.45))
     _spawn_pickup(scene, "FlashlightBatteryB", "flashlight_battery", "Flashlight Battery", Vector3(1.15, 0.02, -8.85))
+
+    _spawn_pickup(scene, "MazeBattery", "flashlight_battery", "Flashlight Battery", Vector3(8.15, 0.02, -27.0))
+    _spawn_pickup(scene, "MazeWater", "bottled_water", "Bottled Water", Vector3(-8.15, 0.02, -35.9))
+    _spawn_pickup(scene, "MazeFood", "canned_food", "Canned Food", Vector3(8.1, 0.02, -44.2))
+    _spawn_pickup(scene, "MazeMedkit", "medkit", "Medkit", Vector3(-8.1, 0.02, -44.8))
 
 func _spawn_pickup(scene: Node, node_name: String, item_id: String, display_name: String, world_position: Vector3) -> void:
     if scene.has_node(NodePath(node_name)):
