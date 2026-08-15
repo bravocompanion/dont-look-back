@@ -12,7 +12,6 @@ var settings_return_mode: String = "title"
 var boot_frames: int = 10
 var pending_join: bool = false
 var pending_join_seen_connecting: bool = false
-var local_player_id: int = 0
 
 var master_volume: float = 0.85
 var look_multiplier: float = 1.0
@@ -62,6 +61,8 @@ func _process(_delta: float) -> void:
     _apply_player_settings()
     if menu_open:
         _lock_local_player()
+    else:
+        _sync_mobile_session_block()
 
     if pending_join:
         _poll_join_result()
@@ -84,8 +85,10 @@ func _input(event: InputEvent) -> void:
         return
 
     if menu_open:
-        if current_mode == "pause" or current_mode == "settings":
+        if current_mode == "pause":
             _resume_game()
+        elif current_mode == "settings":
+            _close_settings()
     else:
         _open_pause_menu()
     get_viewport().set_input_as_handled()
@@ -226,6 +229,7 @@ func _host_coop() -> void:
     _set_all_panels_hidden()
     overlay.visible = false
     _hide_legacy_network_lobby()
+    _set_mobile_blocked(true)
     _set_mouse_visible(true)
     _set_status("Host created. Set name, READY, then START.")
 
@@ -289,6 +293,7 @@ func _poll_join_result() -> void:
         _set_all_panels_hidden()
         overlay.visible = false
         _hide_legacy_network_lobby()
+        _set_mobile_blocked(true)
         _set_mouse_visible(true)
         return
 
@@ -439,23 +444,34 @@ func _unlock_local_player_if_safe() -> void:
     if _network_online():
         var polish: Node = get_node_or_null("/root/MultiplayerPolishSystem")
         if polish != null and not bool(polish.get("session_started")):
+            _set_mobile_blocked(true)
             return
 
     player.set_process(true)
     player.set_physics_process(true)
     player.set_process_unhandled_input(true)
 
+func _sync_mobile_session_block() -> void:
+    if not gameplay_started:
+        _set_mobile_blocked(true)
+        return
+    if not _network_online():
+        _set_mobile_blocked(false)
+        return
+    var polish: Node = get_node_or_null("/root/MultiplayerPolishSystem")
+    if polish == null:
+        _set_mobile_blocked(false)
+        return
+    _set_mobile_blocked(not bool(polish.get("session_started")))
+
 func _set_mobile_blocked(blocked: bool) -> void:
     var mobile: Node = get_node_or_null("/root/MobileControls")
-    if mobile != null and mobile.has_method("set_dead_mode"):
-        if blocked:
-            mobile.call("set_dead_mode", true)
-        else:
-            var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
-            var downed: bool = coop != null and bool(coop.get("local_downed"))
-            var player: CharacterBody3D = _get_local_player()
-            var dead: bool = player != null and bool(player.get("is_dead"))
-            mobile.call("set_dead_mode", downed or dead)
+    if mobile == null:
+        return
+    if mobile.has_method("set_external_blocked"):
+        mobile.call("set_external_blocked", blocked)
+    elif mobile.has_method("set_dead_mode"):
+        mobile.call("set_dead_mode", blocked)
 
 func _disconnect_network_if_needed() -> void:
     var network: Node = get_node_or_null("/root/NetworkManager")
@@ -485,11 +501,7 @@ func _hide_legacy_network_lobby() -> void:
         lobby.visible = false
 
 func _get_local_player() -> CharacterBody3D:
-    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
-    if player == null:
-        return null
-    local_player_id = int(player.get_instance_id())
-    return player
+    return get_tree().get_first_node_in_group("player") as CharacterBody3D
 
 func _objective(text: String) -> void:
     var player: CharacterBody3D = _get_local_player()
