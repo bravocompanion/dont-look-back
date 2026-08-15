@@ -2,6 +2,7 @@ extends Node
 
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
+const LABYRINTH_SPAWN: Vector3 = Vector3(0.0, 0.92, 9.5)
 const FOREST_SPAWN: Vector3 = Vector3(0.0, 0.92, -57.5)
 
 var transitioning: bool = false
@@ -15,6 +16,8 @@ var progress_bar: ProgressBar
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     _build_loading_ui()
+    if not multiplayer.peer_connected.is_connected(_on_peer_connected):
+        multiplayer.peer_connected.connect(_on_peer_connected)
 
 func request_forest_transition() -> void:
     if transitioning:
@@ -51,6 +54,33 @@ func _transition_to_forest_remote() -> void:
         return
     _begin_transition(FOREST_SCENE_PATH, FOREST_SPAWN, "THE OUTSIDE", "Leaving the labyrinth...")
 
+func _on_peer_connected(peer_id: int) -> void:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network == null or not network.has_method("is_server") or not bool(network.call("is_server")):
+        return
+    call_deferred("_send_current_map_to_peer", peer_id)
+
+func _send_current_map_to_peer(peer_id: int) -> void:
+    await get_tree().process_frame
+    var scene: Node = get_tree().current_scene
+    if scene == null:
+        return
+    var scene_path: String = scene.scene_file_path
+    if scene_path != LABYRINTH_SCENE_PATH and scene_path != FOREST_SCENE_PATH:
+        scene_path = LABYRINTH_SCENE_PATH
+    _sync_map_remote.rpc_id(peer_id, scene_path)
+
+@rpc("authority", "call_remote", "reliable", 7)
+func _sync_map_remote(scene_path: String) -> void:
+    if scene_path != LABYRINTH_SCENE_PATH and scene_path != FOREST_SCENE_PATH:
+        return
+    var scene: Node = get_tree().current_scene
+    if scene != null and scene.scene_file_path == scene_path:
+        return
+    var spawn: Vector3 = FOREST_SPAWN if scene_path == FOREST_SCENE_PATH else LABYRINTH_SPAWN
+    var title: String = "SYNCING FOREST" if scene_path == FOREST_SCENE_PATH else "SYNCING LABYRINTH"
+    _begin_transition(scene_path, spawn, title, "Matching the host world...")
+
 func _begin_transition(scene_path: String, spawn_position: Vector3, title: String, detail: String) -> void:
     if transitioning:
         return
@@ -86,7 +116,7 @@ func _change_scene_and_restore(scene_path: String, spawn_position: Vector3) -> v
             if scene_path == FOREST_SCENE_PATH:
                 world_ready = scene.get_node_or_null("OutsideWorld/ForestGround") != null
             else:
-                world_ready = true
+                world_ready = scene.get_node_or_null("LabyrinthExpansion") != null
         if player != null and world_ready:
             break
 
@@ -97,19 +127,24 @@ func _change_scene_and_restore(scene_path: String, spawn_position: Vector3) -> v
     _apply_local_player_state(player, pending_player_state)
     player.global_position = spawn_position
     player.velocity = Vector3.ZERO
-    player.set("darkness_exposure", minf(18.0, float(player.get("darkness_exposure"))))
     player.set("flashlight_panic", 0.0)
 
-    var checkpoint: Node = get_node_or_null("/root/CheckpointSystem")
-    if checkpoint != null and checkpoint.has_method("save_checkpoint"):
-        checkpoint.call("save_checkpoint", player, spawn_position, "Forest entrance")
-
-    var objective: Label = player.get_node_or_null("HUD/Objective") as Label
-    if objective != null:
-        objective.text = "THE OUTSIDE: Find the cabin. Search for fuel before night."
+    if scene_path == FOREST_SCENE_PATH:
+        player.set("darkness_exposure", minf(18.0, float(player.get("darkness_exposure"))))
+        var checkpoint: Node = get_node_or_null("/root/CheckpointSystem")
+        if checkpoint != null and checkpoint.has_method("save_checkpoint"):
+            checkpoint.call("save_checkpoint", player, spawn_position, "Forest entrance")
+        var forest_objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if forest_objective != null:
+            forest_objective.text = "THE OUTSIDE: Find the cabin. Search for fuel before night."
+        detail_label.text = "Forest ready. Keep your light close."
+    else:
+        var labyrinth_objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if labyrinth_objective != null:
+            labyrinth_objective.text = "LABYRINTH: Restore all 3 emergency relays. Light keeps the dark away."
+        detail_label.text = "Labyrinth synchronized with host."
 
     progress_bar.value = 100.0
-    detail_label.text = "Forest ready. Keep your light close."
     await get_tree().process_frame
     await get_tree().process_frame
 
