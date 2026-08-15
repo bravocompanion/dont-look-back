@@ -69,6 +69,9 @@ func save_game(automatic: bool = false) -> bool:
     if player == null:
         _show_status("Save failed: player not ready.")
         return false
+    if bool(player.get("is_dead")) or _is_local_player_downed():
+        _show_status("Cannot save while incapacitated.")
+        return false
 
     _merge_network_claims()
     var state: Dictionary = _collect_state(player)
@@ -104,7 +107,8 @@ func delete_save() -> bool:
     if not FileAccess.file_exists(SAVE_PATH):
         save_exists = false
         return true
-    var error: Error = DirAccess.remove_absolute(SAVE_PATH)
+    var absolute_path: String = ProjectSettings.globalize_path(SAVE_PATH)
+    var error: Error = DirAccess.remove_absolute(absolute_path)
     if error != OK:
         _show_status("Could not delete save.")
         return false
@@ -150,16 +154,32 @@ func _load_from_disk(automatic: bool) -> bool:
         _show_status("Load failed: unsupported save version.")
         return false
 
-    _restore_state(state)
     save_exists = true
     if automatic:
+        _restore_state(state)
         _show_status("SAVE RESTORED")
     else:
-        _show_status("WORLD LOADED")
+        persistent_claimed_pickups.clear()
+        _clear_network_claims()
+        call_deferred("_reload_and_restore", state)
+        _show_status("LOADING WORLD...")
     return true
 
+func _reload_and_restore(state: Dictionary) -> void:
+    var reload_error: Error = get_tree().reload_current_scene()
+    if reload_error != OK:
+        _show_status("Load failed: scene could not reload.")
+        return
+
+    await get_tree().process_frame
+    await get_tree().process_frame
+    await get_tree().process_frame
+    await get_tree().process_frame
+    _restore_state(state)
+    _show_status("WORLD LOADED")
+
 func _collect_state(player: CharacterBody3D) -> Dictionary:
-    var state: Dictionary = {
+    return {
         "format_version": SAVE_FORMAT_VERSION,
         "saved_unix_time": int(Time.get_unix_time_from_system()),
         "player": _collect_player_state(player),
@@ -169,7 +189,6 @@ func _collect_state(player: CharacterBody3D) -> Dictionary:
         "journal": _collect_journal_state(),
         "claimed_pickups": persistent_claimed_pickups.keys()
     }
-    return state
 
 func _collect_player_state(player: CharacterBody3D) -> Dictionary:
     var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
@@ -238,9 +257,10 @@ func _collect_checkpoint_state() -> Dictionary:
     var checkpoint: Node = get_node_or_null("/root/CheckpointSystem")
     if checkpoint == null:
         return {}
+    var checkpoint_position: Vector3 = checkpoint.get("checkpoint_position")
     return {
         "active": bool(checkpoint.get("checkpoint_active")),
-        "position": _vector3_to_array(checkpoint.get("checkpoint_position") as Vector3),
+        "position": _vector3_to_array(checkpoint_position),
         "rotation_y": float(checkpoint.get("checkpoint_rotation_y")),
         "state": Dictionary(checkpoint.get("checkpoint_state")).duplicate(true),
         "name": str(checkpoint.get("checkpoint_name"))
@@ -436,6 +456,12 @@ func _apply_claims_to_network() -> void:
         return
     network.set("claimed_pickups", persistent_claimed_pickups.duplicate(true))
 
+func _clear_network_claims() -> void:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null:
+        network.set("claimed_pickups", {})
+        network.set("pending_pickups", {})
+
 func _remove_current_claimed_nodes() -> void:
     for path_variant: Variant in persistent_claimed_pickups.keys():
         var pickup_path: String = str(path_variant)
@@ -453,6 +479,12 @@ func _array_to_vector3(value: Variant, fallback: Vector3) -> Vector3:
     if values.size() < 3:
         return fallback
     return Vector3(float(values[0]), float(values[1]), float(values[2]))
+
+func _is_local_player_downed() -> bool:
+    var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
+    if coop == null:
+        return false
+    return bool(coop.get("local_downed"))
 
 func _set_objective(player: CharacterBody3D, text: String) -> void:
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
