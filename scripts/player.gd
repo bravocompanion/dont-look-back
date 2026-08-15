@@ -4,6 +4,7 @@ extends CharacterBody3D
 @export var sprint_multiplier: float = 1.65
 @export var acceleration: float = 16.0
 @export var mouse_sensitivity: float = 0.0022
+@export var touch_look_sensitivity: float = 0.0032
 @export var inventory_capacity: int = 8
 
 @export var max_health: float = 100.0
@@ -70,7 +71,12 @@ func _ready() -> void:
     flashlight_battery = max_flashlight_battery
     flashlight_base_energy = flashlight.light_energy
 
-    Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+    if MobileControls.is_mobile_active():
+        Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+    else:
+        Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+    MobileControls.set_dead_mode(false)
     add_to_group("player")
     footstep_audio.stream = _build_footstep_stream()
     _ensure_survival_hud()
@@ -78,9 +84,10 @@ func _ready() -> void:
     _apply_responsive_hud_layout()
     _update_survival_hud()
 
-    controls_label.text = "WASD Move   Shift Sprint   E Interact   F Flashlight   B Battery   1 Food   2 Water   3 Medkit"
+    controls_label.text = "WASD Move   Shift Sprint   E Interact   F Flashlight   B Battery   1 Food   2 Water   3 Medkit   M Co-op"
 
 func _process(delta: float) -> void:
+    _process_mobile_actions()
     if is_dead:
         return
 
@@ -120,39 +127,75 @@ func _process(delta: float) -> void:
 
     _update_survival_hud()
 
-func _unhandled_input(event: InputEvent) -> void:
+func _process_mobile_actions() -> void:
+    if not MobileControls.is_mobile_active():
+        return
+
     if is_dead:
-        if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
+        if MobileControls.consume_action("restart"):
             get_tree().reload_current_scene()
         return
 
-    if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-        rotate_y(-event.relative.x * mouse_sensitivity)
-        camera.rotate_x(-event.relative.y * mouse_sensitivity)
+    var touch_look: Vector2 = MobileControls.consume_look_delta()
+    if touch_look.length_squared() > 0.0:
+        rotate_y(-touch_look.x * touch_look_sensitivity)
+        camera.rotate_x(-touch_look.y * touch_look_sensitivity)
         camera.rotation.x = clampf(camera.rotation.x, deg_to_rad(-82.0), deg_to_rad(82.0))
 
-    if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-        Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+    if MobileControls.consume_action("interact"):
+        _try_interact()
+    if MobileControls.consume_action("flashlight"):
+        _toggle_flashlight()
+    if MobileControls.consume_action("battery"):
+        _replace_flashlight_battery()
+    if MobileControls.consume_action("food"):
+        _consume_food()
+    if MobileControls.consume_action("water"):
+        _consume_water()
+    if MobileControls.consume_action("medkit"):
+        _consume_medkit()
 
-    if event is InputEventKey and event.pressed and not event.echo:
-        match event.physical_keycode:
-            KEY_F:
-                _toggle_flashlight()
-            KEY_B, KEY_4:
-                _replace_flashlight_battery()
-            KEY_E:
-                _try_interact()
-            KEY_1:
-                _consume_food()
-            KEY_2:
-                _consume_water()
-            KEY_3:
-                _consume_medkit()
-            KEY_ESCAPE:
-                if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-                    Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-                else:
-                    Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+func _unhandled_input(event: InputEvent) -> void:
+    if is_dead:
+        if event is InputEventKey:
+            var dead_key: InputEventKey = event as InputEventKey
+            if dead_key.pressed and not dead_key.echo and dead_key.physical_keycode == KEY_R:
+                get_tree().reload_current_scene()
+        return
+
+    if event is InputEventMouseMotion and not MobileControls.is_mobile_active() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+        var motion: InputEventMouseMotion = event as InputEventMouseMotion
+        rotate_y(-motion.relative.x * mouse_sensitivity)
+        camera.rotate_x(-motion.relative.y * mouse_sensitivity)
+        camera.rotation.x = clampf(camera.rotation.x, deg_to_rad(-82.0), deg_to_rad(82.0))
+
+    if event is InputEventMouseButton and not MobileControls.is_mobile_active():
+        var mouse_button: InputEventMouseButton = event as InputEventMouseButton
+        if mouse_button.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+            Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+    if event is InputEventKey:
+        var key_event: InputEventKey = event as InputEventKey
+        if key_event.pressed and not key_event.echo:
+            match key_event.physical_keycode:
+                KEY_F:
+                    _toggle_flashlight()
+                KEY_B, KEY_4:
+                    _replace_flashlight_battery()
+                KEY_E:
+                    _try_interact()
+                KEY_1:
+                    _consume_food()
+                KEY_2:
+                    _consume_water()
+                KEY_3:
+                    _consume_medkit()
+                KEY_ESCAPE:
+                    if not MobileControls.is_mobile_active():
+                        if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+                            Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+                        else:
+                            Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _physics_process(delta: float) -> void:
     if is_dead:
@@ -166,10 +209,16 @@ func _physics_process(delta: float) -> void:
     var x_input: float = float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A))
     var z_input: float = float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
     var input_vector: Vector2 = Vector2(x_input, z_input)
+
+    if MobileControls.is_mobile_active():
+        input_vector += MobileControls.get_move_vector()
+
     if input_vector.length() > 1.0:
         input_vector = input_vector.normalized()
 
-    var wants_sprint: bool = Input.is_physical_key_pressed(KEY_SHIFT) and input_vector.length() > 0.1
+    var keyboard_sprint: bool = Input.is_physical_key_pressed(KEY_SHIFT)
+    var touch_sprint: bool = MobileControls.is_mobile_active() and MobileControls.is_sprint_pressed()
+    var wants_sprint: bool = (keyboard_sprint or touch_sprint) and input_vector.length() > 0.1
     var can_sprint: bool = stamina > 0.5 and hunger > 5.0 and thirst > 5.0
     is_sprinting = wants_sprint and can_sprint
 
@@ -271,7 +320,7 @@ func _toggle_flashlight() -> void:
         return
 
     if flashlight_battery <= 0.0:
-        objective_label.text = "The flashlight battery is dead. Press B to replace it."
+        objective_label.text = "The flashlight battery is dead. Replace it with BATT."
         return
 
     flashlight.visible = true
@@ -350,11 +399,12 @@ func _die(source_name: String) -> void:
     is_dead = true
     velocity = Vector3.ZERO
     is_sprinting = false
+    MobileControls.set_dead_mode(MobileControls.is_mobile_active())
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
     death_title.text = "YOU DIED"
     death_rule.text = "Cause: %s" % source_name
-    death_restart.text = "Press R to restart"
+    death_restart.text = "Tap RESTART" if MobileControls.is_mobile_active() else "Press R to restart"
     death_panel.visible = true
     objective_label.text = ""
 
@@ -393,7 +443,8 @@ func _update_interaction_hint() -> void:
     if interaction_ray.is_colliding():
         var target: Object = interaction_ray.get_collider()
         if target != null and target.has_method("get_interaction_text"):
-            interaction_hint.text = "[E] " + str(target.call("get_interaction_text"))
+            var prefix: String = "[USE] " if MobileControls.is_mobile_active() else "[E] "
+            interaction_hint.text = prefix + str(target.call("get_interaction_text"))
 
 func _update_footsteps(delta: float) -> void:
     var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
@@ -448,7 +499,7 @@ func _apply_responsive_hud_layout() -> void:
         return
 
     var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-    var compact: bool = viewport_size.x < 800.0
+    var compact: bool = viewport_size.x < 800.0 or MobileControls.is_mobile_active()
 
     if compact:
         survival_panel.offset_left = -205.0
