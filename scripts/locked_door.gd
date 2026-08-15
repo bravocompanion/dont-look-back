@@ -33,6 +33,7 @@ func interact() -> void:
         return
 
     var objective: Label = get_node_or_null(objective_label_path) as Label
+    var newly_unlocked: bool = false
 
     if not unlocked:
         var player_node: Node = get_tree().get_first_node_in_group("player")
@@ -48,6 +49,7 @@ func interact() -> void:
         if player_node.has_method("remove_item"):
             player_node.call("remove_item", required_item_id)
         unlocked = true
+        newly_unlocked = true
         if objective != null:
             objective.text = "The exit is unlocked. Get out."
 
@@ -70,6 +72,11 @@ func interact() -> void:
     else:
         pending_collision_restore = true
         _try_restore_collision()
+
+    if newly_unlocked:
+        var save_system: Node = get_node_or_null("/root/SaveSystem")
+        if save_system != null and save_system.has_method("request_autosave"):
+            save_system.call("request_autosave", "Exit door unlocked")
 
 func _collect_collision_shapes(node: Node) -> void:
     for child: Node in node.get_children():
