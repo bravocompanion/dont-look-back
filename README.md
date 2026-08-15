@@ -1,109 +1,88 @@
-# DON'T LOOK BACK — Godot v0.18
+# DON'T LOOK BACK — Godot v0.18.1
 
-A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, responsive menus, and runtime AI navigation/perception.
+A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, responsive menus, runtime AI navigation/perception, and separate Labyrinth/Forest maps.
 
-## v0.18 — AI + Navigation Pass
+## v0.18.1 — Labyrinth Lighting + Separate Forest Map
 
-v0.18 upgrades monster movement from mostly direct pursuit into a lightweight runtime navigation/perception layer designed around the project's dynamically generated labyrinth and exterior world.
+### Labyrinth visibility pass
 
-New autoload systems:
-- `AINavigationSystem`
-- `AINavigationRebuildGuard`
-- `AINoiseRelaySystem`
+The expanded labyrinth is still intentionally dark, but it is no longer meant to be unreadable without staring only at the flashlight cone.
 
-The existing `CoopHorrorSystem` remains responsible for authoritative monster damage, downed/revive logic, monster state broadcast, and team-wipe behavior.
+v0.18.1:
+- raises the four existing maze ambience lights slightly
+- increases their range so walls/corners remain faintly readable
+- adds four additional low-energy cold ambience lights at deeper maze turns
+- keeps all new ambience below the player's protective-light threshold
+- keeps relay lights as the meaningful safe/high-power light sources
 
-### Runtime waypoint navigation
+The result should be dim blue-gray visibility rather than pitch-black geometry. The flashlight is still important and Darkness Exposure remains dangerous.
 
-The current world is assembled by GDScript at runtime, so v0.18 uses an `AStar3D` waypoint graph rather than requiring a pre-baked static navmesh.
+### Labyrinth and Forest are now different scenes
 
-Navigation points cover:
-- opening corridor
-- labyrinth zig-zag routes and relay branches
-- exterior path from the labyrinth exit to the cabin
-- forest routes
-- Abandoned House approaches/interior
-- Old Gas Station
-- Warehouse approaches and shelf aisles
-- Old Water Pump
-- deep forest routes
+Map files:
+- `res://scenes/main.tscn` — opening corridor, Apartment 03 and Labyrinth
+- `res://scenes/forest.tscn` — The Outside, cabin, forest and exterior landmarks
 
-Waypoint links are only created when:
-- points are within the configured link range
-- direct ray checks are unobstructed
-- additional left/right clearance checks are unobstructed
+`OutsideDirector` no longer builds the exterior inside the Labyrinth scene. `LabyrinthDirector` no longer builds labyrinth geometry inside the Forest scene.
 
-A delayed rebuild guard waits for the runtime Labyrinth and Exterior geometry to exist and allows several frames for CSG/collision data to settle before forcing the final navigation graph rebuild.
+This reduces the amount of unrelated world geometry active in one scene and gives future maps a cleaner loading boundary.
 
-### AI perception states
+### Loading transition
 
-The navigation system tracks four behavior modes:
-- `CHASE` — a standing survivor is visible and can be pursued
-- `INVESTIGATE` — a recent audible event has a known location
-- `SEARCH` — line of sight/noise has been lost but the monster remembers the last known location
-- `PATROL` — no current target; the monster moves between regional patrol points
+Leaving the final labyrinth gate now uses `MapTransitionSystem`.
 
-The AI stores a last-known position and search/investigate timers rather than instantly knowing a hidden player's exact position forever.
+Flow:
+1. player reaches the final Outside transition after all 3 relays are active
+2. controls are locked
+3. a full-screen `THE OUTSIDE` loading overlay appears
+4. the Labyrinth scene is replaced by `forest.tscn`
+5. runtime Forest geometry is allowed to initialize
+6. player Health/Hunger/Thirst/Stamina, inventory, flashlight/battery, Darkness Exposure, Bleeding and Infection are restored
+7. player is placed at the Forest entrance
+8. a new `Forest entrance` checkpoint is created and autosaved
+9. controls are restored
 
-### Hearing / player noise
+A collision boundary now closes the back edge of the Forest entrance so the player cannot walk behind the newly separated map and fall off the ground.
 
-Movement now generates lightweight AI noise events based on measured survivor movement speed:
-- sprinting creates the strongest recurring movement noise
-- normal walking produces a smaller hearing event
-- downed survivors do not emit the normal walk/sprint event through this system
+### Co-op map synchronization
 
-Important interactions also generate AI noise:
-- opening/closing a normal door
-- rattling a locked exit
-- unlocking the exit
-- moving the heavy exit door
-- starting/refueling the shelter generator
-- successful workbench crafting
-- using the Old Water Pump
+Map changes remain host-authoritative.
 
-`AINoiseRelaySystem` keeps hearing host-authoritative in LAN co-op. A client interaction sends its noise event to the host; the host inserts it into the AI perception system.
+When the active party leaves the labyrinth:
+- HOST sends the Forest transition to every connected peer
+- every survivor loads `forest.tscn`
+- each survivor preserves their own current local survival/inventory state during the scene swap
+- monster/world authority continues to live on the host
 
-### The Tenant
+Late join also receives the host's active map. If the host is already in Forest, a joining client loads Forest before continuing the v0.15 Ready/Start flow. If the host is still in Labyrinth while a client has a local Forest save loaded in the background, that client is synchronized back to the Labyrinth map for the session.
 
-The signature rule is retained:
-- watching The Tenant freezes its pursuit movement
-- any standing co-op survivor can still contribute to the watched check
+### Save/Continue across maps
 
-When The Tenant is allowed to move, v0.18 routes its movement toward the current memory goal through the runtime waypoint graph instead of always moving directly through obstacles.
+The v0.18.1 SaveSystem wrapper adds the active scene path to new saves.
 
-The Tenant can therefore:
-- chase a visible survivor
-- move toward recent footsteps/interactions
-- continue toward the last known location after losing sight
-- return to regional patrol behavior when the search expires
+Continue/Load can now select the correct scene before applying the saved player/world state.
 
-Panic, attacks, damage and co-op state synchronization remain handled by the existing horror system.
+Older v0.14–v0.18 saves are migrated without deleting them:
+- player positions at `z <= -52` are interpreted as Forest saves
+- earlier positions are interpreted as Labyrinth saves
 
-### Darkness Creature
+Finite pickup persistence is also normalized to scene-relative keys so older Outside pickup paths created under `/root/Main/OutsideWorld/...` continue to match the new `/root/ForestMap/OutsideWorld/...` structure.
 
-The Darkness Creature retains its defining light rule:
-- nearby protective light still forces retreat/despawn behavior
-- directly visible survivors standing in protective light are not selected as normal darkness chase targets by the new perception layer
+`NEW GAME` always returns to `main.tscn`, even if the title screen was opened while the current run was in Forest.
 
-When it is pursuing outside protective light, v0.18 routes movement around available runtime waypoint connections. This is especially important around the Abandoned House and Warehouse shelves.
+## v0.18 — AI + Navigation retained
 
-A newly created Darkness Creature also receives a safety check; if its spawn appears embedded in blocked geometry, the system can reposition it to the nearest navigation waypoint.
+Monster movement uses a lightweight runtime `AStar3D` waypoint graph with four perception states:
+- `CHASE`
+- `INVESTIGATE`
+- `SEARCH`
+- `PATROL`
 
-### Solo and co-op authority
+The graph is now map-aware. Labyrinth loads only corridor/labyrinth navigation points; Forest loads only exterior navigation points. The rebuild guard waits for the active map's runtime geometry before rebuilding.
 
-Solo:
-- the new navigation layer routes Tenant/Darkness movement
-- the existing monster scripts continue handling their special rules, attacks, light reactions and lifetime logic
+The Tenant retains its signature rule: watching it freezes pursuit movement. Darkness Creature still retreats from protective light. Walk/sprint movement and noisy interactions continue to generate host-authoritative AI hearing events.
 
-LAN co-op:
-- only the HOST drives AI navigation/perception
-- clients do not independently pathfind monsters
-- client interaction noise is relayed to the host
-- host monster transforms continue to be distributed through `CoopHorrorSystem`
-
-Night difficulty tuning from `NightThreatSystem` is preserved. Its speed values are read by the navigation layer before the old direct movement path is suppressed for that frame.
-
-## v0.17 Front End retained
+## Front End / Save / Multiplayer retained
 
 Main menu:
 - CONTINUE
@@ -113,89 +92,30 @@ Main menu:
 - SETTINGS
 - QUIT on desktop
 
-Pause/menu:
-- `Esc` on desktop
-- `MENU` on mobile
-- solo pauses the SceneTree
-- co-op keeps the host world running while the local survivor is blocked
+Desktop pause: `Esc`.
+Mobile pause: `MENU`.
 
-Settings remain stored at:
-
-`user://dont_look_back_settings.cfg`
-
-Current settings:
-- Master Volume
-- Look Sensitivity
-- FPS limit: 30 / 60 / 120
-- Fullscreen on supported desktop platforms
-
-The title screen version badge is synchronized to v0.18.
-
-## v0.15 Multiplayer Polish retained
-
-LAN co-op target: 2–4 survivors.
-
-Retained systems:
-- survivor display names
-- Ready / Not Ready
-- Host START
-- responsive session roster
-- teammate Health / DOWNED HUD
-- ping estimate
-- reconnect attempt + RECONNECT control
-- late-join recovery foundation
-- shared checkpoint authority
-- revive progress UI
-- slow downed crawling
-- host-authoritative monster damage/state
-- shared relays
-- shared day/night
-- shared generator/campfire state
-- shared finite survival pickups
-
-## Persistent World retained from v0.14
-
-World save:
-
+Persistent world save:
 `user://dont_look_back_save_v1.json`
 
-Persistent data includes:
-- player position/yaw
-- Health/Hunger/Thirst/Stamina
-- flashlight battery/state
-- Darkness Exposure
-- inventory
-- Bleeding / Infection / Cold
-- relay progress
-- labyrinth door state
-- checkpoint snapshot/name
-- day/time
-- generator/campfire fuel
-- shelter storage
-- finite claimed loot
-- Journal entries/order
+Local settings:
+`user://dont_look_back_settings.cfg`
 
-AI's transient CHASE/SEARCH position is intentionally not written into disk saves. A restored run resumes from the persistent world and the AI reacquires information normally.
+LAN co-op target remains 2–4 survivors with:
+- display names
+- Ready / Not Ready
+- Host START
+- teammate Health / DOWNED HUD
+- ping/reconnect foundation
+- shared checkpoint authority
+- downed crawling and revive progress
+- host-authoritative monster state/damage
+- shared relays/day-night/shelter state
+- shared finite survival pickups
 
-## Journal + Door Safety retained
+## Survival / Journal retained
 
-Journal:
-- `J` desktop
-- `JOURNAL` mobile
-- missions, tips, logs, trivia and warnings
-- persistent discoveries
-
-Door safety remains active:
-- moving collision is disabled before door rotation
-- one physics frame is allowed before movement
-- collision is restored after motion
-- closing collision waits until the local player clears the dangerous hinge area
-
-The new v0.18 door-noise behavior is added on top of this safety logic.
-
-## Survival systems retained
-
-Core stats:
+Stats:
 - Health
 - Hunger
 - Thirst
@@ -206,42 +126,15 @@ Core stats:
 - Bleeding
 - Infection
 
-Resources / processing:
-- Food
-- Clean Water
-- Dirty Water
-- Medkit
-- Cloth
-- Bandage
-- Wood
-- Scrap
-- Fuel Can
-- Flashlight Battery
-- Firewood Bundle
-- boiling Dirty Water at the shelter
-- workbench crafting
-- shared shelter storage
+Resources include Food, Clean/Dirty Water, Medkit, Cloth, Bandage, Wood, Scrap, Fuel Can, Flashlight Battery and Firewood Bundle.
 
-## Current world
-
-Progression covers:
-1. opening corridor / The Tenant
-2. Apartment 03
-3. expanded labyrinth
-4. Relay A / B / C
-5. final gate
-6. The Outside
-7. cabin shelter
-8. expanded forest
-9. Abandoned House
-10. Old Gas Station
-11. Warehouse
-12. Old Water Pump
-13. stronger deep-zone night threat
+Journal:
+- `J` desktop
+- `JOURNAL` mobile
+- missions, tips, logs, trivia and warnings
+- persistent discoveries
 
 ## Controls
-
-No new player buttons are required for v0.18.
 
 Desktop:
 - WASD — move / downed crawl
@@ -259,62 +152,60 @@ Desktop:
 - Esc — pause/menu
 
 Mobile:
-- left joystick — move / downed movement path
+- left joystick — move / downed movement
 - right swipe — look
 - RUN / USE / LIGHT / BATT / FOOD / WATER / MED
 - JOURNAL
 - MENU
 
-## Testing v0.18
+No new gameplay button is required for the map transition.
 
-Recommended solo test:
-1. Pull latest `main` and press F5 in the existing Godot project.
-2. Start/Continue and trigger The Tenant.
-3. Break line of sight around corridor/labyrinth geometry and verify the monster does not simply cut straight through a wall.
-4. Walk quietly, then sprint while a monster is within hearing range and compare its investigate behavior.
-5. Open doors repeatedly near an active threat and verify the interaction can attract investigation.
-6. Outside at night, test the Abandoned House and Warehouse shelves while a Darkness Creature is active.
-7. Break line of sight and watch for last-known-position/search behavior rather than perfect tracking forever.
-8. Verify protective light still repels the Darkness Creature.
-9. Verify watching The Tenant still freezes its pursuit.
-10. Start/refuel the generator, craft at the workbench and use the water pump while a threat is nearby to test interaction noise.
+## Testing v0.18.1
 
-Recommended two-device LAN test:
-1. HOST and JOIN normally, READY both survivors, then START.
-2. Let the client sprint/open a door/use a noisy interaction while the host monster is nearby.
-3. Verify the HOST AI reacts to the client-generated event.
-4. Verify both devices see the same host-driven monster position/state.
-5. Break line of sight around the Warehouse/House and check that only the host determines the route.
-6. Re-test downed/revive, shared checkpoint, reconnect and mobile controls to confirm v0.15/v0.17 behavior remains intact.
+Solo recommended test:
+1. Start a NEW GAME and reach the expanded labyrinth.
+2. Verify maze walls and turns are faintly visible without making the area feel bright.
+3. Stand under a dim ambience light and verify Darkness Exposure still behaves as unsafe darkness; relay/high-power lights should remain the meaningful protection.
+4. Activate Relay A/B/C and pass the final gate.
+5. Confirm the loading overlay appears and the game changes to `forest.tscn`.
+6. Verify Health, Hunger, Thirst, Stamina, inventory, flashlight battery and conditions survive the transition.
+7. Verify the player spawns around `(0, 0.92, -57.5)` and cannot walk behind the Forest entrance edge.
+8. Save in Forest, quit, restart and CONTINUE; the game should restore directly into Forest rather than putting a Forest coordinate inside the Labyrinth scene.
+9. Use NEW GAME from a Forest run/title state and verify it returns to the opening Labyrinth map.
+10. Re-test Darkness Creature navigation in House/Warehouse after the split.
 
-## Asset status
+Co-op recommended test:
+1. HOST + JOIN in Labyrinth and START normally.
+2. Activate all relays and have either survivor enter the final transition.
+3. Confirm both devices display loading and arrive in Forest together.
+4. Verify survivor inventory/stats remain correct on both devices.
+5. Disconnect/rejoin a client while HOST remains in Forest; the joining client should synchronize to Forest.
+6. Test a HOST in Labyrinth against a client whose local disk save would normally restore Forest; the client should synchronize to the host's Labyrinth scene for that session.
+7. Re-test shared pickups, checkpoint, downed/revive, AI hearing and mobile controls.
 
-Production asset requirements are tracked in `ASSET_BACKLOG.md` and updated for v0.18.
+## Asset status after v0.18.1
 
-v0.18 makes these particularly important:
-- Tenant search/listen/turn/freeze-transition animations
-- Darkness crawl/search/retreat/dissolve animations
-- proper footsteps for concrete/wood/dirt/metal with quieter walk and louder sprint variants
-- door swing/creak/locked-rattle/heavy-exit SFX
-- generator start/loop/refuel mechanical SFX
-- workbench hammer/scrape SFX
-- hand-pump squeak/clank SFX
-- monster investigation/search vocal cues
-- collision-safe Warehouse shelves, House furniture/doorways and Gas Station props
+Production requirements are tracked in `ASSET_BACKLOG.md`.
 
-The project remains code/procedural-first; the skipped production-art/audio milestone is still not being treated as complete.
+Newly important assets from this patch:
+- low-power labyrinth emergency/maintenance light fixture model
+- emissive/flicker variants for dim maze lighting
+- Forest entrance barrier/tree-line replacement for the current collision placeholder
+- `THE OUTSIDE` loading-screen/key-art plate, center-safe for desktop and mobile
+- loading transition ambience/stinger
+- optional map-name icon/treatment for future multi-map loading screens
+
+Existing high-priority needs remain final survivor/Tenant/Darkness models and animation, surface footsteps, monster audio, labyrinth material kit, production doors, forest vegetation and landmark props.
 
 ## Current limitations
 
 - Runtime Godot validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
-- Navigation is a hand-authored runtime waypoint graph, not a fully baked NavigationMesh.
-- The graph represents the current procedural map. Major future geometry changes may require waypoint updates.
-- Hearing currently uses gameplay radii; it does not yet model acoustic occlusion, reverb rooms or material-dependent sound propagation.
-- AI does not yet have final AnimationTree/turn-in-place/foot-IK presentation.
-- Internet matchmaking / NAT traversal is not implemented; co-op remains LAN/IP based.
-- Client-specific persistent account profiles are not implemented.
+- Loading currently uses a functional Godot UI overlay rather than final branded loading artwork.
+- Forest entrance boundary is a procedural placeholder and should become believable terrain/tree/fence art later.
+- Navigation remains a hand-authored runtime waypoint graph rather than a fully baked NavigationMesh.
+- Internet matchmaking/NAT traversal is not implemented; co-op remains LAN/IP based.
 - Final character models, animations, production audio, VFX and environment art are still missing.
 
 ## Recommended next update
 
-Before another large story/map expansion, the strongest next milestone is **v0.19 — Art + Audio / AI Presentation Integration**: replace high-impact placeholders, connect movement/search states to final animations, add real surface footsteps/spatial monster audio, then continue story/content expansion from a stronger production base.
+After validating v0.18.1, the strongest next milestone remains **Art + Audio / AI Presentation Integration**: production labyrinth lighting fixtures/materials, real footsteps and spatial monster audio, final monster/survivor animation states, then a branded loading/front-end pass before another large story map.
