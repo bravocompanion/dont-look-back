@@ -16,13 +16,41 @@ func interact() -> void:
     if collected:
         return
 
-    var player: Node = get_tree().get_first_node_in_group("player")
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    if player == null or not player.has_method("add_item"):
+        return
+    if not _can_player_accept(player):
+        var full_objective: Label = get_node_or_null(objective_label_path) as Label
+        if full_objective != null:
+            full_objective.text = "Inventory full."
+        return
+
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("is_online") and bool(network.call("is_online")):
+        if network.has_method("request_pickup"):
+            var collect_now: bool = bool(network.call("request_pickup", self))
+            if collect_now:
+                _collect_locally()
+            else:
+                var waiting_objective: Label = get_node_or_null(objective_label_path) as Label
+                if waiting_objective != null:
+                    waiting_objective.text = "Claiming shared supply..."
+        return
+
+    _collect_locally()
+
+func complete_network_pickup() -> void:
+    if collected:
+        return
+    _collect_locally()
+
+func _collect_locally() -> void:
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null or not player.has_method("add_item"):
         return
 
     var accepted: bool = bool(player.call("add_item", item_id, display_name))
     var objective: Label = get_node_or_null(objective_label_path) as Label
-
     if not accepted:
         if objective != null:
             objective.text = "Inventory full."
@@ -32,6 +60,14 @@ func interact() -> void:
     if objective != null:
         objective.text = "%s added to inventory." % display_name
     queue_free()
+
+func _can_player_accept(player: CharacterBody3D) -> bool:
+    var counts: Dictionary = Dictionary(player.get("inventory_counts"))
+    if int(counts.get(item_id, 0)) > 0:
+        return true
+    var names: Dictionary = Dictionary(player.get("inventory_names"))
+    var capacity: int = int(player.get("inventory_capacity"))
+    return names.size() < capacity
 
 func _build_visual() -> void:
     var mesh_instance: MeshInstance3D = MeshInstance3D.new()
