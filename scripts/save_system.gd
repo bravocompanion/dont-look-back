@@ -159,11 +159,52 @@ func _load_from_disk(automatic: bool) -> bool:
         _restore_state(state)
         _show_status("SAVE RESTORED")
     else:
-        persistent_claimed_pickups.clear()
-        _clear_network_claims()
+        _prepare_clean_reload()
         call_deferred("_reload_and_restore", state)
         _show_status("LOADING WORLD...")
     return true
+
+func _prepare_clean_reload() -> void:
+    persistent_claimed_pickups.clear()
+    _clear_network_claims()
+
+    var checkpoint: Node = get_node_or_null("/root/CheckpointSystem")
+    if checkpoint != null and checkpoint.has_method("clear_checkpoint"):
+        checkpoint.call("clear_checkpoint")
+
+    var labyrinth: Node = get_node_or_null("/root/LabyrinthDirector")
+    if labyrinth != null:
+        labyrinth.set("active_relays", {})
+
+    var shelter: Node = get_node_or_null("/root/ShelterSystem")
+    if shelter != null:
+        shelter.set("generator_running", false)
+        shelter.set("generator_fuel_seconds", 0.0)
+        shelter.set("campfire_burn_seconds", 0.0)
+        shelter.set("storage_names", {})
+        shelter.set("storage_counts", {})
+
+    var outside: Node = get_node_or_null("/root/OutsideDirector")
+    if outside != null:
+        outside.set("game_minutes", 990.0)
+        outside.set("day_index", 1)
+        outside.set("cold_exposure", 0.0)
+        outside.set("shelter_powered", false)
+
+    var depth: Node = get_node_or_null("/root/SurvivalDepthSystem")
+    if depth != null:
+        depth.set("bleeding", 0.0)
+        depth.set("infection", 0.0)
+        depth.set("tracked_player_id", 0)
+
+    var journal: Node = get_node_or_null("/root/JournalSystem")
+    if journal != null:
+        if journal.has_method("is_open") and bool(journal.call("is_open")) and journal.has_method("close_journal"):
+            journal.call("close_journal")
+        journal.set("entries", {})
+        var empty_order: Array[String] = []
+        journal.set("entry_order", empty_order)
+        journal.set("current_entry_index", 0)
 
 func _reload_and_restore(state: Dictionary) -> void:
     var reload_error: Error = get_tree().reload_current_scene()
@@ -324,6 +365,20 @@ func _finalize_restore() -> void:
             shelter.call("_apply_campfire_state")
 
     _remove_current_claimed_nodes()
+    _cleanup_discovered_journal_notes()
+
+func _cleanup_discovered_journal_notes() -> void:
+    var journal: Node = get_node_or_null("/root/JournalSystem")
+    if journal == null or not journal.has_method("has_entry"):
+        return
+
+    var notes: Array[Node] = get_tree().get_nodes_in_group("journal_note")
+    for note: Node in notes:
+        if note == null or not is_instance_valid(note):
+            continue
+        var entry_id: String = str(note.get("entry_id"))
+        if bool(journal.call("has_entry", entry_id)):
+            note.queue_free()
 
 func _restore_world_state(state: Dictionary) -> void:
     var outside: Node = get_node_or_null("/root/OutsideDirector")
