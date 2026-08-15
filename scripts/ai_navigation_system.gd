@@ -113,7 +113,7 @@ func _check_scene_change() -> void:
 
     graph_scene_id = scene_id
     graph_ready = false
-    graph_retry_timer = 0.0
+    graph_retry_timer = 0.75
     graph_point_count = 0
     nav_graph.clear()
     survivor_previous_positions.clear()
@@ -136,8 +136,8 @@ func _ensure_navigation_graph(delta: float) -> void:
     if scene == null:
         return
     var labyrinth: Node = scene.get_node_or_null("LabyrinthExpansion")
-    var outside: Node = scene.get_node_or_null("OutsideWorld")
-    if labyrinth == null and outside == null:
+    var exterior: Node = scene.get_node_or_null("OutsideWorld/ExteriorExpansion")
+    if labyrinth == null or exterior == null:
         graph_retry_timer = 0.35
         return
 
@@ -263,7 +263,8 @@ func _survivor_snapshots() -> Dictionary:
             return result
         var ids_value: Variant = coop.call("_get_active_peer_ids") if coop.has_method("_get_active_peer_ids") else []
         if ids_value is Array:
-            for peer_variant: Variant in ids_value:
+            var ids: Array = Array(ids_value)
+            for peer_variant: Variant in ids:
                 var peer_id: int = int(peer_variant)
                 var state_value: Variant = coop.call("_get_survivor_state", peer_id) if coop.has_method("_get_survivor_state") else {}
                 if not (state_value is Dictionary):
