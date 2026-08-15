@@ -20,6 +20,26 @@ func interact() -> void:
     if director == null or not director.has_method("fuel_campfire"):
         return
 
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
+    if network_client:
+        var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        var action: String = ""
+        if player.has_method("remove_item") and bool(player.call("remove_item", "firewood_bundle")):
+            action = "campfire_bundle"
+        elif player.has_method("remove_item") and bool(player.call("remove_item", "wood")):
+            action = "campfire_wood"
+        else:
+            if objective != null:
+                objective.text = "The campfire needs Wood or a Firewood Bundle."
+            return
+
+        if network.has_method("request_shared_shelter_action"):
+            network.call("request_shared_shelter_action", action)
+        if objective != null:
+            objective.text = "Campfire fuel request sent to host."
+        return
+
     director.call("fuel_campfire", player)
 
 func _build_visual() -> void:
