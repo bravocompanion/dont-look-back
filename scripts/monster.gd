@@ -25,11 +25,13 @@ func appear() -> void:
     if player == null:
         return
 
-    # Spawn several metres behind the player so the first instinct is to turn around.
-    var behind := player.global_transform.basis.z.normalized()
-    global_position = player.global_position + behind * 5.0
-    global_position.y = 0.0
-    global_position.x = clamp(global_position.x, -1.35, 1.35)
+    # The prototype hallway progresses toward -Z, so +Z is always the safe
+    # "behind the player" spawn side even if the player enters while looking sideways.
+    global_position = Vector3(
+        clamp(player.global_position.x, -1.35, 1.35),
+        0.0,
+        min(player.global_position.z + 5.0, 10.4)
+    )
 
     visible = true
     active = true
@@ -40,6 +42,11 @@ func appear() -> void:
 
     await get_tree().create_timer(0.65).timeout
     can_move = true
+
+func stop_stalking() -> void:
+    active = false
+    can_move = false
+    visible = false
 
 func _process(delta: float) -> void:
     if caught:
