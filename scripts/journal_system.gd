@@ -71,6 +71,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func has_entry(entry_id: String) -> bool:
     return entries.has(entry_id)
 
+func is_open() -> bool:
+    return journal_panel != null and journal_panel.visible
+
 func discover_entry(entry_id: String, title: String, category: String, body: String, open_after: bool = true) -> void:
     var newly_discovered: bool = not entries.has(entry_id)
     _add_entry(entry_id, title, category, body)
@@ -95,6 +98,7 @@ func open_journal() -> void:
         return
     journal_panel.visible = true
     overlay.visible = true
+    _set_player_journal_input(false)
     _update_mission()
     _update_entry_display()
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -104,11 +108,26 @@ func close_journal() -> void:
         return
     journal_panel.visible = false
     overlay.visible = false
+    _set_player_journal_input(true)
 
     var mobile: Node = get_node_or_null("/root/MobileControls")
     var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
     if not mobile_active:
         Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _set_player_journal_input(enabled: bool) -> void:
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    if player == null:
+        return
+
+    var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
+    var downed: bool = coop != null and bool(coop.get("local_downed"))
+    if enabled and downed:
+        return
+
+    player.velocity = Vector3.ZERO
+    player.set_physics_process(enabled)
+    player.set_process_unhandled_input(enabled)
 
 func _add_entry(entry_id: String, title: String, category: String, body: String) -> void:
     if entry_id.is_empty():
@@ -124,13 +143,13 @@ func _add_entry(entry_id: String, title: String, category: String, body: String)
 func _previous_entry() -> void:
     if entry_order.is_empty():
         return
-    current_entry_index = posmod(current_entry_index - 1, entry_order.size())
+    current_entry_index = wrapi(current_entry_index - 1, 0, entry_order.size())
     _update_entry_display()
 
 func _next_entry() -> void:
     if entry_order.is_empty():
         return
-    current_entry_index = posmod(current_entry_index + 1, entry_order.size())
+    current_entry_index = wrapi(current_entry_index + 1, 0, entry_order.size())
     _update_entry_display()
 
 func _update_entry_display() -> void:
@@ -288,7 +307,10 @@ func _announce_discovery(title: String) -> void:
 
     var mobile: Node = get_node_or_null("/root/MobileControls")
     var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
-    objective.text = "Journal updated: %s. Tap JOURNAL to read it." % title if mobile_active else "Journal updated: %s. Press J to read it." % title
+    if mobile_active:
+        objective.text = "Journal updated: %s. Tap JOURNAL to read it." % title
+    else:
+        objective.text = "Journal updated: %s. Press J to read it." % title
 
 func _build_ui() -> void:
     layer = CanvasLayer.new()
@@ -380,21 +402,24 @@ func _apply_responsive_layout() -> void:
 
     var size: Vector2 = get_viewport().get_visible_rect().size
     var compact: bool = size.x < 800.0
+    var mobile: Node = get_node_or_null("/root/MobileControls")
+    var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
+
     if compact:
         journal_panel.offset_left = -165.0
         journal_panel.offset_top = -245.0
         journal_panel.offset_right = 165.0
         journal_panel.offset_bottom = 245.0
         entry_body.custom_minimum_size = Vector2(0.0, 180.0)
-        journal_button.visible = true
-        journal_button.offset_left = 12.0
-        journal_button.offset_top = 46.0
-        journal_button.offset_right = 112.0
-        journal_button.offset_bottom = 88.0
     else:
         journal_panel.offset_left = -330.0
         journal_panel.offset_top = -260.0
         journal_panel.offset_right = 330.0
         journal_panel.offset_bottom = 260.0
         entry_body.custom_minimum_size = Vector2(0.0, 225.0)
-        journal_button.visible = false
+
+    journal_button.visible = mobile_active
+    journal_button.offset_left = 12.0
+    journal_button.offset_top = 46.0
+    journal_button.offset_right = 112.0
+    journal_button.offset_bottom = 88.0
