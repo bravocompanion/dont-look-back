@@ -9,7 +9,7 @@ extends CharacterBody3D
 @onready var interaction_ray: RayCast3D = $Camera3D/InteractionRay
 @onready var interaction_hint: Label = $HUD/InteractionHint
 
-var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+var gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity"))
 
 func _ready() -> void:
     Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -19,7 +19,7 @@ func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
         rotate_y(-event.relative.x * mouse_sensitivity)
         camera.rotate_x(-event.relative.y * mouse_sensitivity)
-        camera.rotation.x = clamp(camera.rotation.x, deg_to_rad(-82.0), deg_to_rad(82.0))
+        camera.rotation.x = clampf(camera.rotation.x, deg_to_rad(-82.0), deg_to_rad(82.0))
 
     if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
         Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -42,15 +42,15 @@ func _physics_process(delta: float) -> void:
     else:
         velocity.y = -0.1
 
-    var x_input := float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A))
-    var z_input := float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
-    var input_vector := Vector2(x_input, z_input)
+    var x_input: float = float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A))
+    var z_input: float = float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
+    var input_vector: Vector2 = Vector2(x_input, z_input)
     if input_vector.length() > 1.0:
         input_vector = input_vector.normalized()
 
-    var direction := (transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()
-    var target_x := direction.x * move_speed
-    var target_z := direction.z * move_speed
+    var direction: Vector3 = (transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()
+    var target_x: float = direction.x * move_speed
+    var target_z: float = direction.z * move_speed
     velocity.x = move_toward(velocity.x, target_x, acceleration * delta)
     velocity.z = move_toward(velocity.z, target_z, acceleration * delta)
 
@@ -62,15 +62,15 @@ func _try_interact() -> void:
     if not interaction_ray.is_colliding():
         return
 
-    var target := interaction_ray.get_collider()
+    var target: Object = interaction_ray.get_collider()
     if target != null and target.has_method("interact"):
-        target.interact()
+        target.call("interact")
 
 func _update_interaction_hint() -> void:
     interaction_ray.force_raycast_update()
     interaction_hint.text = ""
 
     if interaction_ray.is_colliding():
-        var target := interaction_ray.get_collider()
+        var target: Object = interaction_ray.get_collider()
         if target != null and target.has_method("get_interaction_text"):
-            interaction_hint.text = "[E] " + str(target.get_interaction_text())
+            interaction_hint.text = "[E] " + str(target.call("get_interaction_text"))
