@@ -10,23 +10,21 @@ extends Node3D
 @export var catch_distance: float = 1.15
 @export var watch_dot_threshold: float = 0.72
 
-var active := false
-var caught := false
+var active: bool = false
+var caught: bool = false
 var panic: float = 0.0
-var can_move := false
+var can_move: bool = false
 var base_flashlight_energy: float = 3.5
-var restart_requested := false
+var restart_requested: bool = false
 
 func _ready() -> void:
     visible = false
 
 func appear() -> void:
-    var player := get_node_or_null(player_path) as CharacterBody3D
+    var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
     if player == null:
         return
 
-    # The prototype hallway progresses toward -Z, so +Z is always the safe
-    # "behind the player" spawn side even if the player enters while looking sideways.
     global_position = Vector3(
         clampf(player.global_position.x, -1.35, 1.35),
         0.0,
@@ -47,6 +45,14 @@ func stop_stalking() -> void:
     active = false
     can_move = false
     visible = false
+    panic = 0.0
+    _update_hud()
+
+    var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
+    if player != null:
+        var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
+        if flashlight != null:
+            flashlight.light_energy = base_flashlight_energy
 
 func _process(delta: float) -> void:
     if caught:
@@ -58,11 +64,11 @@ func _process(delta: float) -> void:
     if not active or not visible:
         return
 
-    var player := get_node_or_null(player_path) as CharacterBody3D
+    var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
     if player == null:
         return
 
-    var camera := player.get_node_or_null("Camera3D") as Camera3D
+    var camera: Camera3D = player.get_node_or_null("Camera3D") as Camera3D
     if camera == null:
         return
 
@@ -100,9 +106,6 @@ func _is_being_watched(camera: Camera3D, player: CharacterBody3D) -> bool:
     var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(camera.global_position, monster_focus)
     query.exclude = [player.get_rid()]
     var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
-
-    # The Tenant has no collision body in this prototype. An empty ray therefore
-    # means nothing solid is blocking the player's view of it.
     return hit.is_empty()
 
 func _update_panic(delta: float, distance: float, watched: bool) -> void:
@@ -118,7 +121,7 @@ func _update_panic(delta: float, distance: float, watched: bool) -> void:
     panic = clampf(panic, 0.0, 100.0)
 
 func _update_flashlight(player: CharacterBody3D) -> void:
-    var flashlight := player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
+    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
     if flashlight == null:
         return
 
@@ -131,11 +134,11 @@ func _update_flashlight(player: CharacterBody3D) -> void:
     flashlight.light_energy = base_flashlight_energy * pulse * panic_factor
 
 func _update_hud() -> void:
-    var panic_label := get_node_or_null(panic_label_path) as Label
+    var panic_label: Label = get_node_or_null(panic_label_path) as Label
     if panic_label != null:
         panic_label.text = "PANIC %d%%" % int(round(panic))
 
-    var overlay := get_node_or_null(panic_overlay_path) as ColorRect
+    var overlay: ColorRect = get_node_or_null(panic_overlay_path) as ColorRect
     if overlay != null:
         var alpha: float = lerpf(0.0, 0.23, panic / 100.0)
         overlay.color = Color(0.18, 0.0, 0.0, alpha)
@@ -154,10 +157,10 @@ func _catch_player(player: CharacterBody3D) -> void:
     player.set_process_unhandled_input(false)
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-    var objective := get_node_or_null(objective_label_path) as Label
+    var objective: Label = get_node_or_null(objective_label_path) as Label
     if objective != null:
         objective.text = ""
 
-    var panel := get_node_or_null(caught_panel_path) as Control
+    var panel: Control = get_node_or_null(caught_panel_path) as Control
     if panel != null:
         panel.visible = true
