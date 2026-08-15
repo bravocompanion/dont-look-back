@@ -13,10 +13,10 @@ func _on_body_entered(body: Node3D) -> void:
     if player == null:
         return
 
-    var director: Node = get_node_or_null("/root/OutsideDirector")
-    if director == null or not director.has_method("enter_outside"):
+    var transition: Node = get_node_or_null("/root/MapTransitionSystem")
+    if transition == null or not transition.has_method("request_forest_transition"):
         return
 
     triggered = true
     monitoring = false
-    director.call("enter_outside", player)
+    transition.call("request_forest_transition")
