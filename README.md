@@ -1,118 +1,152 @@
-# DON'T LOOK BACK — Godot v0.15
+# DON'T LOOK BACK — Godot v0.17
 
-A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive mobile touch controls, LAN co-op, host-authoritative horror encounters, persistent world saves, journal discoveries, and survival crafting.
+A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, and a responsive front-end flow.
 
-## v0.15 — Multiplayer Polish
+## v0.17 — Main Menu / Game Flow
 
-v0.15 turns the existing LAN foundation into a more deliberate co-op session flow. `MultiplayerPolishSystem` sits on top of the existing `NetworkManager` and `CoopHorrorSystem`, so the host-authoritative monsters, shared loot, world state, mobile controls, and v0.14 save system remain intact.
+v0.17 adds `FrontEndSystem` as the high-level entry point for the existing game systems. The gameplay scene remains the same; the front end runs as an autoload overlay so it can coordinate saves, co-op, settings, pause behavior, and mobile input without duplicating the world.
 
-### Survivor names
+### Main menu
 
-Each device now has a local co-op profile stored at:
+Available actions:
+- CONTINUE
+- NEW GAME
+- HOST CO-OP
+- JOIN CO-OP
+- SETTINGS
+- QUIT on desktop platforms
 
-`user://dont_look_back_coop_profile.cfg`
+The title screen is responsive for desktop and narrow/mobile viewports.
 
-The profile remembers:
-- survivor display name
-- last non-localhost LAN host address
+### Continue
 
-Names are synchronized through the host and appear in the session roster, teammate HUD, remote survivor labels, and revive prompts.
+The existing v0.14 `SaveSystem` still restores a valid disk save during startup while the title overlay is covering the game world. After the short boot check, CONTINUE becomes available and displays a compact summary:
+- Day
+- world time
+- latest checkpoint name
 
-### Ready / Start flow
+Selecting CONTINUE releases the player into the restored world.
 
-Hosting or joining no longer immediately gives full movement control.
+If the save JSON is missing or invalid, CONTINUE remains disabled and the player can start a NEW GAME.
 
-The pre-game flow is:
-1. HOST creates the LAN session.
-2. Other devices JOIN using the host LAN IPv4.
-3. Each player enters a survivor name.
-4. Every connected survivor presses READY.
-5. The HOST presses START.
-6. Clients are grouped near the host and normal gameplay begins.
+### New Game
 
-START requires at least two connected survivors and every current survivor to be READY.
+NEW GAME now has a destructive confirmation when a persistent world exists.
 
-This flow uses the existing Godot ENet session; it does not create a separate scene or replace the current world-save state.
+Confirming it:
+1. disconnects any active/connecting network peer
+2. deletes the persistent world save
+3. resets the runtime checkpoint, relay, shelter, exterior condition, survival-depth, Journal and claimed-loot state using the v0.14 reset path
+4. reloads the scene
+5. starts the opening corridor as a fresh run
 
-### Late join / session recovery
+### Host Co-op
 
-If a survivor joins a session that has already started, the host sends the active session state and places the reconnecting/late-joining survivor near the host.
+HOST CO-OP calls the same `NetworkManager` used by v0.15.
 
-If a client loses the host connection:
-- the last LAN address is retained locally
-- v0.15 makes one automatic reconnect attempt after a short delay
-- if that fails, a RECONNECT button remains available
+If a persistent host world was restored during boot, hosting starts from that world. If no save exists, the current fresh world is used.
 
-This is basic LAN session recovery, not account-based internet reconnect or NAT traversal.
+After HOST succeeds, the v0.15 session flow takes over:
+- survivor name
+- READY / NOT READY
+- host START
+- teammate HUD
+- ping
+- shared checkpoint
+- downed/revive flow
 
-### Ping / connection status
+### Join Co-op
 
-Clients periodically measure round-trip latency to the host.
+JOIN CO-OP now has a direct LAN IPv4 entry screen on the main menu.
 
-The co-op session UI displays a local ping estimate in milliseconds. Host profile data also receives the latest client-reported ping through the normal profile synchronization pass.
+Flow:
+1. select JOIN CO-OP
+2. enter the host LAN IPv4, for example `192.168.1.10`
+3. CONNECT
+4. after connection, the v0.15 SESSION panel takes over
+5. enter/confirm survivor name, READY, then wait for host START
 
-### Teammate HUD
+The last host address from the v0.15 local co-op profile is reused when available.
 
-During an active co-op session, a responsive TEAM panel shows:
-- survivor names
-- local-player marker
-- Health
-- DOWNED state
-- current team objective derived from the synchronized world/Journal mission state
+### Pause / in-game menu
 
-Remote survivor world labels now use player names instead of only peer IDs.
+Desktop:
+- `Esc` opens the menu during gameplay
 
-### Shared checkpoint authority
+Mobile:
+- a responsive `MENU` button appears during gameplay
 
-Checkpoint progress is now coordinated through the host.
+Pause menu actions:
+- RESUME
+- SAVE WORLD
+- SETTINGS
+- RETURN TO TITLE
+- QUIT on desktop
 
-When any survivor activates a new checkpoint:
-- that checkpoint request reaches the host
-- the host accepts it as the current team checkpoint
-- every peer saves its own local survival snapshot at the same shared checkpoint position
-- the host's normal v0.14 autosave writes the authoritative world progress to disk
+Solo behavior:
+- the SceneTree is paused while the menu is open
 
-This preserves per-survivor Health/Inventory snapshots while keeping the co-op respawn location synchronized.
+Co-op behavior:
+- the local survivor is blocked, but the network world continues
+- this prevents one client from pausing host-authoritative monsters for the entire team
 
-A checkpoint already restored from the host v0.14 world save is also sent to peers when the co-op session starts or when a survivor joins an active session.
+RETURN TO TITLE disconnects the active co-op peer. A solo/host run can be resumed in memory from the title screen; a disconnected client does not gain an authoritative solo resume from the client world.
 
-### Revive progress UI
+## v0.17 Settings
 
-Interacting with a DOWNED teammate now opens a revive progress bar.
+Settings are stored per device at:
 
-The bar tracks the local revive attempt while:
-- the target remains DOWNED
-- the reviver remains within the allowed revive distance
-- the reviver remains standing
+`user://dont_look_back_settings.cfg`
 
-The UI does not determine the outcome. Completion/cancellation remains host-authoritative through `CoopHorrorSystem`.
+Current settings:
+- Master Volume: 0–100%
+- Look Sensitivity: 0.50x–2.00x
+- Performance/FPS limit: 30 / 60 / 120 FPS
+- Fullscreen on supported desktop platforms
 
-### Downed crawling
+Look sensitivity applies to both mouse and mobile swipe-look.
 
-A DOWNED survivor is no longer completely immobile.
+The front end uses the runtime Godot APIs for master bus volume, FPS limit, and desktop window mode.
 
-While downed in an active co-op session:
-- WASD or the mobile joystick allows slow crawling
-- mouse look or mobile swipe-look remains available
-- the camera is lowered to a downed viewpoint
-- sprint and normal player interactions remain unavailable through the disabled normal player controller
-- revive is still required to return to standing gameplay
+## Mobile input safety
 
-The current prototype keeps the normal player collision capsule; a final crawl pose/collision/animation pass belongs to the asset integration stage.
+`MobileControls` now separates two concepts:
+- `dead_mode` for actual death/restart behavior
+- `external_blocked` for menu/session overlays
+
+This means opening the title/pause/session UI clears joystick/look/action state without pretending the player is dead. It also avoids queued touch actions firing immediately after closing a menu.
+
+Touch gameplay remains available after the menu closes, and the existing v0.15 downed-crawl path remains separate from menu blocking.
+
+## v0.15 Multiplayer Polish retained
+
+LAN co-op target: 2–4 survivors.
+
+Retained systems:
+- player display names
+- local co-op profile
+- Ready / Not Ready
+- Host START
+- responsive session roster
+- teammate HP / DOWNED HUD
+- ping estimate
+- reconnect attempt + RECONNECT control
+- late-join session recovery foundation
+- shared checkpoint authority
+- revive progress UI
+- slow downed crawling
+- host-authoritative The Tenant
+- host-authoritative Darkness Creature
+- shared relays
+- shared day/night state
+- shared generator/campfire state
+- shared finite survival pickups
 
 ## Persistent World retained from v0.14
 
-The world save remains stored at:
+World save:
 
 `user://dont_look_back_save_v1.json`
-
-Desktop:
-- K — Save World
-- L — Load World while offline
-
-Mobile:
-- SAVE — Save World
-- LOAD — Load World while offline
 
 Persistent data includes:
 - player position/yaw
@@ -120,187 +154,170 @@ Persistent data includes:
 - flashlight battery/state
 - Darkness Exposure
 - inventory
-- Bleeding/Infection/Cold
+- Bleeding / Infection / Cold
 - relay progress
 - labyrinth door state
-- checkpoint state
+- checkpoint snapshot/name
 - day/time
 - generator/campfire fuel
 - shelter storage
 - finite claimed loot
 - Journal entries/order
 
-A connected client cannot write the authoritative host world save. Manual Load remains disabled while a co-op session is active.
+Desktop manual save remains `K`; the v0.17 pause menu also exposes SAVE WORLD.
 
-## Journal + Door Safety retained from v0.13.1
+Connected clients cannot write the authoritative host world save. Manual disk Load remains an offline operation.
+
+## Journal + Door Safety retained
 
 Journal:
-- J on desktop
-- JOURNAL on mobile
+- `J` desktop
+- `JOURNAL` mobile
 - current mission
 - tips
 - mission notes
 - logs
 - trivia
 - warnings
-- persistent discoveries through v0.14 saves
+- persistent discoveries
 
-Door safety:
-- moving-door collision is disabled before rotation
-- the script waits for a physics frame before movement
+Labyrinth door safety:
+- moving collision disables before rotation
+- waits one physics frame before motion
 - collision returns after motion
-- closing collision waits until the local player clears the dangerous hinge area
+- closing collision waits until the local player is clear of the hinge area
 
-## Survival Depth retained from v0.13
+## Survival systems retained
 
-- Bleeding from large hits
-- Infection from wounds / unsafe water
-- Cloth
-- Bandage crafting
+Core stats:
+- Health
+- Hunger
+- Thirst
+- Stamina
+- Flashlight Battery
+- Darkness Exposure
+- Cold Exposure
+- Bleeding
+- Infection
+
+Resources / processing:
+- Food
+- Clean Water
 - Dirty Water
-- Clean Water priority
-- boiling pot beside the shelter campfire
-- Medical Aid using Bandage before Medkit when appropriate
+- Medkit
+- Cloth
+- Bandage
+- Wood
+- Scrap
+- Fuel Can
+- Flashlight Battery
+- Firewood Bundle
+- boiling Dirty Water at the shelter campfire
+- crafting at the shelter workbench
+- shared storage chest
 
-Workbench recipes:
-- 2 Wood → Firewood Bundle
-- 1 Wood + 2 Scrap → Flashlight Battery
-- 2 Cloth → Bandage
+## Current world
 
-## Exterior retained from v0.12
+Progression currently covers:
+1. opening corridor / The Tenant
+2. Apartment 03
+3. expanded labyrinth
+4. Relay A / B / C
+5. final gate
+6. The Outside
+7. cabin shelter
+8. expanded forest
+9. Abandoned House
+10. Old Gas Station
+11. Warehouse
+12. Old Water Pump
+13. stronger deep-zone night threat
 
-- Abandoned House
-- Old Gas Station
-- Warehouse
-- Old Water Pump
-- deep forest loot route
-- stronger night threat in the far exterior
+## Controls
 
-## Co-op horror retained from v0.11
-
-While LAN multiplayer is active:
-- The Tenant is host-authoritative
-- Darkness Creature is host-authoritative
-- monsters can switch targets
-- any standing survivor can freeze The Tenant by watching it
-- nearby teammate light can repel the Darkness Creature
-- lethal damage causes DOWNED
-- teammates can revive
-- all survivors downed triggers team wipe/reload
-
-## Mobile gameplay
-
-- Left virtual joystick — Move / downed crawl
-- Right-side swipe — Camera look
-- RUN — Sprint while standing
-- USE — Interact / pick up / revive / pump / boil water
-- LIGHT — Flashlight
-- BATT — Replacement battery
-- FOOD — Eat
-- WATER — Drink Clean Water first, Dirty Water if necessary
-- MED — Medical Aid
-- JOURNAL — Mission / discoveries
-- SAVE — Save host/solo world
-- LOAD — Load while offline
-- RESTART — Restart when available
-- CO-OP — Host/Join lobby
-
-The v0.15 session/roster/teammate/revive UI uses responsive layouts for narrow/mobile screens as well as desktop.
-
-## Desktop controls
-
-- W A S D — Move / downed crawl
-- Mouse — Look
-- Shift — Sprint while standing
-- E — Interact / revive
-- F — Flashlight
-- B or 4 — Replace Flashlight Battery
-- 1 — Food
-- 2 — Water
-- 3 — Medical Aid
+Desktop gameplay:
+- WASD — move / downed crawl
+- Mouse — look
+- Shift — sprint while standing
+- E — interact / revive
+- F — flashlight
+- B or 4 — battery
+- 1 — food
+- 2 — water
+- 3 — medical aid
 - J — Journal
 - K — Save World
 - L — Load World while offline
-- M — CO-OP lobby
-- Esc — Release/capture mouse
-- R — Death/checkpoint restart when available
+- M — legacy in-game co-op lobby
+- Esc — v0.17 pause/menu
 
-## Testing v0.15
+Mobile gameplay:
+- left joystick — move / supported downed movement path
+- right swipe — look
+- RUN
+- USE
+- LIGHT
+- BATT
+- FOOD
+- WATER
+- MED
+- JOURNAL
+- SAVE / LOAD from existing v0.14 UI where available
+- CO-OP legacy access
+- MENU — v0.17 pause/front end
 
-Recommended two-device LAN test:
-1. Pull latest `main` on both devices.
-2. Open the existing Godot project and press F5 on both.
-3. Device A opens CO-OP and HOSTS.
-4. Device B enters Device A's LAN IPv4 and JOINS.
-5. Enter different survivor names.
-6. Confirm both names appear in the roster.
-7. Press READY on both devices.
-8. Confirm only the host has START and that START unlocks only when everyone is ready.
-9. Host presses START.
-10. Confirm both players gain movement and the client is grouped near the host.
-11. Confirm TEAM HUD shows both names and Health.
-12. Take enough monster damage to DOWN one survivor.
-13. Confirm the downed survivor can crawl slowly using desktop/mobile movement controls.
-14. Other survivor uses E/USE on the downed teammate and confirms the revive progress bar appears.
-15. Walk away during revive and confirm the progress UI cancels.
-16. Complete a revive while staying close.
-17. Reach a checkpoint with either survivor and confirm both devices receive TEAM CHECKPOINT.
-18. Disconnect the client unexpectedly and confirm an automatic reconnect attempt occurs.
-19. If automatic retry fails, use the RECONNECT control.
-20. Confirm names/TEAM HUD return after reconnect.
+## Testing v0.17
 
-## Asset backlog
+Recommended desktop test:
+1. Pull latest `main`.
+2. Open the existing Godot project and press F5.
+3. Confirm the title menu appears before movement is possible.
+4. If a v0.14/v0.15 save exists, confirm CONTINUE shows Day / time / checkpoint.
+5. CONTINUE and verify the restored world is playable.
+6. Press Esc and verify the solo menu pauses the world.
+7. Change volume, look sensitivity, FPS limit, and fullscreen; close/reopen Settings.
+8. Restart the game and verify settings remain.
+9. Press NEW GAME and verify the delete confirmation appears when a save exists.
+10. Confirm NEW GAME starts the opening corridor with persistent progress reset.
 
-Production asset requirements are tracked in `ASSET_BACKLOG.md` and must be updated as systems change.
+Recommended co-op test:
+1. Device A selects HOST CO-OP from the title.
+2. Device B selects JOIN CO-OP and enters Device A's LAN IPv4.
+3. Confirm v0.15 SESSION / name / READY / START appears after connection.
+4. Confirm touch gameplay buttons remain blocked during the pre-game session on mobile.
+5. START and verify movement/touch controls become available.
+6. Open MENU on one client and verify the host world continues.
+7. Resume and verify no stale touch action fires immediately.
+8. Test downed/revive/shared checkpoint/reconnect from v0.15.
 
-Highest-priority assets after v0.15:
-- rigged survivor model with 3–4 outfit/material variants
-- downed crawl animations
-- revive / being-revived animations
-- The Tenant model + animation set
-- Darkness Creature model + animation set
-- footsteps and horror ambience
-- revive/downed/lobby UI audio
-- ready/host/ping/downed/revive UI icons
-- labyrinth material/door art pass
-- flashlight and survival pickup models
+## Asset status
 
-The current prototype still uses runtime primitives for many environment, survivor, monster, and prop visuals.
+Production asset needs are tracked in `ASSET_BACKLOG.md` and updated for v0.17.
 
-## Android/iOS export note
+Highest-impact missing assets now:
+- final DON'T LOOK BACK logo
+- 16:9 + portrait-safe title key art
+- menu/button visual states
+- menu/connect/save UI SFX
+- rigged survivor + downed/revive animations
+- The Tenant final model/animations
+- Darkness Creature final model/animations
+- core footsteps + horror ambience
+- labyrinth materials + production door art
+- flashlight / survival pickup models
 
-Generating APK/AAB or iOS builds still requires the appropriate Godot export templates and platform setup on the development machine.
-
-For Android LAN multiplayer, enable INTERNET permission in the Android export preset.
-
-## Update in Godot
-
-If the repository is already cloned:
-1. Open GitHub Desktop.
-2. Select `bravocompanion/dont-look-back`.
-3. If local changes would be overwritten, discard them only when you did not intentionally edit those files.
-4. Fetch origin.
-5. Pull origin.
-6. Return to the existing Godot project.
-7. Press F5.
+v0.17 is still placeholder-friendly. The skipped v0.16 production art/audio integration has not been falsely marked complete.
 
 ## Current limitations
 
-- Runtime Godot validation still needs to be performed on the development machine.
-- Internet matchmaking/NAT traversal is not implemented.
-- Reconnect recovery is LAN/basic and does not preserve an authenticated account identity.
-- Remote client inventories are not persistent account/profile saves.
-- Downed crawling still uses the standing collision capsule and has no final animation asset yet.
-- Revive progress is a client-side visualization; the host remains authoritative for actual completion.
-- Shared checkpoint requests are host-routed but do not yet include anti-cheat validation of the requested checkpoint location.
-- Renewable water-pump cooldown is not persisted.
-- Active monster transforms are not serialized into the disk save.
-- Outdoor monsters still use direct movement rather than full Navigation/pathfinding through complex buildings.
+- Runtime Godot validation must still be performed on the development machine; the assistant environment does not have the Godot executable.
+- The main menu is functional but still uses text/primitive Godot styling instead of final art.
+- Internet matchmaking / NAT traversal is not implemented; co-op is LAN/IP based.
+- Client-specific inventory/profile persistence is not yet a full account/profile system.
+- Active monster transforms are not serialized into disk saves mid-attack.
+- Outdoor AI still lacks full Navigation/pathfinding through complex structures.
+- Final survivor/monster animations, audio, VFX, and environment assets are still missing.
 
-## Next targets
+## Recommended next update
 
-- v0.15.1 — fixes from two-device Ready/Start/reconnect/crawl/revive testing
-- v0.16 — Art & Audio Integration: survivor/monster models, downed/revive animations, footsteps, ambience, labyrinth/door materials, survival prop models
-- v0.17 — front-end flow: New Game / Continue / Host / Join / Settings
-- v0.18 — Navigation/pathfinding and outdoor AI search behavior
-- Later — internet-session support and stronger client-profile persistence
+Before adding another large map, the strongest next step is an **Art + Audio Integration pass** using `ASSET_BACKLOG.md`, followed by AI Navigation/pathfinding and then story/content expansion.
