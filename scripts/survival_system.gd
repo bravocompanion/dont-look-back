@@ -30,6 +30,10 @@ func _configure_scene(scene: Node) -> void:
     if end_subtitle != null:
         end_subtitle.text = "DON'T LOOK BACK — v0.5: LIGHT & DARKNESS"
 
+    var dark_corridor_light: OmniLight3D = scene.get_node_or_null("CeilingLight3") as OmniLight3D
+    if dark_corridor_light != null:
+        dark_corridor_light.light_energy = 0.08
+
     _spawn_pickup(scene, "SurvivalFood", "canned_food", "Canned Food", Vector3(-4.55, 0.02, -4.15))
     _spawn_pickup(scene, "SurvivalWater", "bottled_water", "Bottled Water", Vector3(-6.65, 0.02, -4.25))
     _spawn_pickup(scene, "SurvivalMedkit", "medkit", "Medkit", Vector3(-6.95, 0.02, -6.55))
