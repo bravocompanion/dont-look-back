@@ -60,6 +60,15 @@ func _build_visual() -> void:
             material.albedo_color = Color(0.48, 0.13, 0.08, 1.0)
             material.metallic = 0.30
             material.roughness = 0.46
+        "wood":
+            size = Vector3(0.72, 0.16, 0.20)
+            material.albedo_color = Color(0.28, 0.15, 0.065, 1.0)
+            material.roughness = 0.96
+        "scrap":
+            size = Vector3(0.38, 0.12, 0.34)
+            material.albedo_color = Color(0.27, 0.29, 0.28, 1.0)
+            material.metallic = 0.72
+            material.roughness = 0.42
         _:
             material.albedo_color = Color(0.42, 0.35, 0.16, 1.0)
             material.metallic = 0.2
