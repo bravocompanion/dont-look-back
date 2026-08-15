@@ -25,6 +25,11 @@ func interact() -> void:
 
     collected = true
     journal.call("discover_entry", entry_id, entry_title, entry_category, entry_body, true)
+
+    var save_system: Node = get_node_or_null("/root/SaveSystem")
+    if save_system != null and save_system.has_method("request_autosave"):
+        save_system.call("request_autosave", "Journal entry discovered")
+
     queue_free()
 
 func _remove_if_discovered() -> void:
