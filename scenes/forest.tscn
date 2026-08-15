@@ -1,0 +1,227 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+
+[sub_resource type="Environment" id="Environment_forest"]
+background_mode = 1
+background_color = Color(0.12, 0.15, 0.18, 1)
+ambient_light_color = Color(0.18, 0.20, 0.20, 1)
+ambient_light_energy = 0.28
+
+[sub_resource type="CapsuleShape3D" id="Shape_player"]
+radius = 0.34
+height = 1.75
+
+[node name="ForestMap" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_forest")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(0, 0.92, -57.5)
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("Shape_player")
+
+[node name="Camera3D" type="Camera3D" parent="Player"]
+position = Vector3(0, 0.58, 0)
+current = true
+
+[node name="Flashlight" type="SpotLight3D" parent="Player/Camera3D"]
+light_color = Color(0.92, 0.9, 0.78, 1)
+light_energy = 3.5
+spot_range = 13.0
+spot_angle = 28.0
+shadow_enabled = true
+
+[node name="InteractionRay" type="RayCast3D" parent="Player/Camera3D"]
+target_position = Vector3(0, 0, -2.4)
+collide_with_areas = false
+collide_with_bodies = true
+
+[node name="FootstepAudio" type="AudioStreamPlayer" parent="Player"]
+volume_db = -11.0
+
+[node name="HUD" type="CanvasLayer" parent="Player"]
+
+[node name="PanicOverlay" type="ColorRect" parent="Player/HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.18, 0, 0, 0)
+
+[node name="Objective" type="Label" parent="Player/HUD"]
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 800.0
+offset_bottom = 68.0
+theme_override_font_sizes/font_size = 22
+text = "THE OUTSIDE: Find the cabin before night."
+
+[node name="InventoryLabel" type="Label" parent="Player/HUD"]
+offset_left = 28.0
+offset_top = 74.0
+offset_right = 330.0
+offset_bottom = 160.0
+theme_override_colors/font_color = Color(0.78, 0.78, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "INVENTORY\n(empty)"
+
+[node name="PanicLabel" type="Label" parent="Player/HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = 62.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.95, 0.72, 0.72, 1)
+theme_override_font_sizes/font_size = 20
+text = "PANIC 0%"
+horizontal_alignment = 2
+
+[node name="Controls" type="Label" parent="Player/HUD"]
+offset_left = 28.0
+offset_top = 670.0
+offset_right = 760.0
+offset_bottom = 710.0
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "WASD Move   Mouse Look   E Interact   F Flashlight   Esc Menu"
+
+[node name="InteractionHint" type="Label" parent="Player/HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -110.0
+offset_right = 180.0
+offset_bottom = -70.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="Crosshair" type="Label" parent="Player/HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -15.0
+offset_right = 10.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "+"
+horizontal_alignment = 1
+
+[node name="EndPanel" type="ColorRect" parent="Player/HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.015, 0.018, 0.96)
+
+[node name="Title" type="Label" parent="Player/HUD/EndPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -70.0
+offset_right = 300.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 40
+text = "THE OUTSIDE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Player/HUD/EndPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = 5.0
+offset_right = 390.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+text = "Find shelter. Keep a light alive."
+horizontal_alignment = 1
+
+[node name="CaughtPanel" type="ColorRect" parent="Player/HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.0, 0.0, 0.985)
+
+[node name="Title" type="Label" parent="Player/HUD/CaughtPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -85.0
+offset_right = 320.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 46
+text = "YOU DIED"
+horizontal_alignment = 1
+
+[node name="Rule" type="Label" parent="Player/HUD/CaughtPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = 0.0
+offset_right = 360.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.78, 0.65, 0.65, 1)
+theme_override_font_sizes/font_size = 20
+text = "The dark outside is not empty."
+horizontal_alignment = 1
+
+[node name="Restart" type="Label" parent="Player/HUD/CaughtPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 70.0
+offset_right = 250.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "Press R to restart"
+horizontal_alignment = 1
