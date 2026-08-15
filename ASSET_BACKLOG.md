@@ -1,43 +1,48 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for v0.18.1 Labyrinth Lighting + Separate Forest Map.
+Updated for v0.18.3 Movement + Cabin + Forest Visibility.
 
-The project remains code/procedural-first. v0.18.1 separates Labyrinth and Forest into different scenes and adds a functional loading transition. It also improves labyrinth readability with non-protective dim ambience lights. Production assets should now respect map boundaries, loading presentation, AI navigation clearance, mobile performance, and horror-light readability.
+The project remains code/procedural-first. v0.18.3 adds jump, auto-step, a cabin-entry fix and brighter non-protective forest night lighting. Production art/audio should now support movement readability, threshold geometry and night navigation without making horror spaces feel safe.
 
-## P0 — v0.18.1 map-transition + labyrinth-light assets
+## P0 — New needs from v0.18.3
 
-Immediately useful:
-- low-power labyrinth emergency/maintenance light fixture
-- 2–3 fixture variations: intact, dirty, broken/flickering
-- emissive material variants for OFF / DIM / POWERED states
-- subtle ceiling/wall light stain or grime decal around fixtures
-- Forest entrance terrain/tree-line/fence art to replace the current procedural back-boundary wall
-- Forest entrance landmark treatment so the new map spawn feels intentional
-- `THE OUTSIDE` loading-screen/key-art plate
-- center-safe 16:9 loading composition
-- mobile-safe narrow/portrait crop
-- loading spinner/progress treatment
-- optional small Labyrinth/Forest map-name icons
+Character movement:
+- survivor jump takeoff animation
+- airborne/fall pose
+- landing animation
+- short/low-step foot placement animation or animation blend
+- optional procedural foot-IK target support later
 
-Transition audio:
-- labyrinth exit mechanical/door tail
-- short transition stinger
-- low loading ambience bed or wind bridge
-- Forest arrival wind/branch sting
+Movement audio:
+- jump exertion/breath cue
+- soft landing
+- hard landing variant for future fall-damage support
+- wood porch/threshold footstep
+- cloth/gear movement while airborne/landing
 
-Important lighting constraint:
-- dim labyrinth fixtures are atmosphere/readability lights, not safe-zone lights
-- relay lights remain the stronger visual/protective language
-- production emissive intensity should preserve this distinction on both mobile and desktop
+Cabin entrance:
+- believable porch/entry-step model replacing the current procedural box
+- worn wood/plank material
+- threshold/door-sill piece with simple collision proxy
+- small exterior cabin fixture for the current dim entrance light
 
-## P0 — AI character animation / presentation
+Forest night presentation:
+- moonlit forest lighting reference/key look
+- tree silhouettes that remain readable under low ambient light
+- fog layers that do not crush visibility on mobile
+- optional moon/cloud sky treatment
+- subtle reflective/wet material variants for road/rocks where useful
 
-### Survivor base character
+Important gameplay constraint:
+- ambient/moon/cabin guide lighting must improve readability without visually implying a safe zone
+- generator/campfire/strong powered lights must remain clearly brighter than ambient forest lighting
 
-Required:
+## P0 — Character assets
+
+### Survivor
 - 1 rigged survivor base mesh
 - 3–4 outfit/material variants for 2–4 players
-- first-person hands/arms or compatible first-person rig
+- first-person hands/arms
 - world flashlight attachment
 - backpack/utility attachment points
 
@@ -45,317 +50,238 @@ Animation set:
 - idle
 - walk
 - run
-- stop/start transitions
-- directional turn / strafe
-- crouch/downed idle
+- jump takeoff
+- airborne/fall
+- land
+- start/stop transitions
+- strafe/turn
+- downed idle
 - downed crawl forward/back/strafe
 - revive teammate
-- being revived / stand-up
+- being revived/stand-up
 - hit reaction
 - death/team-wipe pose
 
 ### The Tenant
-
-Required:
 - rigged humanoid horror model
 - idle/freeze pose
-- transition into/out of freeze
-- slow unseen walk
+- freeze transition
+- unseen walk
 - panic chase
-- turn-left / turn-right or good body-turn support
+- turn support
 - search/listen idle
 - investigate walk
 - attack
 - recoil/retreat
-- silhouette-friendly materials
 
 ### Darkness Creature
-
-Required:
 - distinct non-Tenant silhouette
-- idle crouch/crawl
-- crawl locomotion
+- idle/crawl
 - directional turn
-- investigate/search motion
+- investigate/search
 - attack
 - recoil from light
-- sustained retreat-from-light
+- retreat-from-light
 - dissolve/disappear
 
-## P0 — AI / horror audio
+## P0 — Horror / movement audio
 
-Movement set:
-- concrete walk + sprint footsteps
-- wood walk + sprint footsteps
-- dirt/grass walk + sprint footsteps
-- metal walk + sprint footsteps
-- downed crawl cloth/body movement
-- survivor breathing
-- sprint breathing
+Movement:
+- concrete walk + sprint
+- wood walk + sprint
+- dirt/grass walk + sprint
+- metal walk + sprint
+- jump exertion
+- soft/hard landing
+- downed crawl body/cloth movement
+- breathing / sprint breathing
 - heartbeat/panic
 
-Interaction noise set:
-- normal door creak/open/close
-- locked door rattle
-- exit lock/key mechanism
-- heavy exit door movement
-- generator startup burst
-- generator loop
-- generator refuel/can handling
+Interactions:
+- normal door open/close
+- locked rattle
+- exit lock/key
+- heavy exit door
+- generator start/loop/refuel
 - workbench hammer/scrape
-- hand-pump squeak/clank
-- pickup
-- crafting completion
+- water-pump squeak/clank
+- pickup/crafting
 - campfire loop
 
-Monster perception cues:
+Monster cues:
 - Tenant distant movement
-- Tenant investigate/search cue
-- Tenant proximity cue
-- Tenant freeze/stop cue
-- Tenant attack
-- Darkness distant whisper/crawl
-- Darkness investigate/search cue
-- Darkness attack
-- Darkness light-recoil cue
-- Darkness retreat/dissolve cue
+- Tenant investigate/search
+- Tenant proximity/freeze/attack
+- Darkness whisper/crawl
+- Darkness investigate/search
+- Darkness attack/light recoil/retreat
 
-Environment beds:
-- indoor electrical hum
-- fluorescent flicker
+Ambience:
 - labyrinth room tone
-- distant knocks
-- forest day ambience
-- forest night ambience
+- fluorescent/electrical hum
+- forest day
+- forest night
 - wind
-- distant branch snaps
+- branch snaps
 - cabin ambience
-- warehouse interior ambience
-- gas-station exterior ambience
+- warehouse ambience
+- gas-station ambience
+- Labyrinth → Forest transition bridge/stinger
 
-Production target remains roughly 50–70 one-shot SFX plus 7–10 looping ambience/mechanical beds, now including the Labyrinth → Forest transition.
+## P0 — Environment / navigation-safe art
 
-## P0 — Front-end / branding
+Core sets:
+- labyrinth wall/floor/ceiling modules
+- emergency/maintenance light fixtures
+- apartment kit
+- security/metal doors
+- cabin exterior/interior + porch
+- forest terrain/tree/rock/stump/branch variants
+- Forest entrance blocker/terrain transition
 
-Required:
-- final `DON'T LOOK BACK` logo
-- compact/mobile-safe logo
-- 16:9 center-safe title key art
-- portrait/mobile-safe crop
-- dark menu background or looping background plate
-- menu panel/frame treatment
-- button states: normal / focused / hover / pressed / disabled
-- Continue / New Game / Host / Join / Settings icons
-- save/autosave/checkpoint icon
-- loading/connecting spinner
-- warning icon
-- touch-safe MENU icon
-- settings icons
-- app icon + Android adaptive icon
-- splash screen
+Navigation-sensitive props need simple collision proxies:
+- Warehouse shelves/pallets/crates
+- Abandoned House furniture/doorframes
+- Gas Station pumps/counter/shelves
+- generator/workbench
+- hand water pump
+- cabin porch and threshold
 
-Front-end audio:
-- focus/move
-- select
-- back/cancel
-- warning confirmation
-- save/autosave
-- connecting
-- connection success/failure
-- Ready / Unready / Start / Reconnect
-
-## P0 — Collision-safe environment art
-
-The runtime waypoint graph is now map-specific. Production replacement geometry must preserve walkable clearance inside each scene.
-
-Core modular sets:
-- labyrinth concrete/plaster walls
-- labyrinth floor/ceiling
-- labyrinth light-fixture modules
-- apartment wall/floor/door kit
-- metal/security door set
-- cabin exterior/interior kit
-- forest ground/rocks/stumps/branches/tree variants
-- believable Forest entrance blocker/terrain transition
-
-Navigation-sensitive props:
-- Warehouse shelving with clear aisle widths
-- pallets/crates that do not silently close navigation corridors
-- Abandoned House furniture with deliberate walk gaps
-- House doorframes
-- Gas Station pumps/counter/shelving with collision proxies
-- water-pump collision proxy
-- generator/workbench collision proxies
-
-Use simple low-cost collision meshes instead of detailed render geometry for complex props.
-
-Reusable material library:
-- clean concrete
-- dirty concrete
+Reusable materials:
+- clean/dirty concrete
 - painted plaster
 - tile
 - aged wood
 - rusty metal
 - asphalt
 - dirt/grass
-- corrugated roof metal
+- corrugated roof
 - grime/blood/water-stain decals
 
-## P1 — Survival / shelter props
+## P0 — Front-end / loading
 
-Needed:
+- final DON'T LOOK BACK logo
+- mobile-safe logo
+- 16:9 title key art
+- portrait/narrow crop
+- menu background/panel treatment
+- button states
+- Continue/New Game/Host/Join/Settings icons
+- save/checkpoint icon
+- loading/connecting spinner
+- warning icon
+- MENU icon
+- app/adaptive icon + splash
+- THE OUTSIDE loading plate
+
+Front-end audio:
+- focus/select/back
+- warning
+- save/autosave
+- connection success/failure
+- Ready/Unready/Start/Reconnect
+- map transition stinger
+
+## P1 — Survival props
+
+- flashlight FP/world model
 - generator
-- campfire stones/logs
-- cooking/boiling pot
+- campfire
+- boiling pot
 - workbench
 - storage chest
-- bed
-- table/chairs
-- flashlight first-person/world model
+- bed/table/chairs
 - fuel can
-- flashlight battery
+- battery
 - canned food
-- clean-water bottle
-- dirty-water container
+- clean/dirty water containers
 - medkit
 - bandage
-- cloth bundle
+- cloth
 - scrap
-- wood bundle
-- hand water pump
-
-Useful interaction animation:
-- generator pull/start
-- workbench craft hands
-- pump handle
-- pickup/use hand poses
+- wood
+- hand pump
 
 ## P1 — Exterior landmark props
 
-### Gas Station
-- fuel pumps
+Gas Station:
+- pumps
 - canopy/sign
-- counter
-- shelving
-- broken refrigerator/freezer
-- road signage
-- trash/debris
+- counter/shelving
+- broken fridge/freezer
+- signs/debris
 
-### Warehouse
-- pallet variants
-- industrial shelving
-- crates
-- barrels
-- hanging lamps
+Warehouse:
+- pallets
+- shelves
+- crates/barrels
+- lamps
 - warning signs
 
-### Abandoned House
+Abandoned House:
 - damaged furniture
 - cabinets
 - broken doors/windows
-- curtains
-- household debris
+- curtains/debris
 
-All landmark props need simplified collision and should be tested against Forest navigation after integration.
+## P1 — Multiplayer / Journal UI
 
-## P1 — Multiplayer UI
-
-Needed:
-- ready icon
-- host crown/icon
-- connection/ping icons
-- teammate Health icon
-- downed icon
-- revive icon
+Multiplayer:
+- ready/host/ping icons
+- teammate health/downed/revive icons
 - revive progress treatment
 - reconnect icon
-- player-color/outfit swatches
-- lobby/session frame/background
+- player-color swatches
+- lobby/session panel
 - compact mobile variants
-- optional `SYNCING MAP` status icon for scene synchronization
 
-## P1 — Journal assets
-
-Needed:
+Journal:
 - handwritten note
 - maintenance memo
 - receipt
 - warning sheet
-- ledger page
-- water-pump service card
-- diary/notebook page
-- damaged/torn paper variants
-
-Optional:
-- handwriting textures
-- stamps/dates/facility logos
-- photographs/polaroids
+- ledger
+- service card
+- diary page
+- torn/damaged variants
+- optional photos/polaroids
 
 ## P2 — VFX / polish
 
-Needed:
-- subtle dust from sprinting
+- landing dust by surface
 - flashlight dust
 - fog volumes
 - cold breath
-- blood hit vignette/particles
-- bleeding decals
-- subtle infection feedback
+- blood hit/bleeding decals
+- infection feedback
 - campfire sparks/smoke
 - generator exhaust
-- Darkness dissolve
-- Darkness light-recoil wisps
+- Darkness dissolve/light recoil
 - Tenant shadow distortion
-- exterior wind-driven leaves/particles
-- subtle AI search/listen visual cue if animation alone is insufficient
-- transition fade/grain treatment for map loading
+- wind-driven leaves
+- loading fade/grain
 
 ## Mobile + desktop constraints
 
-All production assets must support both targets:
-- loading/key art must be center-safe for desktop and narrow mobile screens
-- keep dim labyrinth lighting readable on low-brightness mobile displays without converting it into bright safe lighting
-- use LODs for survivor, monsters, trees and landmark props
-- keep skeleton/bone counts reasonable for 2–4 survivors plus monsters
-- use simple collision proxies for navigation-sensitive props
-- avoid excessive transparent materials
-- prefer reusable/atlased materials
-- reserve 4K textures for hero assets
+- keep movement buttons readable and separated on narrow screens
+- jump/landing animation must remain readable on remote co-op survivors
+- use LODs for characters, monsters and vegetation
+- use low-cost collision proxies
+- keep transparency/overdraw limited
+- preserve night readability on low-brightness mobile displays
+- avoid making ambient forest lighting as strong as protective lights
+- reserve 4K textures for hero assets only
 - provide lower-cost shadow/material variants for mobile
-- compress long ambience/mechanical loops appropriately
-- keep important spatial one-shots short and reusable
-- UI icons should remain readable around 40–64 logical pixels
 
-## Current integration status
+## Recommended integration order after v0.18.3
 
-Functional but placeholder-heavy:
-- main menu / pause / settings
-- Labyrinth → Forest loading screen
-- separate `main.tscn` / `forest.tscn` map flow
-- co-op session UI
-- teammate HUD / revive progress
-- remote survivor avatars
-- Tenant / Darkness Creature visuals
-- AI CHASE / INVESTIGATE / SEARCH / PATROL
-- labyrinth / apartment / shelter / exterior geometry
-- labyrinth dim-light fixtures are currently invisible runtime light nodes
-- Forest entrance boundary is procedural placeholder geometry
-- survival item models
-- Journal paper visuals
-- footsteps / interaction / ambience audio
-
-## Recommended integration order after v0.18.1
-
-1. Labyrinth fixture model + concrete/material pass while preserving dim unsafe lighting
-2. Real surface footsteps + door/generator/workbench/pump/transition SFX
-3. Tenant model + freeze/search/investigate/chase animations
-4. Darkness Creature model + crawl/search/light-retreat animations
-5. Survivor model + walk/run/downed/revive animations
-6. Branded title + `THE OUTSIDE` loading key art
-7. Production doors + flashlight/survival pickups
-8. Cabin props
-9. Collision-safe Forest/House/Gas/Warehouse art + Forest entrance blocker
-10. Multiplayer UI icon pass
-11. VFX/decals and AI presentation polish
-
-A dedicated art/audio integration pass remains required. v0.18.1 improves structure, visibility and map loading but does not mark production art/audio as complete.
+1. Real footsteps + jump/landing + interaction SFX
+2. Survivor model with walk/run/jump/downed/revive animations
+3. Tenant final model + freeze/search/chase animation
+4. Darkness final model + crawl/search/light-retreat
+5. Labyrinth fixture/material/door pass
+6. Cabin porch/threshold + shelter props
+7. Forest vegetation/night presentation pass
+8. Branded title/loading art
+9. Gas Station/House/Warehouse props
+10. Multiplayer UI + VFX polish
