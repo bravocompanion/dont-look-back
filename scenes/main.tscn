@@ -1,10 +1,15 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/door.gd" id="2_door"]
 [ext_resource type="Script" path="res://scripts/monster.gd" id="3_monster"]
 [ext_resource type="Script" path="res://scripts/horror_trigger.gd" id="4_trigger"]
 [ext_resource type="Script" path="res://scripts/finish_trigger.gd" id="5_finish"]
+[ext_resource type="Script" path="res://scripts/locked_door.gd" id="6_locked"]
+[ext_resource type="Script" path="res://scripts/pickup_item.gd" id="7_pickup"]
+[ext_resource type="Script" path="res://scripts/safe_zone.gd" id="8_safe"]
+[ext_resource type="Script" path="res://scripts/room_scare.gd" id="9_room_scare"]
+[ext_resource type="Script" path="res://scripts/ambient_director.gd" id="10_ambient"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -34,6 +39,15 @@ emission_enabled = true
 emission = Color(0.8, 0.8, 0.68, 1)
 emission_energy_multiplier = 4.0
 
+[sub_resource type="StandardMaterial3D" id="Material_key"]
+albedo_color = Color(0.72, 0.52, 0.12, 1)
+metallic = 0.75
+roughness = 0.28
+
+[sub_resource type="StandardMaterial3D" id="Material_table"]
+albedo_color = Color(0.13, 0.075, 0.04, 1)
+roughness = 0.88
+
 [sub_resource type="BoxMesh" id="Mesh_door"]
 size = Vector3(3.65, 2.45, 0.16)
 
@@ -46,6 +60,9 @@ height = 1.75
 
 [sub_resource type="BoxShape3D" id="Shape_trigger"]
 size = Vector3(3.6, 2.5, 1.0)
+
+[sub_resource type="BoxShape3D" id="Shape_room_trigger"]
+size = Vector3(1.4, 2.5, 1.8)
 
 [sub_resource type="BoxShape3D" id="Shape_finish"]
 size = Vector3(3.6, 2.5, 1.0)
@@ -62,32 +79,50 @@ height = 0.09
 radial_segments = 8
 rings = 4
 
+[sub_resource type="BoxMesh" id="Mesh_key"]
+size = Vector3(0.42, 0.08, 0.18)
+
+[sub_resource type="BoxShape3D" id="Shape_key"]
+size = Vector3(0.42, 0.08, 0.18)
+
 [node name="Main" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
 
-[node name="Floor" type="CSGBox3D" parent="."]
-position = Vector3(0, -0.1, 0)
-size = Vector3(4.4, 0.2, 24)
+[node name="AmbientDirector" type="Node" parent="."]
+script = ExtResource("10_ambient")
+
+[node name="AmbientAudio" type="AudioStreamPlayer" parent="AmbientDirector"]
+volume_db = -17.0
+
+[node name="HallFloor" type="CSGBox3D" parent="."]
+position = Vector3(0, -0.1, -1.5)
+size = Vector3(4.4, 0.2, 27)
 use_collision = true
 material = SubResource("Material_floor")
 
-[node name="Ceiling" type="CSGBox3D" parent="."]
-position = Vector3(0, 3.1, 0)
-size = Vector3(4.4, 0.2, 24)
-use_collision = true
-material = SubResource("Material_wall")
-
-[node name="LeftWall" type="CSGBox3D" parent="."]
-position = Vector3(-2.1, 1.5, 0)
-size = Vector3(0.2, 3.2, 24)
+[node name="HallCeiling" type="CSGBox3D" parent="."]
+position = Vector3(0, 3.1, -1.5)
+size = Vector3(4.4, 0.2, 27)
 use_collision = true
 material = SubResource("Material_wall")
 
 [node name="RightWall" type="CSGBox3D" parent="."]
-position = Vector3(2.1, 1.5, 0)
-size = Vector3(0.2, 3.2, 24)
+position = Vector3(2.1, 1.5, -1.5)
+size = Vector3(0.2, 3.2, 27)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="LeftWallFront" type="CSGBox3D" parent="."]
+position = Vector3(-2.1, 1.5, 4)
+size = Vector3(0.2, 3.2, 16)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="LeftWallBack" type="CSGBox3D" parent="."]
+position = Vector3(-2.1, 1.5, -10.5)
+size = Vector3(0.2, 3.2, 9)
 use_collision = true
 material = SubResource("Material_wall")
 
@@ -98,13 +133,13 @@ use_collision = true
 material = SubResource("Material_wall")
 
 [node name="EndWall" type="CSGBox3D" parent="."]
-position = Vector3(0, 1.5, -12)
+position = Vector3(0, 1.5, -15)
 size = Vector3(4.4, 3.2, 0.2)
 use_collision = true
 material = SubResource("Material_wall")
 
 [node name="DoorFrameTop" type="CSGBox3D" parent="."]
-position = Vector3(0, 2.75, -2.0)
+position = Vector3(0, 2.75, -2)
 size = Vector3(4.2, 0.45, 0.35)
 use_collision = true
 material = SubResource("Material_wall")
@@ -122,6 +157,99 @@ material_override = SubResource("Material_door")
 position = Vector3(1.825, 0, 0)
 shape = SubResource("Shape_door")
 
+[node name="ExitDoorFrameTop" type="CSGBox3D" parent="."]
+position = Vector3(0, 2.75, -11.5)
+size = Vector3(4.2, 0.45, 0.35)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="ExitDoor" type="AnimatableBody3D" parent="."]
+position = Vector3(-1.825, 1.225, -11.5)
+script = ExtResource("6_locked")
+objective_label_path = NodePath("../Player/HUD/Objective")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ExitDoor"]
+position = Vector3(1.825, 0, 0)
+mesh = SubResource("Mesh_door")
+material_override = SubResource("Material_door")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ExitDoor"]
+position = Vector3(1.825, 0, 0)
+shape = SubResource("Shape_door")
+
+[node name="ApartmentFloor" type="CSGBox3D" parent="."]
+position = Vector3(-5, -0.1, -5)
+size = Vector3(6, 0.2, 5)
+use_collision = true
+material = SubResource("Material_floor")
+
+[node name="ApartmentCeiling" type="CSGBox3D" parent="."]
+position = Vector3(-5, 3.1, -5)
+size = Vector3(6, 0.2, 5)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="ApartmentFarWall" type="CSGBox3D" parent="."]
+position = Vector3(-8, 1.5, -5)
+size = Vector3(0.2, 3.2, 5.2)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="ApartmentFrontWall" type="CSGBox3D" parent="."]
+position = Vector3(-5, 1.5, -2.5)
+size = Vector3(6.2, 3.2, 0.2)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="ApartmentBackWall" type="CSGBox3D" parent="."]
+position = Vector3(-5, 1.5, -7.5)
+size = Vector3(6.2, 3.2, 0.2)
+use_collision = true
+material = SubResource("Material_wall")
+
+[node name="TableTop" type="CSGBox3D" parent="."]
+position = Vector3(-5.8, 0.86, -5.8)
+size = Vector3(1.4, 0.12, 0.75)
+use_collision = true
+material = SubResource("Material_table")
+
+[node name="TableLeg1" type="CSGBox3D" parent="."]
+position = Vector3(-6.35, 0.42, -6.05)
+size = Vector3(0.12, 0.82, 0.12)
+use_collision = true
+material = SubResource("Material_table")
+
+[node name="TableLeg2" type="CSGBox3D" parent="."]
+position = Vector3(-5.25, 0.42, -6.05)
+size = Vector3(0.12, 0.82, 0.12)
+use_collision = true
+material = SubResource("Material_table")
+
+[node name="TableLeg3" type="CSGBox3D" parent="."]
+position = Vector3(-6.35, 0.42, -5.55)
+size = Vector3(0.12, 0.82, 0.12)
+use_collision = true
+material = SubResource("Material_table")
+
+[node name="TableLeg4" type="CSGBox3D" parent="."]
+position = Vector3(-5.25, 0.42, -5.55)
+size = Vector3(0.12, 0.82, 0.12)
+use_collision = true
+material = SubResource("Material_table")
+
+[node name="ApartmentKey" type="StaticBody3D" parent="."]
+position = Vector3(-5.8, 1.02, -5.8)
+rotation = Vector3(0, 0.35, 0)
+script = ExtResource("7_pickup")
+objective_label_path = NodePath("../Player/HUD/Objective")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ApartmentKey"]
+mesh = SubResource("Mesh_key")
+material_override = SubResource("Material_key")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ApartmentKey"]
+shape = SubResource("Shape_key")
+
 [node name="CeilingLight1" type="OmniLight3D" parent="."]
 position = Vector3(0, 2.75, 7)
 light_color = Color(0.72, 0.78, 0.86, 1)
@@ -137,10 +265,17 @@ omni_range = 5.0
 shadow_enabled = true
 
 [node name="CeilingLight3" type="OmniLight3D" parent="."]
-position = Vector3(0, 2.75, -6.5)
+position = Vector3(0, 2.75, -8)
 light_color = Color(0.58, 0.64, 0.72, 1)
-light_energy = 0.8
+light_energy = 0.75
 omni_range = 5.3
+shadow_enabled = true
+
+[node name="RoomLight" type="OmniLight3D" parent="."]
+position = Vector3(-5, 2.65, -5)
+light_color = Color(0.74, 0.70, 0.58, 1)
+light_energy = 0.82
+omni_range = 5.0
 shadow_enabled = true
 
 [node name="Player" type="CharacterBody3D" parent="."]
@@ -166,6 +301,9 @@ target_position = Vector3(0, 0, -2.4)
 collide_with_areas = false
 collide_with_bodies = true
 
+[node name="FootstepAudio" type="AudioStreamPlayer" parent="Player"]
+volume_db = -11.0
+
 [node name="HUD" type="CanvasLayer" parent="Player"]
 
 [node name="PanicOverlay" type="ColorRect" parent="Player/HUD"]
@@ -180,10 +318,19 @@ color = Color(0.18, 0, 0, 0)
 [node name="Objective" type="Label" parent="Player/HUD"]
 offset_left = 28.0
 offset_top = 24.0
-offset_right = 760.0
-offset_bottom = 70.0
+offset_right = 800.0
+offset_bottom = 68.0
 theme_override_font_sizes/font_size = 22
-text = "Objective: Find a way through the hallway."
+text = "Objective: Reach the first door. Don't trust the hallway."
+
+[node name="InventoryLabel" type="Label" parent="Player/HUD"]
+offset_left = 28.0
+offset_top = 74.0
+offset_right = 330.0
+offset_bottom = 160.0
+theme_override_colors/font_color = Color(0.78, 0.78, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "INVENTORY\n(empty)"
 
 [node name="PanicLabel" type="Label" parent="Player/HUD"]
 anchors_preset = 1
@@ -202,7 +349,7 @@ horizontal_alignment = 2
 [node name="Controls" type="Label" parent="Player/HUD"]
 offset_left = 28.0
 offset_top = 670.0
-offset_right = 720.0
+offset_right = 760.0
 offset_bottom = 710.0
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 theme_override_font_sizes/font_size = 16
@@ -214,9 +361,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -140.0
+offset_left = -180.0
 offset_top = -110.0
-offset_right = 140.0
+offset_right = 180.0
 offset_bottom = -70.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -262,7 +409,7 @@ offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 40
-text = "YOU REACHED THE END"
+text = "YOU GOT OUT"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Player/HUD/EndPanel"]
@@ -271,15 +418,15 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -360.0
+offset_left = -390.0
 offset_top = 5.0
-offset_right = 360.0
+offset_right = 390.0
 offset_bottom = 65.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 20
-text = "DON'T LOOK BACK — v0.2: THE TENANT"
+text = "DON'T LOOK BACK — v0.3: APARTMENT 03"
 horizontal_alignment = 1
 
 [node name="CaughtPanel" type="ColorRect" parent="Player/HUD"]
@@ -341,7 +488,7 @@ text = "Press R to restart"
 horizontal_alignment = 1
 
 [node name="Monster" type="Node3D" parent="."]
-position = Vector3(0, 0, 8.0)
+position = Vector3(0, 0, 8)
 script = ExtResource("3_monster")
 player_path = NodePath("../Player")
 objective_label_path = NodePath("../Player/HUD/Objective")
@@ -364,6 +511,26 @@ position = Vector3(0.105, 2.15, 0.29)
 mesh = SubResource("Mesh_eye")
 material_override = SubResource("Material_eye")
 
+[node name="Hallucination" type="Node3D" parent="."]
+visible = false
+position = Vector3(-7.15, 0, -4.35)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="Body" type="MeshInstance3D" parent="Hallucination"]
+position = Vector3(0, 1.35, 0)
+mesh = SubResource("Mesh_monster")
+material_override = SubResource("Material_monster")
+
+[node name="EyeLeft" type="MeshInstance3D" parent="Hallucination"]
+position = Vector3(-0.105, 2.15, 0.29)
+mesh = SubResource("Mesh_eye")
+material_override = SubResource("Material_eye")
+
+[node name="EyeRight" type="MeshInstance3D" parent="Hallucination"]
+position = Vector3(0.105, 2.15, 0.29)
+mesh = SubResource("Mesh_eye")
+material_override = SubResource("Material_eye")
+
 [node name="HorrorTrigger" type="Area3D" parent="."]
 position = Vector3(0, 1.2, 3.2)
 script = ExtResource("4_trigger")
@@ -374,8 +541,27 @@ flicker_light_path = NodePath("../CeilingLight2")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HorrorTrigger"]
 shape = SubResource("Shape_trigger")
 
+[node name="SafeZone" type="Area3D" parent="."]
+position = Vector3(0, 1.2, -3.25)
+script = ExtResource("8_safe")
+monster_path = NodePath("../Monster")
+objective_label_path = NodePath("../Player/HUD/Objective")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SafeZone"]
+shape = SubResource("Shape_trigger")
+
+[node name="RoomScareTrigger" type="Area3D" parent="."]
+position = Vector3(-3, 1.2, -5)
+script = ExtResource("9_room_scare")
+figure_path = NodePath("../Hallucination")
+room_light_path = NodePath("../RoomLight")
+objective_label_path = NodePath("../Player/HUD/Objective")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RoomScareTrigger"]
+shape = SubResource("Shape_room_trigger")
+
 [node name="FinishTrigger" type="Area3D" parent="."]
-position = Vector3(0, 1.2, -10.6)
+position = Vector3(0, 1.2, -13.65)
 script = ExtResource("5_finish")
 end_panel_path = NodePath("../Player/HUD/EndPanel")
 
