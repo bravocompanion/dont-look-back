@@ -91,10 +91,22 @@ func _build_visual() -> void:
             size = Vector3(0.22, 0.48, 0.22)
             material.albedo_color = Color(0.15, 0.32, 0.46, 1.0)
             material.roughness = 0.35
+        "dirty_water":
+            size = Vector3(0.22, 0.48, 0.22)
+            material.albedo_color = Color(0.25, 0.23, 0.12, 1.0)
+            material.roughness = 0.55
         "medkit":
             size = Vector3(0.46, 0.22, 0.34)
             material.albedo_color = Color(0.60, 0.12, 0.10, 1.0)
             material.roughness = 0.65
+        "bandage":
+            size = Vector3(0.38, 0.12, 0.28)
+            material.albedo_color = Color(0.78, 0.76, 0.67, 1.0)
+            material.roughness = 0.92
+        "cloth":
+            size = Vector3(0.46, 0.08, 0.34)
+            material.albedo_color = Color(0.48, 0.46, 0.40, 1.0)
+            material.roughness = 0.98
         "flashlight_battery":
             size = Vector3(0.16, 0.42, 0.16)
             material.albedo_color = Color(0.72, 0.58, 0.12, 1.0)
