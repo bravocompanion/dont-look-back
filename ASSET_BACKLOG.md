@@ -1,18 +1,50 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for v0.15 Multiplayer Polish.
+Updated for v0.17 Main Menu / Game Flow.
 
-The project is still code/procedural-first. Most environment geometry, survivor avatars, loot, and UI use runtime primitives or text-only controls. This backlog tracks the production assets needed as gameplay systems mature.
+The project is still code/procedural-first. v0.17 now has a functional responsive front end, pause menu, save summary, direct Host/Join flow, and local settings, but the menu and most of the game still use Godot primitives/text controls rather than production art.
+
+## P0 — Front-end / branding assets
+
+v0.17 makes these assets immediately useful rather than future-only.
+
+Required:
+- final `DON'T LOOK BACK` logo
+- compact/mobile-safe logo variant
+- title-screen key art, 16:9 with center-safe composition
+- portrait-safe/mobile crop of the key art
+- dark menu background treatment or subtle looping background plate
+- menu panel/frame treatment
+- button states: normal / focused / hover / pressed / disabled
+- Continue / New Game / Host / Join / Settings icons
+- Save / autosave / checkpoint icon
+- loading / connecting spinner
+- warning icon for destructive New Game confirmation
+- pause/menu icon suitable for touch controls
+- settings icons for audio, sensitivity, performance/FPS, fullscreen
+- app icon + Android adaptive icon
+- splash screen
+
+Audio needed for the front end:
+- menu move/focus
+- menu select
+- back/cancel
+- confirmation warning
+- save/autosave
+- network connecting
+- connection success
+- connection failure
+- Ready / Unready / Start / Reconnect cues
 
 ## P0 — Character assets
 
 ### Survivor base character
-Needed for co-op readability and v0.15 downed/revive gameplay.
+Needed for co-op readability, v0.15 downed/revive, and future animation integration.
 
 Required:
 - 1 rigged survivor base mesh
 - 3–4 outfit/material variants for 2–4 players
-- first-person hands/arms or a compatible first-person rig
+- first-person hands/arms or compatible first-person rig
 - world flashlight attachment point
 - backpack/utility attachment points
 
@@ -45,31 +77,9 @@ Required:
 - retreat-from-light
 - dissolve/disappear
 
-## P0 — Core environment art
+## P0 — Core horror audio
 
-Required modular sets:
-- labyrinth concrete/plaster wall pieces
-- labyrinth floor and ceiling modules
-- apartment wall/floor/door kit
-- metal/security door set
-- cabin exterior/interior kit
-- forest ground, rock, stump, branch and tree variants
-
-Recommended reusable material library:
-- clean concrete
-- dirty concrete
-- painted plaster
-- tile
-- aged wood
-- rusty metal
-- asphalt
-- dirt/grass
-- corrugated roof metal
-- grime/blood/water-stain decals
-
-## P0 — Audio
-
-Current prototype audio is mostly procedural or minimal. Production audio is a major priority for horror readability.
+Current prototype audio is still mostly procedural/minimal. Production audio remains one of the highest-impact upgrades.
 
 Required first pass:
 - concrete footsteps
@@ -98,12 +108,32 @@ Required first pass:
 - Tenant movement / attack
 - Darkness Creature whisper/crawl/attack/retreat
 - Journal open/page cue
-- Save/autosave cue
-- lobby ready/unready/start/reconnect UI cues
 
-Initial target: roughly 35–50 one-shot SFX plus 5–8 looping ambience beds.
+Initial target: roughly 40–55 one-shot SFX plus 5–8 looping ambience beds, including the v0.17 menu/network cues.
 
-## P1 — Shelter and world props
+## P0 — Core environment art
+
+Required modular sets:
+- labyrinth concrete/plaster wall pieces
+- labyrinth floor and ceiling modules
+- apartment wall/floor/door kit
+- metal/security door set
+- cabin exterior/interior kit
+- forest ground, rock, stump, branch and tree variants
+
+Recommended reusable material library:
+- clean concrete
+- dirty concrete
+- painted plaster
+- tile
+- aged wood
+- rusty metal
+- asphalt
+- dirt/grass
+- corrugated roof metal
+- grime/blood/water-stain decals
+
+## P1 — Survival / shelter props
 
 Needed:
 - generator
@@ -113,6 +143,7 @@ Needed:
 - storage chest
 - bed
 - table/chairs
+- flashlight first-person/world model
 - fuel can
 - flashlight battery
 - canned food
@@ -151,19 +182,21 @@ Needed:
 - curtains
 - household debris
 
-## P1 — v0.15 multiplayer UI assets
+## P1 — Multiplayer UI assets
 
-The current v0.15 UI works with Godot controls and text. Final art should add:
+The v0.15/v0.17 multiplayer UI is functional but text-based.
+
+Needed:
 - ready icon
 - host crown/icon
 - connection/ping icon set
 - teammate health icon
 - downed icon
 - revive icon
-- revive progress treatment
+- revive progress visual treatment
 - reconnect icon
 - player-color swatches / outfit identifiers
-- lobby panel frame/background
+- lobby/session panel frame/background
 - readable mobile versions of the same icons
 
 ## P1 — Journal assets
@@ -197,39 +230,46 @@ Needed:
 - Darkness Creature dissolve
 - Tenant shadow distortion
 - exterior wind-driven particles/leaves
-
-## P2 — Menu / branding
-
-Needed for the future front-end pass:
-- DON'T LOOK BACK logo
-- title-screen background/key art
-- New Game / Continue / Host / Join button treatment
-- loading indicator
-- save-slot artwork
-- settings icons
-- app icon / Android adaptive icon
-- splash screen
+- subtle menu background particles/noise if performance-safe
 
 ## Mobile constraints for all assets
 
-Production assets should be authored with mobile and desktop in mind:
+Production assets must support both mobile and desktop:
+- keep title/key art center-safe for narrow/portrait crops
+- provide compact UI/icon variants rather than shrinking desktop art blindly
 - prefer reusable trim/material sets instead of unique textures for every wall
 - use LODs for survivor/monster/tree meshes
 - keep transparent materials limited
 - atlas small props/UI where practical
 - avoid excessive 4K textures; reserve high resolution for hero assets
 - provide lower-cost material/shadow variants for mobile quality settings
+- UI icons should remain readable around 40–64 logical pixels
 
-## Next asset integration target
+## Current integration status
 
-v0.16 should begin replacing the highest-impact placeholders in this order:
-1. survivor + downed/revive animation set
-2. The Tenant model/animation
-3. core footsteps + monster/audio ambience
-4. labyrinth material kit + doors
-5. flashlight and survival pickup models
-6. cabin props
-7. forest vegetation/rocks
-8. gas-station / warehouse props
-9. multiplayer UI icon pass
-10. VFX and decals
+Functional but still placeholder-heavy:
+- main menu / pause menu / settings
+- co-op session UI
+- teammate HUD / revive progress
+- survivor remote avatars
+- Tenant / Darkness Creature visuals
+- labyrinth / apartment / shelter / exterior geometry
+- survival item models
+- Journal paper visuals
+- ambience and interaction audio
+
+## Next recommended asset integration order
+
+1. Front-end logo + title key art + menu SFX
+2. Survivor model + downed/revive animation set
+3. The Tenant model/animation
+4. Core footsteps + monster/audio ambience
+5. Labyrinth material kit + doors
+6. Flashlight and survival pickup models
+7. Cabin props
+8. Forest vegetation/rocks
+9. Gas-station / warehouse props
+10. Multiplayer UI icon pass
+11. VFX and decals
+
+A dedicated art/audio integration pass is still required; v0.17 does not pretend the skipped v0.16 production-art milestone has been completed.
