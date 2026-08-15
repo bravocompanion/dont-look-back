@@ -8,11 +8,21 @@ func _ready() -> void:
     _update_indicator()
 
 func get_interaction_text() -> String:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("is_client") and bool(network.call("is_client")):
+        return "Shared storage (host controlled)"
     return "Storage: STORE one supply" if store_mode else "Storage: TAKE one supply"
 
 func interact() -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null:
+        return
+
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("is_client") and bool(network.call("is_client")):
+        var client_objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if client_objective != null:
+            client_objective.text = "Shared chest contents are synchronized; host controls transfers in v0.9."
         return
 
     var director: Node = get_node_or_null("/root/ShelterSystem")
