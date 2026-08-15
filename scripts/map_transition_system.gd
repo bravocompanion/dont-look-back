@@ -207,8 +207,8 @@ func _build_loading_ui() -> void:
     overlay = ColorRect.new()
     overlay.color = Color(0.003, 0.004, 0.006, 1.0)
     overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     layer.add_child(overlay)
+    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
     title_label = Label.new()
     title_label.anchor_left = 0.5
@@ -260,13 +260,16 @@ func _hide_loading() -> void:
     overlay.visible = false
 
 func _fail_transition(message: String) -> void:
-    detail_label.text = message
-    progress_bar.value = 0.0
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player != null:
         _unlock_player(player)
+        var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if objective != null:
+            objective.text = "Map transition failed: %s" % message
     _block_mobile(false)
+    pending_player_state.clear()
     transitioning = false
+    _hide_loading()
 
 func _block_mobile(value: bool) -> void:
     var mobile: Node = get_node_or_null("/root/MobileControls")
