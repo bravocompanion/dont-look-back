@@ -23,7 +23,7 @@ func _process(delta: float) -> void:
     if status_timer > 0.0:
         status_timer = maxf(0.0, status_timer - delta)
         if status_timer <= 0.0 and status_label != null:
-            status_label.text = ""
+            status_label.text = _idle_status_text()
     _layout_ui()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -303,6 +303,28 @@ func _restore_state(state: Dictionary) -> void:
         _restore_condition_state(player, Dictionary(state.get("conditions", {})))
         _set_objective(player, "Persistent world restored. Continue where you left off.")
 
+    call_deferred("_finalize_restore")
+
+func _finalize_restore() -> void:
+    await get_tree().process_frame
+    await get_tree().process_frame
+
+    var labyrinth: Node = get_node_or_null("/root/LabyrinthDirector")
+    if labyrinth != null:
+        if labyrinth.has_method("_restore_relay_visuals"):
+            labyrinth.call("_restore_relay_visuals")
+        if labyrinth.has_method("_update_gate_state"):
+            labyrinth.call("_update_gate_state")
+
+    var shelter: Node = get_node_or_null("/root/ShelterSystem")
+    if shelter != null:
+        if shelter.has_method("_sync_generator_state"):
+            shelter.call("_sync_generator_state")
+        if shelter.has_method("_apply_campfire_state"):
+            shelter.call("_apply_campfire_state")
+
+    _remove_current_claimed_nodes()
+
 func _restore_world_state(state: Dictionary) -> void:
     var outside: Node = get_node_or_null("/root/OutsideDirector")
     if outside != null:
@@ -428,6 +450,10 @@ func _restore_journal_state(state: Dictionary) -> void:
 func _restore_door(door: Node, open_state: bool, locked_door: bool, unlocked_state: bool) -> void:
     if door == null:
         return
+    var door_3d: Node3D = door as Node3D
+    if door_3d == null:
+        return
+
     door.set("is_moving", false)
     door.set("pending_collision_restore", false)
     door.set("is_open", open_state)
@@ -436,7 +462,7 @@ func _restore_door(door: Node, open_state: bool, locked_door: bool, unlocked_sta
 
     var closed_y: float = float(door.get("closed_rotation_y"))
     var open_angle: float = float(door.get("open_angle_degrees"))
-    door.rotation.y = closed_y + deg_to_rad(open_angle if open_state else 0.0)
+    door_3d.rotation.y = closed_y + deg_to_rad(open_angle if open_state else 0.0)
     if door.has_method("_set_collision_enabled"):
         door.call("_set_collision_enabled", true)
 
@@ -496,6 +522,11 @@ func _show_status(text: String) -> void:
         status_label.text = text
         status_timer = 2.6
 
+func _idle_status_text() -> String:
+    var mobile: Node = get_node_or_null("/root/MobileControls")
+    var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
+    return "" if mobile_active else "K SAVE  |  L LOAD"
+
 func _build_ui() -> void:
     layer = CanvasLayer.new()
     layer.name = "SaveUI"
@@ -518,6 +549,7 @@ func _build_ui() -> void:
     load_button.focus_mode = Control.FOCUS_NONE
     load_button.pressed.connect(_mobile_load)
     layer.add_child(load_button)
+    status_label.text = _idle_status_text()
     _layout_ui()
 
 func _layout_ui() -> void:
