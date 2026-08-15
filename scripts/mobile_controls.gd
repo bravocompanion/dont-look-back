@@ -77,7 +77,9 @@ func is_mobile_active() -> bool:
     return mobile_active
 
 func get_move_vector() -> Vector2:
-    return move_vector if mobile_active and not dead_mode else Vector2.ZERO
+    if mobile_active and not dead_mode:
+        return move_vector
+    return Vector2.ZERO
 
 func consume_look_delta() -> Vector2:
     var result: Vector2 = look_delta
@@ -138,7 +140,8 @@ func _refresh_mode_and_layout() -> void:
         return
     var viewport_size: Vector2 = get_viewport().get_visible_rect().size
     var editor_preview: bool = OS.has_feature("editor") and viewport_size.x <= editor_preview_width
-    mobile_active = OS.has_feature("mobile") or editor_preview
+    var web_mobile: bool = OS.has_feature("web_android") or OS.has_feature("web_ios")
+    mobile_active = OS.has_feature("mobile") or web_mobile or editor_preview
     root.visible = mobile_active
     if not mobile_active:
         move_vector = Vector2.ZERO
@@ -155,8 +158,9 @@ func _layout_ui(viewport_size: Vector2) -> void:
     var small_size: float = clampf(short_side * 0.082, 48.0, 62.0)
     var margin: float = clampf(short_side * 0.035, 16.0, 28.0)
     var gap: float = clampf(short_side * 0.018, 8.0, 14.0)
+    var compact_clearance: float = 72.0 if viewport_size.x < 800.0 else 0.0
 
-    joystick_base.position = Vector2(margin, viewport_size.y - margin - joystick_size)
+    joystick_base.position = Vector2(margin, viewport_size.y - margin - joystick_size - compact_clearance)
     joystick_base.size = Vector2(joystick_size, joystick_size)
     joystick_knob.size = Vector2(joystick_size * 0.38, joystick_size * 0.38)
     _update_joystick_visual()
@@ -187,9 +191,11 @@ func _layout_ui(viewport_size: Vector2) -> void:
 
     var action_font: int = int(clampf(short_side * 0.030, 15.0, 21.0))
     var small_font: int = int(clampf(short_side * 0.022, 12.0, 16.0))
-    for button: Button in [interact_button, sprint_button, flashlight_button, battery_button]:
+    var primary_buttons: Array[Button] = [interact_button, sprint_button, flashlight_button, battery_button]
+    var item_buttons: Array[Button] = [food_button, water_button, medkit_button]
+    for button: Button in primary_buttons:
         button.add_theme_font_size_override("font_size", action_font)
-    for button: Button in [food_button, water_button, medkit_button]:
+    for button: Button in item_buttons:
         button.add_theme_font_size_override("font_size", small_font)
     restart_button.add_theme_font_size_override("font_size", action_font)
 
@@ -209,7 +215,11 @@ func _update_action_visibility() -> void:
     restart_button.visible = mobile_active and dead_mode
 
 func _is_over_action_button(point: Vector2) -> bool:
-    for button: Button in [interact_button, sprint_button, flashlight_button, battery_button, food_button, water_button, medkit_button, restart_button]:
+    var buttons: Array[Button] = [
+        interact_button, sprint_button, flashlight_button, battery_button,
+        food_button, water_button, medkit_button, restart_button
+    ]
+    for button: Button in buttons:
         if button != null and button.visible and button.get_global_rect().has_point(point):
             return true
     return false
@@ -222,9 +232,9 @@ func _build_ui() -> void:
 
     root = Control.new()
     root.name = "MobileControlsRoot"
-    root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     root.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(root)
+    root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
     joystick_base = Panel.new()
     joystick_base.name = "MoveBase"
