@@ -28,6 +28,7 @@ func interact() -> void:
     is_moving = true
     pending_collision_restore = false
     _set_collision_enabled(false)
+    await get_tree().physics_frame
 
     is_open = not is_open
     var angle: float = open_angle_degrees if is_open else 0.0
