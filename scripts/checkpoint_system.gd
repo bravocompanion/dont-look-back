@@ -5,27 +5,39 @@ var checkpoint_position: Vector3 = Vector3.ZERO
 var checkpoint_rotation_y: float = 0.0
 var checkpoint_state: Dictionary = {}
 var checkpoint_name: String = ""
+var last_scene_id: int = 0
 var restore_pending: bool = false
 
+func _ready() -> void:
+    var scene: Node = get_tree().current_scene
+    if scene != null:
+        last_scene_id = int(scene.get_instance_id())
+
 func save_checkpoint(player: CharacterBody3D, world_position: Vector3, label: String) -> void:
-    if player == null or not player.has_method("export_survival_state"):
+    if player == null:
         return
 
     checkpoint_active = true
     checkpoint_position = world_position
     checkpoint_rotation_y = player.rotation.y
-    checkpoint_state = Dictionary(player.call("export_survival_state")).duplicate(true)
     checkpoint_name = label
+    checkpoint_state = {
+        "health": float(player.get("health")),
+        "hunger": float(player.get("hunger")),
+        "thirst": float(player.get("thirst")),
+        "stamina": float(player.get("stamina")),
+        "flashlight_battery": float(player.get("flashlight_battery")),
+        "darkness_exposure": float(player.get("darkness_exposure")),
+        "inventory_names": Dictionary(player.get("inventory_names")).duplicate(true),
+        "inventory_counts": Dictionary(player.get("inventory_counts")).duplicate(true),
+        "flashlight_on": _is_flashlight_on(player)
+    }
 
 func has_checkpoint() -> bool:
     return checkpoint_active
 
 func get_checkpoint_name() -> String:
     return checkpoint_name
-
-func request_restore() -> void:
-    if checkpoint_active:
-        restore_pending = true
 
 func clear_checkpoint() -> void:
     checkpoint_active = false
@@ -36,6 +48,16 @@ func clear_checkpoint() -> void:
     restore_pending = false
 
 func _process(_delta: float) -> void:
+    var scene: Node = get_tree().current_scene
+    if scene == null:
+        return
+
+    var scene_id: int = int(scene.get_instance_id())
+    if scene_id != last_scene_id:
+        last_scene_id = scene_id
+        if checkpoint_active:
+            restore_pending = true
+
     if not restore_pending or not checkpoint_active:
         return
 
@@ -59,9 +81,35 @@ func _restore_player(player: CharacterBody3D) -> void:
     player.rotation.y = checkpoint_rotation_y
     player.velocity = Vector3.ZERO
 
-    if player.has_method("import_survival_state"):
-        player.call("import_survival_state", checkpoint_state.duplicate(true))
+    player.set("health", float(checkpoint_state.get("health", 100.0)))
+    player.set("hunger", float(checkpoint_state.get("hunger", 100.0)))
+    player.set("thirst", float(checkpoint_state.get("thirst", 100.0)))
+    player.set("stamina", float(checkpoint_state.get("stamina", 100.0)))
+    player.set("flashlight_battery", float(checkpoint_state.get("flashlight_battery", 100.0)))
+    player.set("darkness_exposure", minf(30.0, float(checkpoint_state.get("darkness_exposure", 0.0))))
+    player.set("inventory_names", Dictionary(checkpoint_state.get("inventory_names", {})).duplicate(true))
+    player.set("inventory_counts", Dictionary(checkpoint_state.get("inventory_counts", {})).duplicate(true))
+    player.set("is_dead", false)
+
+    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
+    if flashlight != null:
+        flashlight.visible = bool(checkpoint_state.get("flashlight_on", true)) and float(player.get("flashlight_battery")) > 0.0
+
+    var death_panel: Control = player.get_node_or_null("HUD/CaughtPanel") as Control
+    if death_panel != null:
+        death_panel.visible = false
+
+    if player.has_method("_update_inventory_hud"):
+        player.call("_update_inventory_hud")
+    if player.has_method("_update_survival_hud"):
+        player.call("_update_survival_hud")
+
+    Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
         objective.text = "Checkpoint restored: %s" % checkpoint_name
+
+func _is_flashlight_on(player: CharacterBody3D) -> bool:
+    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
+    return flashlight != null and flashlight.visible
