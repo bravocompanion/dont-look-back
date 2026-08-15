@@ -45,6 +45,8 @@ func interact() -> void:
         pending_collision_restore = true
         _try_restore_collision()
 
+    _report_ai_noise(0.72, "door movement")
+
 func _collect_collision_shapes(node: Node) -> void:
     for child: Node in node.get_children():
         if child is CollisionShape3D:
@@ -71,3 +73,9 @@ func _try_restore_collision() -> void:
 
     pending_collision_restore = false
     _set_collision_enabled(true)
+
+func _report_ai_noise(strength: float, label: String) -> void:
+    var navigation: Node = get_node_or_null("/root/AINavigationSystem")
+    if navigation == null or not navigation.has_method("report_noise"):
+        return
+    navigation.call("report_noise", global_position, strength, label, 0)
