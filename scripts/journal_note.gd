@@ -8,6 +8,7 @@ extends StaticBody3D
 var collected: bool = false
 
 func _ready() -> void:
+    add_to_group("journal_note")
     _build_visual()
     call_deferred("_remove_if_discovered")
 
