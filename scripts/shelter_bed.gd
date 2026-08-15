@@ -11,7 +11,7 @@ func interact() -> void:
     if player == null:
         return
 
-    var director: Node = get_node_or_null("/root/OutsideDirector")
+    var director: Node = get_node_or_null("/root/ShelterSystem")
     if director == null or not director.has_method("sleep_until_morning"):
         return
 
