@@ -14,9 +14,16 @@ func _on_body_entered(body: Node3D) -> void:
 
     triggered = true
 
-    var monster: Node = get_node_or_null(monster_path)
-    if monster != null and monster.has_method("stop_stalking"):
-        monster.call("stop_stalking")
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    var shared_system: Node = get_node_or_null("/root/CoopHorrorSystem")
+    var online: bool = network != null and network.has_method("is_online") and bool(network.call("is_online"))
+
+    if online and shared_system != null and shared_system.has_method("request_tenant_stop"):
+        shared_system.call("request_tenant_stop")
+    else:
+        var monster: Node = get_node_or_null(monster_path)
+        if monster != null and monster.has_method("stop_stalking"):
+            monster.call("stop_stalking")
 
     var objective: Label = get_node_or_null(objective_label_path) as Label
     if objective != null:
