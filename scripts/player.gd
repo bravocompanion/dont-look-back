@@ -10,10 +10,13 @@ extends CharacterBody3D
 @export var max_hunger: float = 100.0
 @export var max_thirst: float = 100.0
 @export var max_stamina: float = 100.0
+@export var max_flashlight_battery: float = 100.0
 @export var hunger_drain_per_second: float = 0.055
 @export var thirst_drain_per_second: float = 0.082
 @export var stamina_drain_per_second: float = 25.0
 @export var stamina_regen_per_second: float = 18.0
+@export var flashlight_drain_per_second: float = 1.15
+@export var low_battery_threshold: float = 22.0
 
 @onready var camera: Camera3D = $Camera3D
 @onready var flashlight: SpotLight3D = $Camera3D/Flashlight
@@ -37,20 +40,26 @@ var health: float = 100.0
 var hunger: float = 100.0
 var thirst: float = 100.0
 var stamina: float = 100.0
+var flashlight_battery: float = 100.0
 var darkness_exposure: float = 0.0
+var flashlight_panic: float = 0.0
+var flashlight_base_energy: float = 3.5
 var is_dead: bool = false
 var is_sprinting: bool = false
+var battery_empty_announced: bool = false
 
 var survival_panel: PanelContainer
 var health_label: Label
 var hunger_label: Label
 var thirst_label: Label
 var stamina_label: Label
+var battery_label: Label
 var darkness_label: Label
 var damage_flash: ColorRect
 var damage_flash_timer: float = 0.0
 var starvation_tick_timer: float = 1.0
 var light_check_timer: float = 0.0
+var ui_check_timer: float = 0.0
 var currently_lit: bool = true
 
 func _ready() -> void:
@@ -58,15 +67,18 @@ func _ready() -> void:
     hunger = max_hunger
     thirst = max_thirst
     stamina = max_stamina
+    flashlight_battery = max_flashlight_battery
+    flashlight_base_energy = flashlight.light_energy
 
     Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
     add_to_group("player")
     footstep_audio.stream = _build_footstep_stream()
     _ensure_survival_hud()
     _update_inventory_hud()
+    _apply_responsive_hud_layout()
     _update_survival_hud()
 
-    controls_label.text = "WASD Move   Shift Sprint   Mouse Look   E Interact   F Flashlight   1 Food   2 Water   3 Medkit"
+    controls_label.text = "WASD Move   Shift Sprint   E Interact   F Flashlight   B Battery   1 Food   2 Water   3 Medkit"
 
 func _process(delta: float) -> void:
     if is_dead:
@@ -74,6 +86,7 @@ func _process(delta: float) -> void:
 
     hunger = maxf(0.0, hunger - hunger_drain_per_second * delta)
     thirst = maxf(0.0, thirst - thirst_drain_per_second * delta)
+    _update_flashlight(delta)
 
     starvation_tick_timer -= delta
     if starvation_tick_timer <= 0.0:
@@ -85,13 +98,13 @@ func _process(delta: float) -> void:
 
     light_check_timer -= delta
     if light_check_timer <= 0.0:
-        light_check_timer = 0.25
+        light_check_timer = 0.18
         currently_lit = _is_in_protective_light()
 
     if currently_lit:
-        darkness_exposure = maxf(0.0, darkness_exposure - 22.0 * delta)
+        darkness_exposure = maxf(0.0, darkness_exposure - 24.0 * delta)
     else:
-        darkness_exposure = minf(100.0, darkness_exposure + 14.0 * delta)
+        darkness_exposure = minf(100.0, darkness_exposure + 15.0 * delta)
 
     if damage_flash_timer > 0.0:
         damage_flash_timer = maxf(0.0, damage_flash_timer - delta)
@@ -99,6 +112,11 @@ func _process(delta: float) -> void:
         damage_flash.color = Color(0.55, 0.0, 0.0, flash_alpha)
     elif damage_flash != null:
         damage_flash.color = Color(0.55, 0.0, 0.0, 0.0)
+
+    ui_check_timer -= delta
+    if ui_check_timer <= 0.0:
+        ui_check_timer = 0.5
+        _apply_responsive_hud_layout()
 
     _update_survival_hud()
 
@@ -119,7 +137,9 @@ func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventKey and event.pressed and not event.echo:
         match event.physical_keycode:
             KEY_F:
-                flashlight.visible = not flashlight.visible
+                _toggle_flashlight()
+            KEY_B, KEY_4:
+                _replace_flashlight_battery()
             KEY_E:
                 _try_interact()
             KEY_1:
@@ -236,8 +256,70 @@ func heal(amount: float) -> void:
 func get_darkness_exposure() -> float:
     return darkness_exposure
 
+func get_flashlight_battery() -> float:
+    return flashlight_battery
+
 func is_in_light() -> bool:
     return currently_lit
+
+func set_flashlight_panic(panic_value: float) -> void:
+    flashlight_panic = clampf(panic_value, 0.0, 100.0)
+
+func _toggle_flashlight() -> void:
+    if flashlight.visible:
+        flashlight.visible = false
+        return
+
+    if flashlight_battery <= 0.0:
+        objective_label.text = "The flashlight battery is dead. Press B to replace it."
+        return
+
+    flashlight.visible = true
+
+func _replace_flashlight_battery() -> void:
+    if flashlight_battery >= max_flashlight_battery - 1.0:
+        objective_label.text = "The flashlight battery is already full."
+        return
+    if not remove_item("flashlight_battery"):
+        objective_label.text = "You have no replacement battery."
+        return
+
+    flashlight_battery = max_flashlight_battery
+    battery_empty_announced = false
+    flashlight.visible = true
+    flashlight.light_energy = flashlight_base_energy
+    objective_label.text = "You replace the flashlight battery."
+
+func _update_flashlight(delta: float) -> void:
+    if flashlight.visible and flashlight_battery > 0.0:
+        flashlight_battery = maxf(0.0, flashlight_battery - flashlight_drain_per_second * delta)
+
+    if flashlight_battery <= 0.0:
+        flashlight_battery = 0.0
+        flashlight.visible = false
+        flashlight.light_energy = 0.0
+        if not battery_empty_announced:
+            battery_empty_announced = true
+            objective_label.text = "Your flashlight died. Darkness is not safe. Find a battery."
+        return
+
+    if not flashlight.visible:
+        flashlight.light_energy = flashlight_base_energy
+        return
+
+    var battery_factor: float = 1.0
+    if flashlight_battery <= low_battery_threshold:
+        var low_ratio: float = clampf(flashlight_battery / low_battery_threshold, 0.0, 1.0)
+        var flicker: float = 0.62 + 0.38 * absf(sin(float(Time.get_ticks_msec()) / 72.0))
+        battery_factor = lerpf(0.48, 0.88, low_ratio) * flicker
+
+    var panic_factor: float = 1.0
+    if flashlight_panic >= 72.0:
+        var panic_ratio: float = clampf((flashlight_panic - 72.0) / 28.0, 0.0, 1.0)
+        var panic_pulse: float = 0.72 + 0.28 * absf(sin(float(Time.get_ticks_msec()) / 85.0))
+        panic_factor = lerpf(1.0, 0.58, panic_ratio) * panic_pulse
+
+    flashlight.light_energy = flashlight_base_energy * battery_factor * panic_factor
 
 func _consume_food() -> void:
     if not remove_item("canned_food"):
@@ -276,9 +358,11 @@ func _die(source_name: String) -> void:
     death_panel.visible = true
     objective_label.text = ""
 
-    var monster: Node = get_tree().current_scene.get_node_or_null("Monster")
-    if monster != null and monster.has_method("stop_stalking"):
-        monster.call("stop_stalking")
+    var scene: Node = get_tree().current_scene
+    if scene != null:
+        var monster: Node = scene.get_node_or_null("Monster")
+        if monster != null and monster.has_method("stop_stalking"):
+            monster.call("stop_stalking")
 
 func _update_inventory_hud() -> void:
     if inventory_names.is_empty():
@@ -333,10 +417,6 @@ func _ensure_survival_hud() -> void:
     survival_panel.anchor_top = 0.0
     survival_panel.anchor_right = 1.0
     survival_panel.anchor_bottom = 0.0
-    survival_panel.offset_left = -270.0
-    survival_panel.offset_top = 70.0
-    survival_panel.offset_right = -28.0
-    survival_panel.offset_bottom = 250.0
 
     var box: VBoxContainer = VBoxContainer.new()
     box.add_theme_constant_override("separation", 4)
@@ -346,6 +426,7 @@ func _ensure_survival_hud() -> void:
     hunger_label = _make_stat_label(box)
     thirst_label = _make_stat_label(box)
     stamina_label = _make_stat_label(box)
+    battery_label = _make_stat_label(box)
     darkness_label = _make_stat_label(box)
 
     damage_flash = ColorRect.new()
@@ -362,6 +443,34 @@ func _make_stat_label(parent: VBoxContainer) -> Label:
     parent.add_child(label)
     return label
 
+func _apply_responsive_hud_layout() -> void:
+    if survival_panel == null:
+        return
+
+    var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+    var compact: bool = viewport_size.x < 800.0
+
+    if compact:
+        survival_panel.offset_left = -205.0
+        survival_panel.offset_top = 12.0
+        survival_panel.offset_right = -12.0
+        survival_panel.offset_bottom = 202.0
+        objective_label.add_theme_font_size_override("font_size", 16)
+        inventory_label.add_theme_font_size_override("font_size", 13)
+        inventory_label.offset_top = 52.0
+        inventory_label.offset_right = 205.0
+        controls_label.visible = false
+    else:
+        survival_panel.offset_left = -270.0
+        survival_panel.offset_top = 70.0
+        survival_panel.offset_right = -28.0
+        survival_panel.offset_bottom = 276.0
+        objective_label.add_theme_font_size_override("font_size", 22)
+        inventory_label.add_theme_font_size_override("font_size", 16)
+        inventory_label.offset_top = 74.0
+        inventory_label.offset_right = 330.0
+        controls_label.visible = true
+
 func _update_survival_hud() -> void:
     if health_label == null:
         return
@@ -369,10 +478,11 @@ func _update_survival_hud() -> void:
     hunger_label.text = "HUNGER      %3d%%" % int(round(hunger))
     thirst_label.text = "THIRST      %3d%%" % int(round(thirst))
     stamina_label.text = "STAMINA     %3d%%" % int(round(stamina))
+    battery_label.text = "BATTERY     %3d%%" % int(round(flashlight_battery))
     darkness_label.text = "DARKNESS    %3d%%" % int(round(darkness_exposure))
 
 func _is_in_protective_light() -> bool:
-    if flashlight.visible and flashlight.light_energy > 0.35:
+    if flashlight.visible and flashlight_battery > 0.0 and flashlight.light_energy > 0.35:
         return true
 
     var scene: Node = get_tree().current_scene
