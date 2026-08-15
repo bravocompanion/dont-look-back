@@ -3,27 +3,28 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.18"
+config/name="Don't Look Back v0.18.1"
 run/main_scene="res://scenes/main.tscn"
 
 [autoload]
 SurvivalSystem="*res://scripts/survival_system.gd"
 DarknessDirector="*res://scripts/darkness_director.gd"
 CheckpointSystem="*res://scripts/checkpoint_system.gd"
-LabyrinthDirector="*res://scripts/labyrinth_director.gd"
-OutsideDirector="*res://scripts/outside_director.gd"
+LabyrinthDirector="*res://scripts/labyrinth_director_v181.gd"
+OutsideDirector="*res://scripts/outside_director_v181.gd"
 ShelterSystem="*res://scripts/shelter_system.gd"
 NetworkManager="*res://scripts/network_manager.gd"
 MobileControls="*res://scripts/mobile_controls.gd"
+MapTransitionSystem="*res://scripts/map_transition_system.gd"
 AINoiseRelaySystem="*res://scripts/ai_noise_relay_system.gd"
 ExteriorExpansion="*res://scripts/exterior_expansion.gd"
 NightThreatSystem="*res://scripts/night_threat_system.gd"
-AINavigationSystem="*res://scripts/ai_navigation_system.gd"
-AINavigationRebuildGuard="*res://scripts/ai_navigation_rebuild_guard.gd"
+AINavigationSystem="*res://scripts/ai_navigation_system_v181.gd"
+AINavigationRebuildGuard="*res://scripts/ai_navigation_rebuild_guard_v181.gd"
 CoopHorrorSystem="*res://scripts/coop_horror_system.gd"
 SurvivalDepthSystem="*res://scripts/survival_depth_system.gd"
 JournalSystem="*res://scripts/journal_system.gd"
-SaveSystem="*res://scripts/save_system.gd"
+SaveSystem="*res://scripts/save_system_v181.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
 FrontEndSystem="*res://scripts/front_end_system.gd"
 
