@@ -9,28 +9,31 @@ func _ready() -> void:
     _build_visual()
 
 func get_interaction_text() -> String:
-    if powered:
-        return display_name + " online"
+    var system: Node = get_node_or_null("/root/ShelterSystem")
+    if system != null and system.has_method("get_generator_percent"):
+        var percent: int = int(system.call("get_generator_percent"))
+        if powered:
+            return "Refuel generator (%d%%)" % percent
     return "Start " + display_name + " (Fuel Can)"
 
 func interact() -> void:
-    if powered:
-        return
-
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null:
         return
 
-    var director: Node = get_node_or_null("/root/OutsideDirector")
-    if director == null or not director.has_method("activate_shelter"):
+    var system: Node = get_node_or_null("/root/ShelterSystem")
+    if system == null:
         return
 
-    var accepted: bool = bool(director.call("activate_shelter", player))
-    if not accepted:
-        return
+    var accepted: bool = false
+    if powered and system.has_method("refuel_generator"):
+        accepted = bool(system.call("refuel_generator", player))
+    elif not powered and system.has_method("activate_generator"):
+        accepted = bool(system.call("activate_generator", player))
 
-    powered = true
-    _set_indicator(true)
+    if accepted:
+        powered = bool(system.call("is_generator_running")) if system.has_method("is_generator_running") else true
+        _set_indicator(powered)
 
 func set_powered_from_restore(value: bool) -> void:
     powered = value
