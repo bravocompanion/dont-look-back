@@ -19,9 +19,13 @@ func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventKey:
         var key_event: InputEventKey = event as InputEventKey
         if key_event.pressed and not key_event.echo and key_event.physical_keycode == KEY_SPACE:
-            jump_buffer_timer = jump_buffer_time
+            var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+            if player != null and _movement_allowed(player):
+                jump_buffer_timer = jump_buffer_time
 
 func _physics_process(delta: float) -> void:
+    jump_buffer_timer = maxf(0.0, jump_buffer_timer - delta)
+
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null:
         tracked_player_id = 0
@@ -41,7 +45,8 @@ func _physics_process(delta: float) -> void:
     var mobile: Node = get_node_or_null("/root/MobileControls")
     var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
     if mobile_active and mobile.has_method("consume_action") and bool(mobile.call("consume_action", "jump")):
-        jump_buffer_timer = jump_buffer_time
+        if _movement_allowed(player):
+            jump_buffer_timer = jump_buffer_time
 
     if not _movement_allowed(player):
         player.velocity.x = 0.0
@@ -53,7 +58,6 @@ func _physics_process(delta: float) -> void:
         coyote_timer = coyote_time
     else:
         coyote_timer = maxf(0.0, coyote_timer - delta)
-    jump_buffer_timer = maxf(0.0, jump_buffer_timer - delta)
 
     if not grounded_before_move:
         player.velocity.y -= gravity * delta
