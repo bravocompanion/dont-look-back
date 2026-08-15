@@ -20,7 +20,8 @@ func _on_body_entered(body: Node3D) -> void:
 
     var light := get_node_or_null(flicker_light_path) as Light3D
     if light != null:
-        for delay in [0.10, 0.06, 0.14, 0.05, 0.18]:
+        var flicker_delays: Array[float] = [0.10, 0.06, 0.14, 0.05, 0.18]
+        for delay in flicker_delays:
             light.visible = not light.visible
             await get_tree().create_timer(delay).timeout
         light.visible = true
@@ -29,7 +30,7 @@ func _on_body_entered(body: Node3D) -> void:
 
     var monster := get_node_or_null(monster_path)
     if monster != null and monster.has_method("appear"):
-        monster.appear()
+        monster.call("appear")
 
     if objective != null:
         objective.text = "KEEP IT IN SIGHT. Open the door and reach the end."
