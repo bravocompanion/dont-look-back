@@ -1,139 +1,91 @@
-# DON'T LOOK BACK — Godot v0.18.2
+# DON'T LOOK BACK — Godot v0.18.3
 
-A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, responsive menus, runtime AI navigation/perception, and separate Labyrinth/Forest maps.
+First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent saves, Journal discoveries, separate Labyrinth/Forest maps, and runtime AI navigation/perception.
 
-## v0.18.2 — Main Menu Cursor Hotfix
+## v0.18.3 — Movement + Cabin + Forest Visibility
 
-Desktop cursor ownership is now enforced by the front-end while any menu is open.
+### Cabin entry fix
 
-Fixed behavior:
-- title screen always forces `Input.MOUSE_MODE_VISIBLE`
-- Join / Settings / New Game confirmation keep the pointer visible
-- Esc pause menu keeps the pointer visible
-- a short boot guard handles the scene initialization race where `Player._ready()` captures the mouse after the title UI has already appeared
-- after gameplay resumes, the normal captured first-person mouse behavior is restored
-- mobile behavior is unchanged; touch controls remain the primary input path
+The cabin floor is slightly higher than the surrounding forest terrain. The old controller only used `move_and_slide()`, so the player capsule could stop on the floor lip even though the height difference was small.
 
-Regression test:
-1. launch the game with F5
-2. confirm the cursor is visible and movable on the title screen
-3. open Settings and Join Co-op and confirm it remains visible
-4. start/continue gameplay and confirm mouse-look captures normally
-5. press Esc and confirm the pointer appears in the pause menu
-6. Resume and confirm mouse-look captures again
+v0.18.3 adds `MovementSystem`, which owns standing locomotion on both Labyrinth and Forest maps while the existing Player script continues to own survival, inventory, interaction, flashlight and HUD behavior.
 
-## v0.18.1 — Labyrinth Lighting + Separate Forest Map
+Auto-step behavior:
+- only works while grounded
+- only attempts a step when forward movement is actually blocked
+- checks upward clearance before lifting the body
+- checks forward clearance from the raised position
+- probes the target floor height before stepping
+- maximum configured step height is `0.80 m`
+- the effective limit is also clamped below half of the player's capsule height
+- auto-step is disabled while airborne, dead, downed, in menus, during map loading, and before a co-op session starts
 
-### Labyrinth visibility pass
+The Forest cabin also gets a small physical entry/porch step so the threshold is easier to cross even before final environment art replaces the placeholder geometry.
 
-The expanded labyrinth is still intentionally dark, but it is no longer meant to be unreadable without staring only at the flashlight cone.
+### Jump
 
-v0.18.1:
-- raises the four existing maze ambience lights slightly
-- increases their range so walls/corners remain faintly readable
-- adds four additional low-energy cold ambience lights at deeper maze turns
-- keeps all new ambience below the player's protective-light threshold
-- keeps relay lights as the meaningful safe/high-power light sources
+Desktop:
+- `Space` — Jump
 
-The result should be dim blue-gray visibility rather than pitch-black geometry. The flashlight is still important and Darkness Exposure remains dangerous.
+Mobile:
+- new responsive `JUMP` button
 
-### Labyrinth and Forest are now different scenes
+Jump tuning:
+- jump velocity: `4.6`
+- stamina cost: `8`
+- short coyote time: `0.11 s`
+- short jump buffer: `0.13 s`
 
-Map files:
-- `res://scenes/main.tscn` — opening corridor, Apartment 03 and Labyrinth
+Downed survivors cannot use normal jumping; v0.15 downed crawling remains a separate co-op state.
+
+### Forest visibility
+
+Forest night lighting has been raised without turning the whole forest into protective light.
+
+Changes:
+- brighter cool night background
+- higher minimum Environment ambient-light energy
+- low-cost cool moon-direction fill with shadows disabled
+- subtle warm cabin-entry light below the protective-light threshold
+
+The new ambient/moon lighting improves silhouettes of trees, roads, the cabin and landmarks. Darkness Exposure and the Darkness Creature remain dangerous because the added fill is not treated as a normal protective OmniLight safe zone.
+
+### Mobile / desktop
+
+`MobileControls` now uses `mobile_controls_v183.gd`, adding JUMP without removing existing controls. The button uses the same responsive sizing rules as USE/RUN/LIGHT/BATT and is hidden whenever gameplay input is externally blocked.
+
+`MovementSystem` is shared by `main.tscn` and `forest.tscn`, so step/jump behavior does not diverge between maps.
+
+## v0.18.2 retained — Main Menu Cursor
+
+Desktop menus keep `Input.MOUSE_MODE_VISIBLE` while title, Join, Settings, confirmation and pause UI are open. Gameplay restores captured mouse-look.
+
+## v0.18.1 retained — Separate maps
+
+Maps:
+- `res://scenes/main.tscn` — opening corridor, Apartment 03, Labyrinth
 - `res://scenes/forest.tscn` — The Outside, cabin, forest and exterior landmarks
 
-`OutsideDirector` no longer builds the exterior inside the Labyrinth scene. `LabyrinthDirector` no longer builds labyrinth geometry inside the Forest scene.
+Leaving the final Labyrinth gate loads Forest through `MapTransitionSystem`. Player survival/inventory state is preserved and the Forest entrance becomes a checkpoint/autosave location.
 
-This reduces the amount of unrelated world geometry active in one scene and gives future maps a cleaner loading boundary.
+Co-op map transitions are host-authoritative and late join synchronizes to the host's active map.
 
-### Loading transition
+Save/Continue stores the active map and migrates older pre-map-split saves.
 
-Leaving the final labyrinth gate now uses `MapTransitionSystem`.
+## AI + horror systems retained
 
-Flow:
-1. player reaches the final Outside transition after all 3 relays are active
-2. controls are locked
-3. a full-screen `THE OUTSIDE` loading overlay appears
-4. the Labyrinth scene is replaced by `forest.tscn`
-5. runtime Forest geometry is allowed to initialize
-6. player Health/Hunger/Thirst/Stamina, inventory, flashlight/battery, Darkness Exposure, Bleeding and Infection are restored
-7. player is placed at the Forest entrance
-8. a new `Forest entrance` checkpoint is created and autosaved
-9. controls are restored
+v0.18 AI behavior:
+- CHASE
+- INVESTIGATE
+- SEARCH
+- PATROL
+- runtime AStar3D waypoint graph
+- hearing from walking/sprinting and noisy interactions
+- host-authoritative AI in LAN co-op
 
-A collision boundary now closes the back edge of the Forest entrance so the player cannot walk behind the newly separated map and fall off the ground.
+The Tenant still freezes when watched. Darkness Creature still retreats from protective light.
 
-### Co-op map synchronization
-
-Map changes remain host-authoritative.
-
-When the active party leaves the labyrinth:
-- HOST sends the Forest transition to every connected peer
-- every survivor loads `forest.tscn`
-- each survivor preserves their own current local survival/inventory state during the scene swap
-- monster/world authority continues to live on the host
-
-Late join also receives the host's active map. If the host is already in Forest, a joining client loads Forest before continuing the v0.15 Ready/Start flow. If the host is still in Labyrinth while a client has a local Forest save loaded in the background, that client is synchronized back to the Labyrinth map for the session.
-
-### Save/Continue across maps
-
-The v0.18.1 SaveSystem wrapper adds the active scene path to new saves.
-
-Continue/Load can now select the correct scene before applying the saved player/world state.
-
-Older v0.14–v0.18 saves are migrated without deleting them:
-- player positions at `z <= -52` are interpreted as Forest saves
-- earlier positions are interpreted as Labyrinth saves
-
-Finite pickup persistence is also normalized to scene-relative keys so older Outside pickup paths created under `/root/Main/OutsideWorld/...` continue to match the new `/root/ForestMap/OutsideWorld/...` structure.
-
-`NEW GAME` always returns to `main.tscn`, even if the title screen was opened while the current run was in Forest.
-
-## v0.18 — AI + Navigation retained
-
-Monster movement uses a lightweight runtime `AStar3D` waypoint graph with four perception states:
-- `CHASE`
-- `INVESTIGATE`
-- `SEARCH`
-- `PATROL`
-
-The graph is now map-aware. Labyrinth loads only corridor/labyrinth navigation points; Forest loads only exterior navigation points. The rebuild guard waits for the active map's runtime geometry before rebuilding.
-
-The Tenant retains its signature rule: watching it freezes pursuit movement. Darkness Creature still retreats from protective light. Walk/sprint movement and noisy interactions continue to generate host-authoritative AI hearing events.
-
-## Front End / Save / Multiplayer retained
-
-Main menu:
-- CONTINUE
-- NEW GAME
-- HOST CO-OP
-- JOIN CO-OP
-- SETTINGS
-- QUIT on desktop
-
-Desktop pause: `Esc`.
-Mobile pause: `MENU`.
-
-Persistent world save:
-`user://dont_look_back_save_v1.json`
-
-Local settings:
-`user://dont_look_back_settings.cfg`
-
-LAN co-op target remains 2–4 survivors with:
-- display names
-- Ready / Not Ready
-- Host START
-- teammate Health / DOWNED HUD
-- ping/reconnect foundation
-- shared checkpoint authority
-- downed crawling and revive progress
-- host-authoritative monster state/damage
-- shared relays/day-night/shelter state
-- shared finite survival pickups
-
-## Survival / Journal retained
+## Survival systems
 
 Stats:
 - Health
@@ -148,18 +100,13 @@ Stats:
 
 Resources include Food, Clean/Dirty Water, Medkit, Cloth, Bandage, Wood, Scrap, Fuel Can, Flashlight Battery and Firewood Bundle.
 
-Journal:
-- `J` desktop
-- `JOURNAL` mobile
-- missions, tips, logs, trivia and warnings
-- persistent discoveries
-
 ## Controls
 
 Desktop:
 - WASD — move / downed crawl
 - Mouse — look
 - Shift — sprint
+- Space — jump
 - E — interact / revive
 - F — flashlight
 - B or 4 — battery
@@ -174,58 +121,39 @@ Desktop:
 Mobile:
 - left joystick — move / downed movement
 - right swipe — look
-- RUN / USE / LIGHT / BATT / FOOD / WATER / MED
+- RUN
+- JUMP
+- USE
+- LIGHT
+- BATT
+- FOOD
+- WATER
+- MED
 - JOURNAL
 - MENU
 
-No new gameplay button is required for the map transition.
+## Testing v0.18.3
 
-## Testing v0.18.1 map split
+Recommended test:
+1. Pull latest `main`, open the existing project and press F5.
+2. Confirm title-screen cursor still works from v0.18.2.
+3. Start gameplay and verify `Space` jumps on desktop.
+4. On mobile/editor mobile preview, verify the JUMP button appears and does not overlap USE/RUN.
+5. Walk into small floor lips/thresholds; the player should step up automatically instead of stopping.
+6. Verify walls/tall obstacles cannot be auto-stepped.
+7. Transition to Forest and walk through the cabin entrance repeatedly from different angles.
+8. Verify the porch threshold no longer blocks entry.
+9. Test Forest at night with flashlight off: terrain/tree silhouettes should be readable, but the area should still feel dark and Darkness Exposure should continue increasing outside real protective light.
+10. Test jump/step in two-device co-op and re-test downed crawl/revive.
 
-Solo recommended test:
-1. Start a NEW GAME and reach the expanded labyrinth.
-2. Verify maze walls and turns are faintly visible without making the area feel bright.
-3. Stand under a dim ambience light and verify Darkness Exposure still behaves as unsafe darkness; relay/high-power lights should remain the meaningful protection.
-4. Activate Relay A/B/C and pass the final gate.
-5. Confirm the loading overlay appears and the game changes to `forest.tscn`.
-6. Verify Health, Hunger, Thirst, Stamina, inventory, flashlight battery and conditions survive the transition.
-7. Verify the player spawns around `(0, 0.92, -57.5)` and cannot walk behind the Forest entrance edge.
-8. Save in Forest, quit, restart and CONTINUE; the game should restore directly into Forest rather than putting a Forest coordinate inside the Labyrinth scene.
-9. Use NEW GAME from a Forest run/title state and verify it returns to the opening Labyrinth map.
-10. Re-test Darkness Creature navigation in House/Warehouse after the split.
+## Asset status
 
-Co-op recommended test:
-1. HOST + JOIN in Labyrinth and START normally.
-2. Activate all relays and have either survivor enter the final transition.
-3. Confirm both devices display loading and arrive in Forest together.
-4. Verify survivor inventory/stats remain correct on both devices.
-5. Disconnect/rejoin a client while HOST remains in Forest; the joining client should synchronize to Forest.
-6. Test a HOST in Labyrinth against a client whose local disk save would normally restore Forest; the client should synchronize to the host's Labyrinth scene for that session.
-7. Re-test shared pickups, checkpoint, downed/revive, AI hearing and mobile controls.
-
-## Asset status after v0.18.1
-
-Production requirements are tracked in `ASSET_BACKLOG.md`.
-
-Newly important assets from the map split:
-- low-power labyrinth emergency/maintenance light fixture model
-- emissive/flicker variants for dim maze lighting
-- Forest entrance barrier/tree-line replacement for the current collision placeholder
-- `THE OUTSIDE` loading-screen/key-art plate, center-safe for desktop and mobile
-- loading transition ambience/stinger
-- optional map-name icon/treatment for future multi-map loading screens
-
-Existing high-priority needs remain final survivor/Tenant/Darkness models and animation, surface footsteps, monster audio, labyrinth material kit, production doors, forest vegetation and landmark props.
+Production needs are tracked in `ASSET_BACKLOG.md`. v0.18.3 adds requirements for jump/landing animation and SFX, step/foot-placement polish, a real cabin porch/threshold model, and night forest lighting/reference art.
 
 ## Current limitations
 
-- Runtime Godot validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
-- Loading currently uses a functional Godot UI overlay rather than final branded loading artwork.
-- Forest entrance boundary is a procedural placeholder and should become believable terrain/tree/fence art later.
-- Navigation remains a hand-authored runtime waypoint graph rather than a fully baked NavigationMesh.
+- Runtime F5 validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
+- Auto-step is a lightweight collision solver, not full procedural foot IK.
+- Final character models/animations, production audio, VFX and environment art are still missing.
+- Forest/labyrinth navigation remains a hand-authored runtime waypoint graph rather than a baked NavigationMesh.
 - Internet matchmaking/NAT traversal is not implemented; co-op remains LAN/IP based.
-- Final character models, animations, production audio, VFX and environment art are still missing.
-
-## Recommended next update
-
-After validating v0.18.2, the strongest next milestone remains **Art + Audio / AI Presentation Integration**: production labyrinth lighting fixtures/materials, real footsteps and spatial monster audio, final monster/survivor animation states, then a branded loading/front-end pass before another large story map.
