@@ -17,19 +17,21 @@ func _ensure_v181_labyrinth_lighting(scene: Node) -> void:
     if lighting_scene_id == scene_id:
         return
 
+    # Keep ambience below the player's protective-light threshold (> 0.1).
+    # This makes walls/corners readable without turning the maze into a safe zone.
     for child: Node in expansion_root.get_children():
         if child is OmniLight3D:
             var light: OmniLight3D = child as OmniLight3D
             if light.light_energy <= 0.08 and light.omni_range <= 4.6:
-                light.light_energy = 0.16
-                light.omni_range = 5.7
+                light.light_energy = 0.095
+                light.omni_range = 6.2
                 light.light_color = Color(0.46, 0.50, 0.54, 1.0)
                 light.shadow_enabled = false
 
-    _add_v181_dim_light("MazeAmbientA", Vector3(-6.5, 2.55, -22.8), 0.11, 5.1)
-    _add_v181_dim_light("MazeAmbientB", Vector3(6.5, 2.55, -31.6), 0.10, 5.0)
-    _add_v181_dim_light("MazeAmbientC", Vector3(-6.5, 2.55, -40.2), 0.11, 5.1)
-    _add_v181_dim_light("MazeAmbientD", Vector3(-5.5, 2.55, -48.0), 0.09, 4.8)
+    _add_v181_dim_light("MazeAmbientA", Vector3(-6.5, 2.55, -22.8), 0.085, 5.6)
+    _add_v181_dim_light("MazeAmbientB", Vector3(6.5, 2.55, -31.6), 0.080, 5.5)
+    _add_v181_dim_light("MazeAmbientC", Vector3(-6.5, 2.55, -40.2), 0.085, 5.6)
+    _add_v181_dim_light("MazeAmbientD", Vector3(-5.5, 2.55, -48.0), 0.075, 5.2)
     lighting_scene_id = scene_id
 
 func _add_v181_dim_light(node_name: String, position: Vector3, energy: float, light_range: float) -> void:
