@@ -1,57 +1,26 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for v0.17 Main Menu / Game Flow.
+Updated for v0.18 AI + Navigation Pass.
 
-The project is still code/procedural-first. v0.17 now has a functional responsive front end, pause menu, save summary, direct Host/Join flow, and local settings, but the menu and most of the game still use Godot primitives/text controls rather than production art.
+The project remains code/procedural-first. v0.18 adds runtime AI navigation, hearing, last-known-position search and host-authoritative interaction noise, which increases the importance of readable character animation, surface audio, spatial interaction SFX and collision-safe environment art.
 
-## P0 — Front-end / branding assets
-
-v0.17 makes these assets immediately useful rather than future-only.
-
-Required:
-- final `DON'T LOOK BACK` logo
-- compact/mobile-safe logo variant
-- title-screen key art, 16:9 with center-safe composition
-- portrait-safe/mobile crop of the key art
-- dark menu background treatment or subtle looping background plate
-- menu panel/frame treatment
-- button states: normal / focused / hover / pressed / disabled
-- Continue / New Game / Host / Join / Settings icons
-- Save / autosave / checkpoint icon
-- loading / connecting spinner
-- warning icon for destructive New Game confirmation
-- pause/menu icon suitable for touch controls
-- settings icons for audio, sensitivity, performance/FPS, fullscreen
-- app icon + Android adaptive icon
-- splash screen
-
-Audio needed for the front end:
-- menu move/focus
-- menu select
-- back/cancel
-- confirmation warning
-- save/autosave
-- network connecting
-- connection success
-- connection failure
-- Ready / Unready / Start / Reconnect cues
-
-## P0 — Character assets
+## P0 — AI character animation / presentation
 
 ### Survivor base character
-Needed for co-op readability, v0.15 downed/revive, and future animation integration.
 
 Required:
 - 1 rigged survivor base mesh
 - 3–4 outfit/material variants for 2–4 players
 - first-person hands/arms or compatible first-person rig
-- world flashlight attachment point
+- world flashlight attachment
 - backpack/utility attachment points
 
 Animation set:
 - idle
 - walk
 - run
+- stop/start transitions
+- directional turn / strafe
 - crouch/downed idle
 - downed crawl forward/back/strafe
 - revive teammate
@@ -59,67 +28,148 @@ Animation set:
 - hit reaction
 - death/team-wipe pose
 
+The v0.18 hearing system distinguishes normal movement from sprinting, so the walk/run animation cadence should be clear enough to match different footstep intensities.
+
 ### The Tenant
+
 Required:
 - rigged humanoid horror model
 - idle/freeze pose
-- unseen walk
+- transition into/out of freeze
+- slow unseen walk
 - panic chase
+- turn-left / turn-right or good root/body turning support
+- search/listen idle
+- investigate walk
 - attack
 - recoil/retreat
 - silhouette-friendly materials
 
+The model needs strong readable stop/freeze behavior because watching The Tenant still immediately stops pursuit movement.
+
 ### Darkness Creature
+
 Required:
-- separate creature silhouette
-- crawl/move
+- distinct non-Tenant silhouette
+- idle crouch/crawl
+- crawl locomotion
+- directional turn
+- investigate/search motion
 - attack
-- retreat-from-light
+- recoil from light
+- sustained retreat-from-light
 - dissolve/disappear
 
-## P0 — Core horror audio
+## P0 — AI / horror audio
 
-Current prototype audio is still mostly procedural/minimal. Production audio remains one of the highest-impact upgrades.
+v0.18 makes real spatial audio especially valuable because AI now reacts to gameplay noise events.
 
-Required first pass:
-- concrete footsteps
-- wood footsteps
-- dirt/grass footsteps
-- metal footsteps
-- player breathing
+Required movement set:
+- concrete walk footsteps
+- concrete sprint footsteps
+- wood walk footsteps
+- wood sprint footsteps
+- dirt/grass walk footsteps
+- dirt/grass sprint footsteps
+- metal walk footsteps
+- metal sprint footsteps
+- downed crawl cloth/body movement
+- survivor breathing
 - sprint breathing
 - heartbeat/panic
-- damage / bleeding reactions
-- downed breathing
-- revive start / loop / complete
-- door open / close / locked rattle
+
+Required interaction noise set:
+- normal door creak/open/close
+- locked door rattle
+- exit lock/key mechanism
+- heavy exit door movement
+- generator startup burst
+- generator mechanical loop
+- generator refuel/can handling
+- workbench hammer/scrape
+- hand water-pump squeak/clank
 - pickup
-- crafting
-- generator start / loop / stop
+- crafting completion
 - campfire loop
+
+Required monster perception cues:
+- Tenant distant movement
+- Tenant investigate/search vocal or body cue
+- Tenant proximity cue
+- Tenant freeze/stop sting kept subtle
+- Tenant attack
+- Darkness distant whisper/crawl
+- Darkness investigate/search cue
+- Darkness attack
+- Darkness light-recoil cue
+- Darkness retreat/dissolve cue
+
+Environment beds:
 - indoor electrical hum
 - fluorescent flicker
 - distant knocks
+- labyrinth room tone
 - forest day ambience
 - forest night ambience
 - wind
 - distant branch snaps
-- Tenant proximity cue
-- Tenant movement / attack
-- Darkness Creature whisper/crawl/attack/retreat
-- Journal open/page cue
+- cabin ambience
+- warehouse interior ambience
+- gas-station exterior ambience
 
-Initial target: roughly 40–55 one-shot SFX plus 5–8 looping ambience beds, including the v0.17 menu/network cues.
+Initial production target is now roughly 50–70 one-shot SFX plus 7–10 looping ambience/mechanical beds when menu/network audio is included.
 
-## P0 — Core environment art
+## P0 — Front-end / branding assets
 
-Required modular sets:
-- labyrinth concrete/plaster wall pieces
-- labyrinth floor and ceiling modules
+Still immediately needed from v0.17:
+- final `DON'T LOOK BACK` logo
+- compact/mobile-safe logo variant
+- 16:9 center-safe title key art
+- portrait/mobile-safe title crop
+- dark menu background or subtle looping background plate
+- menu panel/frame treatment
+- button states: normal / focused / hover / pressed / disabled
+- Continue / New Game / Host / Join / Settings icons
+- save/autosave/checkpoint icon
+- loading/connecting spinner
+- destructive confirmation warning icon
+- touch-safe MENU icon
+- audio/sensitivity/performance/fullscreen settings icons
+- app icon + Android adaptive icon
+- splash screen
+
+Front-end audio:
+- focus/move
+- select
+- back/cancel
+- warning confirmation
+- save/autosave
+- connecting
+- connection success/failure
+- Ready / Unready / Start / Reconnect
+
+## P0 — Collision-safe environment art
+
+The current waypoint graph was authored around the procedural map dimensions. Production environment replacements should preserve readable walkable clearance or update navigation points at the same time.
+
+Core modular sets:
+- labyrinth concrete/plaster walls
+- labyrinth floor/ceiling
 - apartment wall/floor/door kit
 - metal/security door set
 - cabin exterior/interior kit
-- forest ground, rock, stump, branch and tree variants
+- forest ground/rocks/stumps/branches/tree variants
+
+v0.18 navigation-sensitive props:
+- Warehouse shelving with clear aisle width
+- pallets/crates that do not silently close a navigation corridor
+- Abandoned House furniture with deliberate walk gaps
+- House doorway/doorframe modules
+- Gas Station pumps/counter/shelving with collision proxies
+- water-pump collision proxy
+- generator/workbench collision proxies
+
+For complex props, provide simple low-cost collision meshes rather than using detailed render geometry as collision.
 
 Recommended reusable material library:
 - clean concrete
@@ -156,9 +206,15 @@ Needed:
 - wood bundle
 - hand water pump
 
+Animations optional but useful:
+- generator pull/start interaction
+- workbench craft hand action
+- pump handle action
+- simple pickup/use hand poses
+
 ## P1 — Exterior landmark props
 
-### Gas station
+### Gas Station
 - fuel pumps
 - canopy/sign
 - counter
@@ -175,29 +231,31 @@ Needed:
 - hanging lamps
 - warning signs
 
-### Abandoned house
+### Abandoned House
 - damaged furniture
 - cabinets
 - broken doors/windows
 - curtains
 - household debris
 
+All landmark props need simplified collision and must be tested against monster waypoint routes after integration.
+
 ## P1 — Multiplayer UI assets
 
-The v0.15/v0.17 multiplayer UI is functional but text-based.
+The v0.15/v0.17 multiplayer UI remains functional but text-based.
 
 Needed:
 - ready icon
 - host crown/icon
-- connection/ping icon set
-- teammate health icon
+- connection/ping icons
+- teammate Health icon
 - downed icon
 - revive icon
 - revive progress visual treatment
 - reconnect icon
-- player-color swatches / outfit identifiers
+- player-color/outfit identifier swatches
 - lobby/session panel frame/background
-- readable mobile versions of the same icons
+- compact mobile variants
 
 ## P1 — Journal assets
 
@@ -213,63 +271,69 @@ Needed variants:
 
 Optional later:
 - inspectable handwriting textures
-- stamps, dates and facility logos
-- photographs / polaroids
+- stamps/dates/facility logos
+- photographs/polaroids
 
-## P2 — VFX and polish
+## P2 — AI / environmental VFX
 
 Needed:
+- subtle dust kick from sprinting on dry surfaces
 - flashlight dust particles
-- subtle fog volumes
+- fog volumes
 - cold breath
 - blood hit vignette/particles
 - bleeding drips/decals
-- infection visual feedback kept subtle
+- subtle infection feedback
 - campfire sparks/smoke
 - generator exhaust
-- Darkness Creature dissolve
+- Darkness dissolve
+- Darkness light-recoil wisps
 - Tenant shadow distortion
-- exterior wind-driven particles/leaves
-- subtle menu background particles/noise if performance-safe
+- exterior wind-driven leaves/particles
+- subtle visual head/body cue for monster searching/listening if animation alone is insufficient
+- performance-safe menu background particles/noise
 
-## Mobile constraints for all assets
+## Mobile + desktop constraints
 
-Production assets must support both mobile and desktop:
-- keep title/key art center-safe for narrow/portrait crops
-- provide compact UI/icon variants rather than shrinking desktop art blindly
-- prefer reusable trim/material sets instead of unique textures for every wall
-- use LODs for survivor/monster/tree meshes
-- keep transparent materials limited
-- atlas small props/UI where practical
-- avoid excessive 4K textures; reserve high resolution for hero assets
+All production assets must support both targets:
+- use LODs for survivor, monsters, trees and landmark props
+- keep skeleton/bone count reasonable for 2–4 co-op survivors plus monsters
+- use simple collision proxies for navigation-sensitive props
+- avoid excessive transparent materials
+- prefer reusable/atlased materials
+- reserve 4K textures for true hero assets; most props/environment should use lower resolution
 - provide lower-cost material/shadow variants for mobile quality settings
+- compress long ambience/mechanical loops appropriately instead of loading excessive uncompressed audio
+- keep important spatial one-shot sounds short and reusable
+- keep title/key art center-safe for narrow screens
 - UI icons should remain readable around 40–64 logical pixels
 
 ## Current integration status
 
 Functional but still placeholder-heavy:
-- main menu / pause menu / settings
+- main menu / pause / settings
 - co-op session UI
 - teammate HUD / revive progress
-- survivor remote avatars
+- remote survivor avatars
 - Tenant / Darkness Creature visuals
+- AI CHASE / INVESTIGATE / SEARCH / PATROL logic
 - labyrinth / apartment / shelter / exterior geometry
 - survival item models
 - Journal paper visuals
-- ambience and interaction audio
+- footsteps / interaction / ambience audio
 
-## Next recommended asset integration order
+## Recommended integration order after v0.18
 
-1. Front-end logo + title key art + menu SFX
-2. Survivor model + downed/revive animation set
-3. The Tenant model/animation
-4. Core footsteps + monster/audio ambience
-5. Labyrinth material kit + doors
-6. Flashlight and survival pickup models
-7. Cabin props
-8. Forest vegetation/rocks
-9. Gas-station / warehouse props
+1. Real surface footsteps + door/generator/workbench/pump SFX so AI hearing has matching player feedback
+2. Tenant model + freeze/search/investigate/chase animation set
+3. Darkness Creature model + crawl/search/light-retreat animation set
+4. Survivor model + walk/run/downed/revive animations
+5. Front-end logo + title key art + menu SFX
+6. Labyrinth material kit + production doors
+7. Flashlight/survival pickup models
+8. Cabin props
+9. Collision-safe forest/House/Gas/Warehouse art
 10. Multiplayer UI icon pass
-11. VFX and decals
+11. VFX/decals and AI presentation polish
 
-A dedicated art/audio integration pass is still required; v0.17 does not pretend the skipped v0.16 production-art milestone has been completed.
+A dedicated art/audio integration pass remains required. v0.18 improves behavior and navigation but does not mark the previously skipped production-art/audio milestone as complete.
