@@ -28,9 +28,9 @@ func appear() -> void:
     # The prototype hallway progresses toward -Z, so +Z is always the safe
     # "behind the player" spawn side even if the player enters while looking sideways.
     global_position = Vector3(
-        clamp(player.global_position.x, -1.35, 1.35),
+        clampf(player.global_position.x, -1.35, 1.35),
         0.0,
-        min(player.global_position.z + 5.0, 10.4)
+        minf(player.global_position.z + 5.0, 10.4)
     )
 
     visible = true
@@ -66,16 +66,16 @@ func _process(delta: float) -> void:
     if camera == null:
         return
 
-    var target_position := Vector3(player.global_position.x, global_position.y, player.global_position.z)
-    var distance := global_position.distance_to(target_position)
-    var watched := _is_being_watched(camera, player)
+    var target_position: Vector3 = Vector3(player.global_position.x, global_position.y, player.global_position.z)
+    var distance: float = global_position.distance_to(target_position)
+    var watched: bool = _is_being_watched(camera, player)
 
     if can_move and not watched:
-        var direction := target_position - global_position
+        var direction: Vector3 = target_position - global_position
         direction.y = 0.0
         if direction.length() > 0.01:
             direction = direction.normalized()
-            var speed := panic_speed if panic >= 60.0 else walk_speed
+            var speed: float = panic_speed if panic >= 60.0 else walk_speed
             global_position += direction * speed * delta
             look_at(Vector3(player.global_position.x, 1.25, player.global_position.z), Vector3.UP)
 
@@ -88,18 +88,18 @@ func _process(delta: float) -> void:
         _catch_player(player)
 
 func _is_being_watched(camera: Camera3D, player: CharacterBody3D) -> bool:
-    var monster_focus := global_position + Vector3(0.0, 1.35, 0.0)
+    var monster_focus: Vector3 = global_position + Vector3(0.0, 1.35, 0.0)
     if not camera.is_position_in_frustum(monster_focus):
         return false
 
-    var forward := -camera.global_transform.basis.z.normalized()
-    var to_monster := (monster_focus - camera.global_position).normalized()
+    var forward: Vector3 = -camera.global_transform.basis.z.normalized()
+    var to_monster: Vector3 = (monster_focus - camera.global_position).normalized()
     if forward.dot(to_monster) < watch_dot_threshold:
         return false
 
-    var query := PhysicsRayQueryParameters3D.create(camera.global_position, monster_focus)
+    var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(camera.global_position, monster_focus)
     query.exclude = [player.get_rid()]
-    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 
     # The Tenant has no collision body in this prototype. An empty ray therefore
     # means nothing solid is blocking the player's view of it.
@@ -112,10 +112,10 @@ func _update_panic(delta: float, distance: float, watched: bool) -> void:
         else:
             panic -= 7.5 * delta
     else:
-        var proximity := clamp(11.0 - distance, 0.0, 11.0)
+        var proximity: float = clampf(11.0 - distance, 0.0, 11.0)
         panic += (4.0 + proximity * 1.55) * delta
 
-    panic = clamp(panic, 0.0, 100.0)
+    panic = clampf(panic, 0.0, 100.0)
 
 func _update_flashlight(player: CharacterBody3D) -> void:
     var flashlight := player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
@@ -126,8 +126,8 @@ func _update_flashlight(player: CharacterBody3D) -> void:
         flashlight.light_energy = base_flashlight_energy
         return
 
-    var pulse := 0.72 + 0.28 * abs(sin(float(Time.get_ticks_msec()) / 85.0))
-    var panic_factor := lerp(1.0, 0.58, (panic - 72.0) / 28.0)
+    var pulse: float = 0.72 + 0.28 * absf(sin(float(Time.get_ticks_msec()) / 85.0))
+    var panic_factor: float = lerpf(1.0, 0.58, (panic - 72.0) / 28.0)
     flashlight.light_energy = base_flashlight_energy * pulse * panic_factor
 
 func _update_hud() -> void:
@@ -137,7 +137,7 @@ func _update_hud() -> void:
 
     var overlay := get_node_or_null(panic_overlay_path) as ColorRect
     if overlay != null:
-        var alpha := lerp(0.0, 0.23, panic / 100.0)
+        var alpha: float = lerpf(0.0, 0.23, panic / 100.0)
         overlay.color = Color(0.18, 0.0, 0.0, alpha)
 
 func _catch_player(player: CharacterBody3D) -> void:
