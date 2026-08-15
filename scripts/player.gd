@@ -327,11 +327,16 @@ func _ensure_survival_hud() -> void:
 
     survival_panel = PanelContainer.new()
     survival_panel.name = "SurvivalPanel"
-    survival_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-    survival_panel.position = Vector2(1010.0, 70.0)
-    survival_panel.size = Vector2(242.0, 180.0)
     survival_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
     hud.add_child(survival_panel)
+    survival_panel.anchor_left = 1.0
+    survival_panel.anchor_top = 0.0
+    survival_panel.anchor_right = 1.0
+    survival_panel.anchor_bottom = 0.0
+    survival_panel.offset_left = -270.0
+    survival_panel.offset_top = 70.0
+    survival_panel.offset_right = -28.0
+    survival_panel.offset_bottom = 250.0
 
     var box: VBoxContainer = VBoxContainer.new()
     box.add_theme_constant_override("separation", 4)
@@ -345,10 +350,10 @@ func _ensure_survival_hud() -> void:
 
     damage_flash = ColorRect.new()
     damage_flash.name = "DamageFlash"
-    damage_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
     damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    damage_flash.color = Color(0.55, 0.0, 0.0, 0.0)
     hud.add_child(damage_flash)
+    damage_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+    damage_flash.color = Color(0.55, 0.0, 0.0, 0.0)
     hud.move_child(damage_flash, 1)
 
 func _make_stat_label(parent: VBoxContainer) -> Label:
