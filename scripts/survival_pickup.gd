@@ -55,6 +55,11 @@ func _build_visual() -> void:
             material.albedo_color = Color(0.72, 0.58, 0.12, 1.0)
             material.metallic = 0.45
             material.roughness = 0.32
+        "generator_fuel":
+            size = Vector3(0.42, 0.52, 0.24)
+            material.albedo_color = Color(0.48, 0.13, 0.08, 1.0)
+            material.metallic = 0.30
+            material.roughness = 0.46
         _:
             material.albedo_color = Color(0.42, 0.35, 0.16, 1.0)
             material.metallic = 0.2
