@@ -5,11 +5,21 @@ func _ready() -> void:
     _build_visual()
 
 func get_interaction_text() -> String:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("is_client") and bool(network.call("is_client")):
+        return "Sleep until morning (host only)"
     return "Sleep until morning"
 
 func interact() -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null:
+        return
+
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network != null and network.has_method("is_client") and bool(network.call("is_client")):
+        var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if objective != null:
+            objective.text = "Only the host can advance the shared night in v0.9."
         return
 
     var director: Node = get_node_or_null("/root/ShelterSystem")
