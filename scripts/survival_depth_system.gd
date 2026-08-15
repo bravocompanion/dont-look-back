@@ -14,6 +14,8 @@ var infection_damage_timer: float = 5.0
 var configured_scene_id: int = 0
 var starter_spawn_scene_id: int = 0
 var outside_spawn_scene_id: int = 0
+var tracked_player_id: int = 0
+var last_health: float = 100.0
 var status_label: Label
 var ui_timer: float = 0.0
 var pickup_script: Script
@@ -24,6 +26,30 @@ func _ready() -> void:
     boiler_script = load("res://scripts/water_boiler.gd") as Script
     bleed_damage_timer = bleed_damage_interval
     infection_damage_timer = infection_damage_interval
+
+func _input(event: InputEvent) -> void:
+    if not (event is InputEventKey):
+        return
+
+    var key_event: InputEventKey = event as InputEventKey
+    if not key_event.pressed or key_event.echo:
+        return
+    if key_event.physical_keycode != KEY_2 and key_event.physical_keycode != KEY_3:
+        return
+
+    var focus: Control = get_viewport().gui_get_focus_owner()
+    if focus is LineEdit:
+        return
+
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    if player == null or bool(player.get("is_dead")) or _is_local_player_downed():
+        return
+
+    if key_event.physical_keycode == KEY_2:
+        consume_water(player)
+    else:
+        use_medical_aid(player)
+    get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -42,10 +68,14 @@ func _process(delta: float) -> void:
     if player == null:
         return
 
+    player.set("inventory_capacity", maxi(12, int(player.get("inventory_capacity"))))
     _ensure_status_label(player)
+    _process_mobile_actions(player)
+    _track_wound_damage(player)
 
     if _is_local_player_downed():
         _update_status_label(player)
+        last_health = float(player.get("health"))
         return
 
     if bleeding > 0.0:
@@ -74,6 +104,8 @@ func _process(delta: float) -> void:
             player.call("apply_damage", 2.0, "infection")
     elif infection < 90.0:
         infection_damage_timer = maxf(infection_damage_timer, 1.0)
+
+    last_health = float(player.get("health"))
 
     ui_timer -= delta
     if ui_timer <= 0.0:
@@ -108,7 +140,7 @@ func consume_water(player: CharacterBody3D) -> bool:
         var dirty_thirst: float = minf(float(player.get("max_thirst")), float(player.get("thirst")) + 38.0)
         player.set("thirst", dirty_thirst)
         infection = minf(max_condition, infection + dirty_water_infection)
-        _set_objective(player, "You drink untreated water. It helps your thirst, but infection risk rises.")
+        _set_objective(player, "You drink untreated water. Thirst drops, but Infection rises.")
         return true
 
     _set_objective(player, "You have no water.")
@@ -177,6 +209,34 @@ func get_bleeding() -> float:
 
 func get_infection() -> float:
     return infection
+
+func _process_mobile_actions(player: CharacterBody3D) -> void:
+    var mobile: Node = get_node_or_null("/root/MobileControls")
+    if mobile == null or not mobile.has_method("is_mobile_active") or not bool(mobile.call("is_mobile_active")):
+        return
+    if bool(player.get("is_dead")) or _is_local_player_downed():
+        return
+
+    if mobile.has_method("consume_action") and bool(mobile.call("consume_action", "water")):
+        consume_water(player)
+    if mobile.has_method("consume_action") and bool(mobile.call("consume_action", "medkit")):
+        use_medical_aid(player)
+
+func _track_wound_damage(player: CharacterBody3D) -> void:
+    var player_id: int = int(player.get_instance_id())
+    var current_health: float = float(player.get("health"))
+
+    if tracked_player_id != player_id:
+        tracked_player_id = player_id
+        last_health = current_health
+        return
+
+    if not _is_local_player_downed() and current_health < last_health:
+        var damage_taken: float = last_health - current_health
+        if damage_taken >= 10.0:
+            report_damage(player, damage_taken, "impact")
+
+    last_health = current_health
 
 func _configure_scene(scene: Node) -> void:
     if not is_instance_valid(scene):
