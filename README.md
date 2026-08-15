@@ -1,94 +1,88 @@
-# DON'T LOOK BACK — Godot v0.9
+# DON'T LOOK BACK — Godot v0.10
 
-A first-person survival-horror prototype built for Godot 4.x.
+A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive touch controls, and LAN co-op foundation.
 
-## v0.9 — Multiplayer Foundation
-v0.9 adds the first playable LAN co-op layer without replacing the existing single-player survival systems. Solo mode still works when no multiplayer peer is active.
+## v0.10 — Mobile Controls
+v0.10 turns the existing responsive HUD into actual mobile gameplay input. The same Player script now accepts keyboard/mouse and touch input, so survival, crafting, shelter interaction, and co-op use one gameplay path rather than separate desktop/mobile implementations.
 
-### Host / Join
-- LAN host/join using Godot ENet multiplayer.
-- Current target: 2–4 survivors.
-- Open the CO-OP panel with the on-screen `CO-OP` button or press `M` on desktop.
-- HOST shows the host device LAN IPv4 when available.
-- JOIN accepts an IPv4 address such as `192.168.1.20`.
-- Default port: `24877`.
-- Disconnecting returns the game to solo mode.
+### Touch movement and camera
+- Left virtual joystick controls walking direction.
+- Right-side free swipe area controls first-person camera look.
+- Multi-touch indices keep movement and camera fingers separate.
+- Joystick has a deadzone and clamped analog movement.
+- RUN is a hold button and uses the existing Stamina sprint system.
 
-### Networked survivors
-Every peer keeps control of its own existing first-person player. NetworkManager sends a lightweight snapshot of:
-- World transform / movement position
-- Body rotation
-- Camera pitch
-- Flashlight on/off state
-- Health
-- Hunger
-- Thirst
-- Stamina
-- Flashlight battery
+### Mobile action buttons
+Responsive touch buttons are created at runtime:
+- USE — Interact / pick up / activate / craft / storage / sleep
+- RUN — Hold to sprint
+- LIGHT — Flashlight on/off
+- BATT — Replace flashlight battery
+- FOOD — Eat Canned Food
+- WATER — Drink Bottled Water
+- MED — Use Medkit
+- RESTART — Appears after death
 
-Other survivors are rendered as remote co-op avatars with a visible flashlight and floating Survivor/HP label. Transform interpolation is used to smooth remote movement.
+The existing desktop controls remain active on desktop builds.
 
-### Shared survival pickups
-The standard survival loot system is now coordinated through the host:
-- Food
-- Water
-- Medkits
-- Flashlight batteries
-- Fuel cans
-- Wood
-- Scrap
+### Responsive layout
+Touch control sizes and positions scale from the current viewport dimensions.
+- Joystick remains in the lower-left control zone.
+- Primary actions remain on the lower-right.
+- Consumable buttons stay near the lower center.
+- Narrow/portrait layouts leave additional clearance for the responsive CO-OP button.
+- Survival HUD continues using its compact mobile layout.
+- Touch controls are hidden on normal desktop builds.
+- Mobile Web is also detected through the web Android/iOS feature tags.
 
-When one survivor successfully claims a supply, the host records that pickup path and removes the same pickup for the other connected peers. The claimed list is also sent to late-joining clients.
+### Mobile interaction prompts
+Desktop interaction prompts continue to use `[E]`.
+Mobile interaction prompts automatically use `[USE]` so prompts match the touch UI.
 
-Story/key items outside `survival_pickup.gd` are not yet globally synchronized in v0.9.
+### Death / restart
+Desktop keeps `R` to restart.
+On mobile, the normal action cluster hides after death and a large RESTART touch button appears.
 
-### Shared labyrinth progress
-The three Emergency Relays are host-authoritative while multiplayer is active.
-- A client sends a relay activation request.
-- The host updates the shared relay state.
-- Relay state and final gate state are broadcast to connected clients.
+## Multiplayer foundation retained from v0.9
+LAN co-op remains available while using the new touch controls.
 
-### Shared world and shelter state
-The host periodically broadcasts:
-- Day/night clock
-- Day number
-- Generator running state
-- Generator fuel
-- Campfire fuel
-- Shelter storage contents/count
-- Emergency relay state
+Current networking includes:
+- Host / Join LAN using ENet
+- 2–4 survivor target
+- Remote survivor position/rotation interpolation
+- Remote flashlight state
+- Remote Health/Hunger/Thirst/Stamina/Battery snapshots
+- Shared standard survival pickups
+- Shared emergency relay progress
+- Shared day/night state
+- Shared generator and campfire fuel state
+- Shared shelter storage state from the host
 
-Fuel added by a client is consumed from that client's inventory and sent as a shared shelter action to the host. Generator and campfire state are then synchronized back to all peers.
+The CO-OP lobby uses normal GUI buttons and can be operated by touch.
 
-For v0.9 safety:
-- Shared chest transfers are host-controlled.
-- Sleeping/advancing the shared night is host-controlled.
-- Workbench crafting remains local to each survivor inventory.
-
-### Multiplayer limits in v0.9
-This is the foundation release, not the final co-op netcode.
-
-Still to complete:
-- Full server-authoritative monster targeting/damage for every survivor
-- Synchronizing The Tenant and Darkness Creature as one shared encounter
+### Multiplayer limits still remaining
+v0.10 does not yet make every horror encounter fully server-authoritative.
+Still planned:
+- Shared authoritative The Tenant encounter
+- Shared authoritative Darkness Creature targeting/damage
 - Shared story-key ownership
-- Client-controlled shared storage transfers
-- Revive/downed-player system
+- Full client chest transfers
+- Revive/downed survivor system
 - Internet matchmaking / NAT traversal
 
-The current Host/Join flow is intended for LAN testing first.
+LAN is still the intended multiplayer test environment.
 
-## Existing survival game
-The existing game flow remains available:
-1. Survive The Tenant in the horror labyrinth.
+## Survival game loop
+1. Survive The Tenant in the opening horror labyrinth.
 2. Search Apartment 03.
-3. Restore the emergency relays.
+3. Restore all emergency relays.
 4. Exit into the forest.
 5. Gather Fuel, Food, Water, Batteries, Wood, and Scrap.
 6. Power the cabin generator.
 7. Craft supplies at the workbench.
 8. Maintain generator/campfire light through the night.
 9. Manage Health, Hunger, Thirst, Stamina, Battery, Darkness, and Cold.
+10. Sleep safely when enough light fuel remains.
 
 ## Desktop controls
 - W A S D — Move
@@ -104,32 +98,39 @@ The existing game flow remains available:
 - Esc — Release/capture mouse
 - R — Restart after death / restore active checkpoint
 
-## Mobile / responsive status
-The multiplayer lobby itself is responsive and includes a touch-clickable `CO-OP` button. Existing survival and shelter HUDs also switch to compact layouts on narrow screens.
+## Mobile controls
+- Left joystick — Move
+- Swipe right side — Look
+- RUN — Sprint
+- USE — Interact
+- LIGHT — Flashlight
+- BATT — Replacement battery
+- FOOD — Eat
+- WATER — Drink
+- MED — Heal
+- RESTART — Restart after death
+- CO-OP — Open Host/Join lobby
 
-Full mobile gameplay controls are still scheduled for v0.10:
-- Left virtual joystick
-- Touch/swipe camera look
-- Interact
-- Sprint
-- Flashlight
-- Item actions
-- Mobile-safe inventory controls
+## Android/iOS export note
+The gameplay code is now mobile-responsive, but generating an APK/AAB or iOS build still requires the appropriate Godot export templates and platform export setup on the development machine.
 
-For Android multiplayer exports, remember to enable the Android INTERNET permission in the export preset.
+For Android LAN multiplayer, enable the INTERNET permission in the Android export preset.
 
-## Testing v0.9 on two PCs
-1. Pull the latest `main` branch on both devices.
-2. Make sure both PCs are on the same LAN/Wi-Fi.
-3. Start the game on PC A and open CO-OP.
-4. Press HOST.
-5. Note the LAN IPv4 shown by the host.
-6. Start the game on PC B.
-7. Open CO-OP and enter PC A's LAN IPv4.
-8. Press JOIN.
-9. Both devices should show the other survivor avatar and synchronized flashlight/state.
+## Testing v0.10
+### Desktop
+1. Pull the latest `main` branch.
+2. Open the existing Godot project.
+3. Press F5.
+4. Desktop controls should behave exactly as before.
 
-If Windows Firewall asks for network access, allow Godot/game access on the private network used for the test.
+### Mobile device
+1. Install/configure the relevant Godot mobile export templates.
+2. Export/deploy the project to the device.
+3. Start the game in landscape or portrait.
+4. Verify joystick movement and simultaneous right-side camera swipe.
+5. Test USE, RUN, LIGHT, BATT, FOOD, WATER, and MED.
+6. Let Health reach zero or test a death encounter and verify RESTART.
+7. For co-op, put devices on the same LAN/Wi-Fi, HOST on one device and JOIN using the host LAN IPv4 on the other.
 
 ## Update in Godot
 If the repository is already cloned:
@@ -140,7 +141,7 @@ If the repository is already cloned:
 5. Return to the existing Godot project.
 6. Press F5.
 
-## Next target
-- v0.9.1 — multiplayer monster authority + shared encounter fixes after LAN testing
-- v0.10 — complete mobile touch controls and Android-oriented responsive input
-- Later — exterior expansion, revive system, stronger co-op night encounters, and internet-session support
+## Next targets
+- v0.10.1 — fix device-specific touch/layout issues found during Android testing
+- v0.11 — authoritative co-op monsters + downed/revive foundation
+- Later — exterior expansion, larger loot routes, water systems, stronger night encounters, and internet-session support
