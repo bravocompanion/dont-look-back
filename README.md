@@ -1,66 +1,70 @@
-# DON'T LOOK BACK — Godot v0.2
+# DON'T LOOK BACK — Godot v0.3
 
-A small first-person horror prototype built for Godot 4.x.
+A first-person horror prototype built for Godot 4.x.
 
-## v0.2 — The Tenant
-This version turns the original shadow scare into an actual gameplay threat.
+## v0.3 — Apartment 03
+This version expands the original hallway chase into a small exploration objective.
 
 ### Playable features
-- WASD first-person movement
-- Mouse look
+- WASD first-person movement and mouse look
 - F toggles flashlight
-- E interacts with the hallway door
-- Dark hallway made only from built-in Godot geometry
-- Encounter now starts earlier, before the door
-- The Tenant spawns behind the player
-- The Tenant moves toward the player while it is not being watched
-- Looking directly at The Tenant freezes it
-- Solid geometry can block line of sight, so staring through the closed door does not freeze it
-- Panic meter rises while the stalker closes in
-- High panic causes unstable flashlight brightness
-- Red panic overlay increases with danger
-- The Tenant becomes faster at high panic
-- Getting caught shows a death screen
+- E interacts with doors and items
+- The Tenant still moves only while it is not being watched
+- Panic system and unstable flashlight at high panic
+- The first chase ends after the player reaches the safe side of the first door
+- First explorable apartment room: Apartment 03
+- Interactable Apartment Exit Key
+- Three-slot inventory HUD
+- Locked exit door that requires the key
+- Key is consumed when the exit is unlocked
+- Procedurally generated player footstep sounds
+- Procedurally generated distant environmental knocks
+- Non-lethal room hallucination scare with light flicker
+- Extended hallway and final escape section
 - R restarts after being caught
-- Reaching the end stops the stalker and completes v0.2
 
-## Open/update in Godot
-If you already cloned v0.1:
-1. Open the local `dont-look-back` repository folder in GitHub Desktop or Git.
-2. Pull the latest changes from `main`.
-3. Open the same project in Godot.
-4. Press **F5**.
-
-For a new PC:
-1. Clone `bravocompanion/dont-look-back`.
-2. Open Godot 4.x.
-3. Choose **Import** in Project Manager.
-4. Select `project.godot` from the cloned folder.
-5. Choose **Import & Edit**.
-6. Press **F5**.
-
-No external assets or plugins are required.
+## v0.3 gameplay flow
+1. Move down the hallway.
+2. The Tenant appears behind you.
+3. Keep it in sight while opening and passing the first door.
+4. Once through the safe transition, search Apartment 03.
+5. Entering the apartment triggers a non-lethal hallucination.
+6. Find the Apartment Exit Key on the table and press E to pick it up.
+7. Return to the hallway.
+8. Use the key on the locked exit door.
+9. Pass through the door and reach the final trigger.
 
 ## Controls
 - W A S D — Move
 - Mouse — Look
-- E — Interact
+- E — Interact / pick up / unlock
 - F — Flashlight
 - Esc — Release/capture mouse
 - R — Restart after being caught
 
+## Update in Godot
+If the repository is already cloned:
+1. Open GitHub Desktop.
+2. Select `bravocompanion/dont-look-back`.
+3. Fetch origin and Pull origin.
+4. Return to the same Godot project.
+5. Press F5.
+
+No external assets or plugins are required. Geometry, scare figures, the key, footsteps, and ambient knocks are generated with Godot resources or built-in primitives.
+
 ## Core rule
 **If you stop watching The Tenant, it moves.**
 
-You need to manage your view while moving down the hallway and opening the door. The goal of v0.2 is to test whether this rule creates enough tension before expanding the environment.
+v0.3 adds a second kind of tension after the chase: entering an apparently safe room and searching it while the environment behaves incorrectly.
 
 ## GitHub workflow
-This repository is the main source for the game. Future versions should be applied here so Godot only needs a normal Git pull instead of a new ZIP/project import.
+This repository remains the main source for the game. Future versions should continue to be applied here so the local Godot project only needs a normal Git pull.
 
-## Recommended v0.3
-- First explorable apartment room
-- Key/item pickup system
-- Small inventory
-- Locked-door objective
-- Environmental audio and footsteps
-- Additional non-lethal horror events
+## Recommended v0.4
+- Horror Director with randomized scare selection
+- Flashlight battery and replacement batteries
+- More apartment rooms
+- Notes/story fragments
+- Better monster navigation for multi-room spaces
+- Save/checkpoint system
+- Main menu and settings
