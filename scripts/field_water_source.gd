@@ -12,7 +12,7 @@ func get_interaction_text() -> String:
     if now < next_refill_time:
         var remaining: int = int(ceil(next_refill_time - now))
         return "Water source recovering (%ds)" % remaining
-    return "Collect Bottled Water"
+    return "Collect Dirty Water"
 
 func interact() -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -24,13 +24,13 @@ func interact() -> void:
         _set_objective(player, "The hand pump needs a moment before more water can be collected.")
         return
 
-    var accepted: bool = bool(player.call("add_item", "bottled_water", "Bottled Water"))
+    var accepted: bool = bool(player.call("add_item", "dirty_water", "Dirty Water"))
     if not accepted:
         _set_objective(player, "Inventory full. Make room before collecting water.")
         return
 
     next_refill_time = now + refill_cooldown_seconds
-    _set_objective(player, "You collect water from the old hand pump.")
+    _set_objective(player, "You collect Dirty Water. Boil it at the shelter campfire before drinking if possible.")
 
 func _set_objective(player: CharacterBody3D, text: String) -> void:
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
@@ -67,6 +67,7 @@ func _build_visual() -> void:
     var handle_mesh: BoxMesh = BoxMesh.new()
     handle_mesh.size = Vector3(0.72, 0.08, 0.08)
     var handle: MeshInstance3D = MeshInstance3D.new()
+    handle_mesh.size = Vector3(0.72, 0.08, 0.08)
     handle.mesh = handle_mesh
     handle.material_override = metal
     handle.position = Vector3(0.24, 1.30, 0.0)
