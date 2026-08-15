@@ -26,8 +26,8 @@ var storage_names: Dictionary = {}
 var storage_counts: Dictionary = {}
 var ui_timer: float = 0.0
 
-const CAMPFIRE_POSITION := Vector3(14.0, 0.0, -74.5)
-const SHELTER_CHECKPOINT := Vector3(14.0, 0.92, -82.2)
+const CAMPFIRE_POSITION: Vector3 = Vector3(14.0, 0.0, -74.5)
+const SHELTER_CHECKPOINT: Vector3 = Vector3(14.0, 0.92, -82.2)
 const STORAGE_PRIORITY: Array[String] = [
     "generator_fuel", "flashlight_battery", "medkit", "bottled_water",
     "canned_food", "firewood_bundle", "wood", "scrap"
@@ -59,7 +59,7 @@ func _process(delta: float) -> void:
         if candidate != null:
             outside_root = candidate as Node3D
             if outside_root != null:
-                _attach_shelter_objects(scene)
+                _attach_shelter_objects()
                 attached_scene_id = scene_id
 
     var outside: Node = get_node_or_null("/root/OutsideDirector")
@@ -99,10 +99,8 @@ func _process(delta: float) -> void:
 func activate_generator(player: CharacterBody3D) -> bool:
     if player == null:
         return false
-
     if generator_running:
         return refuel_generator(player)
-
     if not _consume_item(player, "generator_fuel"):
         _set_objective(player, "The generator is dry. Find a Fuel Can outside.")
         return false
@@ -258,10 +256,8 @@ func sleep_until_morning(player: CharacterBody3D) -> bool:
         outside.set("day_index", int(outside.get("day_index")) + 1)
     outside.set("cold_exposure", 0.0)
 
-    var hunger: float = float(player.get("hunger"))
-    var thirst: float = float(player.get("thirst"))
-    hunger = maxf(0.0, hunger - sleep_hours * 1.3)
-    thirst = maxf(0.0, thirst - sleep_hours * 2.0)
+    var hunger: float = maxf(0.0, float(player.get("hunger")) - sleep_hours * 1.3)
+    var thirst: float = maxf(0.0, float(player.get("thirst")) - sleep_hours * 2.0)
     player.set("hunger", hunger)
     player.set("thirst", thirst)
     player.set("stamina", float(player.get("max_stamina")))
@@ -278,7 +274,7 @@ func sleep_until_morning(player: CharacterBody3D) -> bool:
     _set_objective(player, "You survived the night. Morning light returns. Checkpoint saved.")
     return true
 
-func _attach_shelter_objects(scene: Node) -> void:
+func _attach_shelter_objects() -> void:
     if outside_root == null:
         return
 
