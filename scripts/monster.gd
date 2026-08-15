@@ -16,7 +16,6 @@ extends Node3D
 var active: bool = false
 var panic: float = 0.0
 var can_move: bool = false
-var base_flashlight_energy: float = 3.5
 var attack_timer: float = 0.0
 
 func _ready() -> void:
@@ -39,6 +38,7 @@ func appear() -> void:
     can_move = false
     attack_timer = 0.0
     _update_hud()
+    _sync_flashlight_panic(player)
 
     await get_tree().create_timer(0.65).timeout
     if active:
@@ -53,10 +53,8 @@ func stop_stalking() -> void:
     _update_hud()
 
     var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
-    if player != null:
-        var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
-        if flashlight != null:
-            flashlight.light_energy = base_flashlight_energy
+    if player != null and player.has_method("set_flashlight_panic"):
+        player.call("set_flashlight_panic", 0.0)
 
 func _process(delta: float) -> void:
     if attack_timer > 0.0:
@@ -88,7 +86,7 @@ func _process(delta: float) -> void:
 
     distance = global_position.distance_to(target_position)
     _update_panic(delta, distance, watched)
-    _update_flashlight(player)
+    _sync_flashlight_panic(player)
     _update_hud()
 
     if distance <= catch_distance and attack_timer <= 0.0:
@@ -150,18 +148,9 @@ func _update_panic(delta: float, distance: float, watched: bool) -> void:
 
     panic = clampf(panic, 0.0, 100.0)
 
-func _update_flashlight(player: CharacterBody3D) -> void:
-    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
-    if flashlight == null:
-        return
-
-    if panic < 72.0:
-        flashlight.light_energy = base_flashlight_energy
-        return
-
-    var pulse: float = 0.72 + 0.28 * absf(sin(float(Time.get_ticks_msec()) / 85.0))
-    var panic_factor: float = lerpf(1.0, 0.58, (panic - 72.0) / 28.0)
-    flashlight.light_energy = base_flashlight_energy * pulse * panic_factor
+func _sync_flashlight_panic(player: CharacterBody3D) -> void:
+    if player.has_method("set_flashlight_panic"):
+        player.call("set_flashlight_panic", panic)
 
 func _update_hud() -> void:
     var panic_label: Label = get_node_or_null(panic_label_path) as Label
