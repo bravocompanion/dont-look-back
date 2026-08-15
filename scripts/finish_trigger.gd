@@ -1,7 +1,6 @@
 extends Area3D
 
 @export var end_panel_path: NodePath
-@export var monster_path: NodePath
 var finished := false
 
 func _ready() -> void:
@@ -12,7 +11,7 @@ func _on_body_entered(body: Node3D) -> void:
         return
     finished = true
 
-    var monster := get_node_or_null(monster_path)
+    var monster := get_node_or_null("../Monster")
     if monster != null and monster.has_method("stop_stalking"):
         monster.stop_stalking()
 
