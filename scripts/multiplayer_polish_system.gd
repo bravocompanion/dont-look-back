@@ -121,11 +121,15 @@ func _physics_process(delta: float) -> void:
     var mobile: Node = get_node_or_null("/root/MobileControls")
     var mobile_active: bool = mobile != null and mobile.has_method("is_mobile_active") and bool(mobile.call("is_mobile_active"))
     if mobile_active and mobile.has_method("get_move_vector"):
-        var mobile_move: Vector2 = mobile.call("get_move_vector") as Vector2
-        input_vector += mobile_move
+        var move_variant: Variant = mobile.call("get_move_vector")
+        if move_variant is Vector2:
+            var mobile_move: Vector2 = move_variant
+            input_vector += mobile_move
         if mobile.has_method("consume_look_delta"):
-            var look_delta: Vector2 = mobile.call("consume_look_delta") as Vector2
-            _apply_crawl_look(player, look_delta, true)
+            var look_variant: Variant = mobile.call("consume_look_delta")
+            if look_variant is Vector2:
+                var look_delta: Vector2 = look_variant
+                _apply_crawl_look(player, look_delta, true)
 
     if input_vector.length() > 1.0:
         input_vector = input_vector.normalized()
@@ -278,6 +282,8 @@ func _start_session() -> void:
     var host_transform: Transform3D = player.global_transform
     _session_started_remote.rpc(host_transform)
     _apply_session_started(host_transform, true)
+    if not shared_checkpoint_label.is_empty():
+        _apply_shared_checkpoint_remote.rpc(shared_checkpoint_position, shared_checkpoint_label)
     _broadcast_profiles()
 
 func _all_profiles_ready() -> bool:
@@ -387,7 +393,10 @@ func _poll_shared_checkpoint(network: Node) -> void:
     if checkpoint == null or not bool(checkpoint.get("checkpoint_active")):
         return
 
-    var position: Vector3 = checkpoint.get("checkpoint_position") as Vector3
+    var position_variant: Variant = checkpoint.get("checkpoint_position")
+    if not (position_variant is Vector3):
+        return
+    var position: Vector3 = position_variant
     var label: String = str(checkpoint.get("checkpoint_name"))
     if _network_server(network):
         _server_share_checkpoint(position, label, false)
@@ -400,7 +409,9 @@ func _capture_host_checkpoint() -> void:
         shared_checkpoint_position = Vector3.ZERO
         shared_checkpoint_label = ""
         return
-    shared_checkpoint_position = checkpoint.get("checkpoint_position") as Vector3
+    var position_variant: Variant = checkpoint.get("checkpoint_position")
+    if position_variant is Vector3:
+        shared_checkpoint_position = position_variant
     shared_checkpoint_label = str(checkpoint.get("checkpoint_name"))
 
 func _server_share_checkpoint(position: Vector3, label: String, apply_host: bool) -> void:
@@ -442,7 +453,10 @@ func _current_checkpoint_signature() -> String:
     var checkpoint: Node = get_node_or_null("/root/CheckpointSystem")
     if checkpoint == null or not bool(checkpoint.get("checkpoint_active")):
         return "none"
-    var position: Vector3 = checkpoint.get("checkpoint_position") as Vector3
+    var position_variant: Variant = checkpoint.get("checkpoint_position")
+    if not (position_variant is Vector3):
+        return "none"
+    var position: Vector3 = position_variant
     var label: String = str(checkpoint.get("checkpoint_name"))
     return "%s|%.2f|%.2f|%.2f" % [label, position.x, position.y, position.z]
 
@@ -497,15 +511,18 @@ func _distance_to_peer(peer_id: int) -> float:
     var local_player: CharacterBody3D = _get_local_player()
     if local_player == null:
         return INF
-    var target_position: Variant = _peer_position(peer_id)
-    if not (target_position is Vector3):
+    var target_variant: Variant = _peer_position(peer_id)
+    if not (target_variant is Vector3):
         return INF
-    return local_player.global_position.distance_to(target_position as Vector3)
+    var target_position: Vector3 = target_variant
+    return local_player.global_position.distance_to(target_position)
 
 func _peer_position(peer_id: int) -> Variant:
     if peer_id == multiplayer.get_unique_id():
         var player: CharacterBody3D = _get_local_player()
-        return player.global_position if player != null else null
+        if player != null:
+            return player.global_position
+        return null
 
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null:
@@ -516,7 +533,8 @@ func _peer_position(peer_id: int) -> Variant:
         return null
     var transform_value: Variant = target.get("transform", null)
     if transform_value is Transform3D:
-        return (transform_value as Transform3D).origin
+        var target_transform: Transform3D = transform_value
+        return target_transform.origin
     return null
 
 func _update_downed_state() -> void:
@@ -809,7 +827,9 @@ func _save_profile() -> void:
     var config: ConfigFile = ConfigFile.new()
     config.set_value("player", "name", local_name)
     config.set_value("network", "last_host", last_host_address)
-    config.save(PROFILE_PATH)
+    var save_error: Error = config.save(PROFILE_PATH)
+    if save_error != OK:
+        return
 
 func _build_ui() -> void:
     layer = CanvasLayer.new()
