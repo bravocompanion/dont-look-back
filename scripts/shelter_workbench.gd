@@ -41,6 +41,8 @@ func interact() -> void:
 
     recipe_index = (recipe_index + 1) % RECIPE_NAMES.size()
     _flash_indicator(crafted)
+    if crafted:
+        _report_ai_noise(0.54, "workbench crafting")
 
 func _craft_firewood(player: CharacterBody3D) -> bool:
     if _item_count(player, "wood") < 2:
@@ -101,6 +103,12 @@ func _flash_indicator(success: bool) -> void:
         return
     indicator_material.albedo_color = Color(0.18, 0.62, 0.30, 1.0) if success else Color(0.62, 0.18, 0.10, 1.0)
     indicator_material.emission = Color(0.08, 0.48, 0.18, 1.0) if success else Color(0.48, 0.05, 0.02, 1.0)
+
+func _report_ai_noise(strength: float, label: String) -> void:
+    var noise_relay: Node = get_node_or_null("/root/AINoiseRelaySystem")
+    if noise_relay == null or not noise_relay.has_method("report_noise"):
+        return
+    noise_relay.call("report_noise", global_position, strength, label)
 
 func _build_visual() -> void:
     var body_mesh: BoxMesh = BoxMesh.new()
