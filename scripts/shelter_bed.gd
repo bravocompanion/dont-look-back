@@ -1,6 +1,7 @@
 extends StaticBody3D
 
 func _ready() -> void:
+    position.x += 2.3
     _build_visual()
 
 func get_interaction_text() -> String:
