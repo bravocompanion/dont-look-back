@@ -44,6 +44,7 @@ func interact() -> void:
         if not has_key:
             if objective != null:
                 objective.text = "The exit is locked. Search Apartment 03 for a key."
+            _report_ai_noise(0.32, "locked door rattle")
             return
 
         if player_node.has_method("remove_item"):
@@ -52,6 +53,7 @@ func interact() -> void:
         newly_unlocked = true
         if objective != null:
             objective.text = "The exit is unlocked. Get out."
+        _report_ai_noise(0.58, "lock opened")
 
     is_moving = true
     pending_collision_restore = false
@@ -72,6 +74,8 @@ func interact() -> void:
     else:
         pending_collision_restore = true
         _try_restore_collision()
+
+    _report_ai_noise(0.86, "heavy exit door")
 
     if newly_unlocked:
         var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -104,3 +108,9 @@ func _try_restore_collision() -> void:
 
     pending_collision_restore = false
     _set_collision_enabled(true)
+
+func _report_ai_noise(strength: float, label: String) -> void:
+    var navigation: Node = get_node_or_null("/root/AINavigationSystem")
+    if navigation == null or not navigation.has_method("report_noise"):
+        return
+    navigation.call("report_noise", global_position, strength, label, 0)
