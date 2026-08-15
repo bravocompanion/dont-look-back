@@ -9,13 +9,15 @@ extends Node3D
 @export var panic_speed: float = 2.35
 @export var catch_distance: float = 1.15
 @export var watch_dot_threshold: float = 0.72
+@export var attack_damage: float = 28.0
+@export var attack_cooldown: float = 2.4
+@export var retreat_distance: float = 3.8
 
 var active: bool = false
-var caught: bool = false
 var panic: float = 0.0
 var can_move: bool = false
 var base_flashlight_energy: float = 3.5
-var restart_requested: bool = false
+var attack_timer: float = 0.0
 
 func _ready() -> void:
     visible = false
@@ -33,19 +35,21 @@ func appear() -> void:
 
     visible = true
     active = true
-    caught = false
     panic = 12.0
     can_move = false
+    attack_timer = 0.0
     _update_hud()
 
     await get_tree().create_timer(0.65).timeout
-    can_move = true
+    if active:
+        can_move = true
 
 func stop_stalking() -> void:
     active = false
     can_move = false
     visible = false
     panic = 0.0
+    attack_timer = 0.0
     _update_hud()
 
     var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
@@ -55,11 +59,8 @@ func stop_stalking() -> void:
             flashlight.light_energy = base_flashlight_energy
 
 func _process(delta: float) -> void:
-    if caught:
-        if not restart_requested and Input.is_physical_key_pressed(KEY_R):
-            restart_requested = true
-            get_tree().reload_current_scene()
-        return
+    if attack_timer > 0.0:
+        attack_timer = maxf(0.0, attack_timer - delta)
 
     if not active or not visible:
         return
@@ -90,8 +91,37 @@ func _process(delta: float) -> void:
     _update_flashlight(player)
     _update_hud()
 
-    if distance <= catch_distance:
-        _catch_player(player)
+    if distance <= catch_distance and attack_timer <= 0.0:
+        _attack_player(player, target_position)
+
+func _attack_player(player: CharacterBody3D, target_position: Vector3) -> void:
+    attack_timer = attack_cooldown
+    panic = minf(100.0, panic + 20.0)
+
+    var died: bool = false
+    if player.has_method("apply_damage"):
+        died = bool(player.call("apply_damage", attack_damage, "The Tenant"))
+
+    if died:
+        active = false
+        can_move = false
+        return
+
+    var retreat_direction: Vector3 = global_position - target_position
+    retreat_direction.y = 0.0
+    if retreat_direction.length() <= 0.01:
+        retreat_direction = Vector3(0.0, 0.0, 1.0)
+    else:
+        retreat_direction = retreat_direction.normalized()
+
+    global_position += retreat_direction * retreat_distance
+    global_position.x = clampf(global_position.x, -1.45, 1.45)
+    global_position.z = clampf(global_position.z, -10.0, 10.4)
+
+    can_move = false
+    await get_tree().create_timer(0.55).timeout
+    if active:
+        can_move = true
 
 func _is_being_watched(camera: Camera3D, player: CharacterBody3D) -> bool:
     var monster_focus: Vector3 = global_position + Vector3(0.0, 1.35, 0.0)
@@ -142,25 +172,3 @@ func _update_hud() -> void:
     if overlay != null:
         var alpha: float = lerpf(0.0, 0.23, panic / 100.0)
         overlay.color = Color(0.18, 0.0, 0.0, alpha)
-
-func _catch_player(player: CharacterBody3D) -> void:
-    if caught:
-        return
-
-    caught = true
-    active = false
-    panic = 100.0
-    _update_hud()
-
-    player.velocity = Vector3.ZERO
-    player.set_physics_process(false)
-    player.set_process_unhandled_input(false)
-    Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-
-    var objective: Label = get_node_or_null(objective_label_path) as Label
-    if objective != null:
-        objective.text = ""
-
-    var panel: Control = get_node_or_null(caught_panel_path) as Control
-    if panel != null:
-        panel.visible = true
