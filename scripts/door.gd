@@ -75,7 +75,7 @@ func _try_restore_collision() -> void:
     _set_collision_enabled(true)
 
 func _report_ai_noise(strength: float, label: String) -> void:
-    var navigation: Node = get_node_or_null("/root/AINavigationSystem")
-    if navigation == null or not navigation.has_method("report_noise"):
+    var noise_relay: Node = get_node_or_null("/root/AINoiseRelaySystem")
+    if noise_relay == null or not noise_relay.has_method("report_noise"):
         return
-    navigation.call("report_noise", global_position, strength, label, 0)
+    noise_relay.call("report_noise", global_position, strength, label)
