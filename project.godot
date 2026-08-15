@@ -3,7 +3,7 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.11"
+config/name="Don't Look Back v0.12"
 run/main_scene="res://scenes/main.tscn"
 
 [autoload]
@@ -16,6 +16,8 @@ ShelterSystem="*res://scripts/shelter_system.gd"
 NetworkManager="*res://scripts/network_manager.gd"
 MobileControls="*res://scripts/mobile_controls.gd"
 CoopHorrorSystem="*res://scripts/coop_horror_system.gd"
+ExteriorExpansion="*res://scripts/exterior_expansion.gd"
+NightThreatSystem="*res://scripts/night_threat_system.gd"
 
 [display]
 window/size/viewport_width=1280
