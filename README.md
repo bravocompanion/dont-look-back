@@ -1,144 +1,155 @@
-# DON'T LOOK BACK — Godot v0.17
+# DON'T LOOK BACK — Godot v0.18
 
-A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, and a responsive front-end flow.
+A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, responsive menus, and runtime AI navigation/perception.
 
-## v0.17 — Main Menu / Game Flow
+## v0.18 — AI + Navigation Pass
 
-v0.17 adds `FrontEndSystem` as the high-level entry point for the existing game systems. The gameplay scene remains the same; the front end runs as an autoload overlay so it can coordinate saves, co-op, settings, pause behavior, and mobile input without duplicating the world.
+v0.18 upgrades monster movement from mostly direct pursuit into a lightweight runtime navigation/perception layer designed around the project's dynamically generated labyrinth and exterior world.
 
-### Main menu
+New autoload systems:
+- `AINavigationSystem`
+- `AINavigationRebuildGuard`
+- `AINoiseRelaySystem`
 
-Available actions:
+The existing `CoopHorrorSystem` remains responsible for authoritative monster damage, downed/revive logic, monster state broadcast, and team-wipe behavior.
+
+### Runtime waypoint navigation
+
+The current world is assembled by GDScript at runtime, so v0.18 uses an `AStar3D` waypoint graph rather than requiring a pre-baked static navmesh.
+
+Navigation points cover:
+- opening corridor
+- labyrinth zig-zag routes and relay branches
+- exterior path from the labyrinth exit to the cabin
+- forest routes
+- Abandoned House approaches/interior
+- Old Gas Station
+- Warehouse approaches and shelf aisles
+- Old Water Pump
+- deep forest routes
+
+Waypoint links are only created when:
+- points are within the configured link range
+- direct ray checks are unobstructed
+- additional left/right clearance checks are unobstructed
+
+A delayed rebuild guard waits for the runtime Labyrinth and Exterior geometry to exist and allows several frames for CSG/collision data to settle before forcing the final navigation graph rebuild.
+
+### AI perception states
+
+The navigation system tracks four behavior modes:
+- `CHASE` — a standing survivor is visible and can be pursued
+- `INVESTIGATE` — a recent audible event has a known location
+- `SEARCH` — line of sight/noise has been lost but the monster remembers the last known location
+- `PATROL` — no current target; the monster moves between regional patrol points
+
+The AI stores a last-known position and search/investigate timers rather than instantly knowing a hidden player's exact position forever.
+
+### Hearing / player noise
+
+Movement now generates lightweight AI noise events based on measured survivor movement speed:
+- sprinting creates the strongest recurring movement noise
+- normal walking produces a smaller hearing event
+- downed survivors do not emit the normal walk/sprint event through this system
+
+Important interactions also generate AI noise:
+- opening/closing a normal door
+- rattling a locked exit
+- unlocking the exit
+- moving the heavy exit door
+- starting/refueling the shelter generator
+- successful workbench crafting
+- using the Old Water Pump
+
+`AINoiseRelaySystem` keeps hearing host-authoritative in LAN co-op. A client interaction sends its noise event to the host; the host inserts it into the AI perception system.
+
+### The Tenant
+
+The signature rule is retained:
+- watching The Tenant freezes its pursuit movement
+- any standing co-op survivor can still contribute to the watched check
+
+When The Tenant is allowed to move, v0.18 routes its movement toward the current memory goal through the runtime waypoint graph instead of always moving directly through obstacles.
+
+The Tenant can therefore:
+- chase a visible survivor
+- move toward recent footsteps/interactions
+- continue toward the last known location after losing sight
+- return to regional patrol behavior when the search expires
+
+Panic, attacks, damage and co-op state synchronization remain handled by the existing horror system.
+
+### Darkness Creature
+
+The Darkness Creature retains its defining light rule:
+- nearby protective light still forces retreat/despawn behavior
+- directly visible survivors standing in protective light are not selected as normal darkness chase targets by the new perception layer
+
+When it is pursuing outside protective light, v0.18 routes movement around available runtime waypoint connections. This is especially important around the Abandoned House and Warehouse shelves.
+
+A newly created Darkness Creature also receives a safety check; if its spawn appears embedded in blocked geometry, the system can reposition it to the nearest navigation waypoint.
+
+### Solo and co-op authority
+
+Solo:
+- the new navigation layer routes Tenant/Darkness movement
+- the existing monster scripts continue handling their special rules, attacks, light reactions and lifetime logic
+
+LAN co-op:
+- only the HOST drives AI navigation/perception
+- clients do not independently pathfind monsters
+- client interaction noise is relayed to the host
+- host monster transforms continue to be distributed through `CoopHorrorSystem`
+
+Night difficulty tuning from `NightThreatSystem` is preserved. Its speed values are read by the navigation layer before the old direct movement path is suppressed for that frame.
+
+## v0.17 Front End retained
+
+Main menu:
 - CONTINUE
 - NEW GAME
 - HOST CO-OP
 - JOIN CO-OP
 - SETTINGS
-- QUIT on desktop platforms
-
-The title screen is responsive for desktop and narrow/mobile viewports.
-
-### Continue
-
-The existing v0.14 `SaveSystem` still restores a valid disk save during startup while the title overlay is covering the game world. After the short boot check, CONTINUE becomes available and displays a compact summary:
-- Day
-- world time
-- latest checkpoint name
-
-Selecting CONTINUE releases the player into the restored world.
-
-If the save JSON is missing or invalid, CONTINUE remains disabled and the player can start a NEW GAME.
-
-### New Game
-
-NEW GAME now has a destructive confirmation when a persistent world exists.
-
-Confirming it:
-1. disconnects any active/connecting network peer
-2. deletes the persistent world save
-3. resets the runtime checkpoint, relay, shelter, exterior condition, survival-depth, Journal and claimed-loot state using the v0.14 reset path
-4. reloads the scene
-5. starts the opening corridor as a fresh run
-
-### Host Co-op
-
-HOST CO-OP calls the same `NetworkManager` used by v0.15.
-
-If a persistent host world was restored during boot, hosting starts from that world. If no save exists, the current fresh world is used.
-
-After HOST succeeds, the v0.15 session flow takes over:
-- survivor name
-- READY / NOT READY
-- host START
-- teammate HUD
-- ping
-- shared checkpoint
-- downed/revive flow
-
-### Join Co-op
-
-JOIN CO-OP now has a direct LAN IPv4 entry screen on the main menu.
-
-Flow:
-1. select JOIN CO-OP
-2. enter the host LAN IPv4, for example `192.168.1.10`
-3. CONNECT
-4. after connection, the v0.15 SESSION panel takes over
-5. enter/confirm survivor name, READY, then wait for host START
-
-The last host address from the v0.15 local co-op profile is reused when available.
-
-### Pause / in-game menu
-
-Desktop:
-- `Esc` opens the menu during gameplay
-
-Mobile:
-- a responsive `MENU` button appears during gameplay
-
-Pause menu actions:
-- RESUME
-- SAVE WORLD
-- SETTINGS
-- RETURN TO TITLE
 - QUIT on desktop
 
-Solo behavior:
-- the SceneTree is paused while the menu is open
+Pause/menu:
+- `Esc` on desktop
+- `MENU` on mobile
+- solo pauses the SceneTree
+- co-op keeps the host world running while the local survivor is blocked
 
-Co-op behavior:
-- the local survivor is blocked, but the network world continues
-- this prevents one client from pausing host-authoritative monsters for the entire team
-
-RETURN TO TITLE disconnects the active co-op peer. A solo/host run can be resumed in memory from the title screen; a disconnected client does not gain an authoritative solo resume from the client world.
-
-## v0.17 Settings
-
-Settings are stored per device at:
+Settings remain stored at:
 
 `user://dont_look_back_settings.cfg`
 
 Current settings:
-- Master Volume: 0–100%
-- Look Sensitivity: 0.50x–2.00x
-- Performance/FPS limit: 30 / 60 / 120 FPS
+- Master Volume
+- Look Sensitivity
+- FPS limit: 30 / 60 / 120
 - Fullscreen on supported desktop platforms
 
-Look sensitivity applies to both mouse and mobile swipe-look.
-
-The front end uses the runtime Godot APIs for master bus volume, FPS limit, and desktop window mode.
-
-## Mobile input safety
-
-`MobileControls` now separates two concepts:
-- `dead_mode` for actual death/restart behavior
-- `external_blocked` for menu/session overlays
-
-This means opening the title/pause/session UI clears joystick/look/action state without pretending the player is dead. It also avoids queued touch actions firing immediately after closing a menu.
-
-Touch gameplay remains available after the menu closes, and the existing v0.15 downed-crawl path remains separate from menu blocking.
+The title screen version badge is synchronized to v0.18.
 
 ## v0.15 Multiplayer Polish retained
 
 LAN co-op target: 2–4 survivors.
 
 Retained systems:
-- player display names
-- local co-op profile
+- survivor display names
 - Ready / Not Ready
 - Host START
 - responsive session roster
-- teammate HP / DOWNED HUD
+- teammate Health / DOWNED HUD
 - ping estimate
 - reconnect attempt + RECONNECT control
-- late-join session recovery foundation
+- late-join recovery foundation
 - shared checkpoint authority
 - revive progress UI
 - slow downed crawling
-- host-authoritative The Tenant
-- host-authoritative Darkness Creature
+- host-authoritative monster damage/state
 - shared relays
-- shared day/night state
+- shared day/night
 - shared generator/campfire state
 - shared finite survival pickups
 
@@ -164,28 +175,23 @@ Persistent data includes:
 - finite claimed loot
 - Journal entries/order
 
-Desktop manual save remains `K`; the v0.17 pause menu also exposes SAVE WORLD.
-
-Connected clients cannot write the authoritative host world save. Manual disk Load remains an offline operation.
+AI's transient CHASE/SEARCH position is intentionally not written into disk saves. A restored run resumes from the persistent world and the AI reacquires information normally.
 
 ## Journal + Door Safety retained
 
 Journal:
 - `J` desktop
 - `JOURNAL` mobile
-- current mission
-- tips
-- mission notes
-- logs
-- trivia
-- warnings
+- missions, tips, logs, trivia and warnings
 - persistent discoveries
 
-Labyrinth door safety:
-- moving collision disables before rotation
-- waits one physics frame before motion
-- collision returns after motion
-- closing collision waits until the local player is clear of the hinge area
+Door safety remains active:
+- moving collision is disabled before door rotation
+- one physics frame is allowed before movement
+- collision is restored after motion
+- closing collision waits until the local player clears the dangerous hinge area
+
+The new v0.18 door-noise behavior is added on top of this safety logic.
 
 ## Survival systems retained
 
@@ -212,13 +218,13 @@ Resources / processing:
 - Fuel Can
 - Flashlight Battery
 - Firewood Bundle
-- boiling Dirty Water at the shelter campfire
-- crafting at the shelter workbench
-- shared storage chest
+- boiling Dirty Water at the shelter
+- workbench crafting
+- shared shelter storage
 
 ## Current world
 
-Progression currently covers:
+Progression covers:
 1. opening corridor / The Tenant
 2. Apartment 03
 3. expanded labyrinth
@@ -235,10 +241,12 @@ Progression currently covers:
 
 ## Controls
 
-Desktop gameplay:
+No new player buttons are required for v0.18.
+
+Desktop:
 - WASD — move / downed crawl
 - Mouse — look
-- Shift — sprint while standing
+- Shift — sprint
 - E — interact / revive
 - F — flashlight
 - B or 4 — battery
@@ -248,76 +256,65 @@ Desktop gameplay:
 - J — Journal
 - K — Save World
 - L — Load World while offline
-- M — legacy in-game co-op lobby
-- Esc — v0.17 pause/menu
+- Esc — pause/menu
 
-Mobile gameplay:
-- left joystick — move / supported downed movement path
+Mobile:
+- left joystick — move / downed movement path
 - right swipe — look
-- RUN
-- USE
-- LIGHT
-- BATT
-- FOOD
-- WATER
-- MED
+- RUN / USE / LIGHT / BATT / FOOD / WATER / MED
 - JOURNAL
-- SAVE / LOAD from existing v0.14 UI where available
-- CO-OP legacy access
-- MENU — v0.17 pause/front end
+- MENU
 
-## Testing v0.17
+## Testing v0.18
 
-Recommended desktop test:
-1. Pull latest `main`.
-2. Open the existing Godot project and press F5.
-3. Confirm the title menu appears before movement is possible.
-4. If a v0.14/v0.15 save exists, confirm CONTINUE shows Day / time / checkpoint.
-5. CONTINUE and verify the restored world is playable.
-6. Press Esc and verify the solo menu pauses the world.
-7. Change volume, look sensitivity, FPS limit, and fullscreen; close/reopen Settings.
-8. Restart the game and verify settings remain.
-9. Press NEW GAME and verify the delete confirmation appears when a save exists.
-10. Confirm NEW GAME starts the opening corridor with persistent progress reset.
+Recommended solo test:
+1. Pull latest `main` and press F5 in the existing Godot project.
+2. Start/Continue and trigger The Tenant.
+3. Break line of sight around corridor/labyrinth geometry and verify the monster does not simply cut straight through a wall.
+4. Walk quietly, then sprint while a monster is within hearing range and compare its investigate behavior.
+5. Open doors repeatedly near an active threat and verify the interaction can attract investigation.
+6. Outside at night, test the Abandoned House and Warehouse shelves while a Darkness Creature is active.
+7. Break line of sight and watch for last-known-position/search behavior rather than perfect tracking forever.
+8. Verify protective light still repels the Darkness Creature.
+9. Verify watching The Tenant still freezes its pursuit.
+10. Start/refuel the generator, craft at the workbench and use the water pump while a threat is nearby to test interaction noise.
 
-Recommended co-op test:
-1. Device A selects HOST CO-OP from the title.
-2. Device B selects JOIN CO-OP and enters Device A's LAN IPv4.
-3. Confirm v0.15 SESSION / name / READY / START appears after connection.
-4. Confirm touch gameplay buttons remain blocked during the pre-game session on mobile.
-5. START and verify movement/touch controls become available.
-6. Open MENU on one client and verify the host world continues.
-7. Resume and verify no stale touch action fires immediately.
-8. Test downed/revive/shared checkpoint/reconnect from v0.15.
+Recommended two-device LAN test:
+1. HOST and JOIN normally, READY both survivors, then START.
+2. Let the client sprint/open a door/use a noisy interaction while the host monster is nearby.
+3. Verify the HOST AI reacts to the client-generated event.
+4. Verify both devices see the same host-driven monster position/state.
+5. Break line of sight around the Warehouse/House and check that only the host determines the route.
+6. Re-test downed/revive, shared checkpoint, reconnect and mobile controls to confirm v0.15/v0.17 behavior remains intact.
 
 ## Asset status
 
-Production asset needs are tracked in `ASSET_BACKLOG.md` and updated for v0.17.
+Production asset requirements are tracked in `ASSET_BACKLOG.md` and updated for v0.18.
 
-Highest-impact missing assets now:
-- final DON'T LOOK BACK logo
-- 16:9 + portrait-safe title key art
-- menu/button visual states
-- menu/connect/save UI SFX
-- rigged survivor + downed/revive animations
-- The Tenant final model/animations
-- Darkness Creature final model/animations
-- core footsteps + horror ambience
-- labyrinth materials + production door art
-- flashlight / survival pickup models
+v0.18 makes these particularly important:
+- Tenant search/listen/turn/freeze-transition animations
+- Darkness crawl/search/retreat/dissolve animations
+- proper footsteps for concrete/wood/dirt/metal with quieter walk and louder sprint variants
+- door swing/creak/locked-rattle/heavy-exit SFX
+- generator start/loop/refuel mechanical SFX
+- workbench hammer/scrape SFX
+- hand-pump squeak/clank SFX
+- monster investigation/search vocal cues
+- collision-safe Warehouse shelves, House furniture/doorways and Gas Station props
 
-v0.17 is still placeholder-friendly. The skipped v0.16 production art/audio integration has not been falsely marked complete.
+The project remains code/procedural-first; the skipped production-art/audio milestone is still not being treated as complete.
 
 ## Current limitations
 
-- Runtime Godot validation must still be performed on the development machine; the assistant environment does not have the Godot executable.
-- The main menu is functional but still uses text/primitive Godot styling instead of final art.
-- Internet matchmaking / NAT traversal is not implemented; co-op is LAN/IP based.
-- Client-specific inventory/profile persistence is not yet a full account/profile system.
-- Active monster transforms are not serialized into disk saves mid-attack.
-- Outdoor AI still lacks full Navigation/pathfinding through complex structures.
-- Final survivor/monster animations, audio, VFX, and environment assets are still missing.
+- Runtime Godot validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
+- Navigation is a hand-authored runtime waypoint graph, not a fully baked NavigationMesh.
+- The graph represents the current procedural map. Major future geometry changes may require waypoint updates.
+- Hearing currently uses gameplay radii; it does not yet model acoustic occlusion, reverb rooms or material-dependent sound propagation.
+- AI does not yet have final AnimationTree/turn-in-place/foot-IK presentation.
+- Internet matchmaking / NAT traversal is not implemented; co-op remains LAN/IP based.
+- Client-specific persistent account profiles are not implemented.
+- Final character models, animations, production audio, VFX and environment art are still missing.
 
 ## Recommended next update
 
-Before adding another large map, the strongest next step is an **Art + Audio Integration pass** using `ASSET_BACKLOG.md`, followed by AI Navigation/pathfinding and then story/content expansion.
+Before another large story/map expansion, the strongest next milestone is **v0.19 — Art + Audio / AI Presentation Integration**: replace high-impact placeholders, connect movement/search states to final animations, add real surface footsteps/spatial monster audio, then continue story/content expansion from a stronger production base.
