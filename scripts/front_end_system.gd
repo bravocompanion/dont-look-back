@@ -2,7 +2,7 @@ extends Node
 
 const SETTINGS_PATH: String = "user://dont_look_back_settings.cfg"
 const SAVE_PATH: String = "user://dont_look_back_save_v1.json"
-const VERSION_TEXT: String = "v0.17"
+const VERSION_TEXT: String = "v0.18"
 
 var menu_open: bool = true
 var gameplay_started: bool = false
