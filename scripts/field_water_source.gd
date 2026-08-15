@@ -31,11 +31,18 @@ func interact() -> void:
 
     next_refill_time = now + refill_cooldown_seconds
     _set_objective(player, "You collect Dirty Water. Boil it at the shelter campfire before drinking if possible.")
+    _report_ai_noise(0.68, "hand water pump")
 
 func _set_objective(player: CharacterBody3D, text: String) -> void:
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
         objective.text = text
+
+func _report_ai_noise(strength: float, label: String) -> void:
+    var noise_relay: Node = get_node_or_null("/root/AINoiseRelaySystem")
+    if noise_relay == null or not noise_relay.has_method("report_noise"):
+        return
+    noise_relay.call("report_noise", global_position, strength, label)
 
 func _build_visual() -> void:
     var metal: StandardMaterial3D = StandardMaterial3D.new()
@@ -67,7 +74,6 @@ func _build_visual() -> void:
     var handle_mesh: BoxMesh = BoxMesh.new()
     handle_mesh.size = Vector3(0.72, 0.08, 0.08)
     var handle: MeshInstance3D = MeshInstance3D.new()
-    handle_mesh.size = Vector3(0.72, 0.08, 0.08)
     handle.mesh = handle_mesh
     handle.material_override = metal
     handle.position = Vector3(0.24, 1.30, 0.0)
