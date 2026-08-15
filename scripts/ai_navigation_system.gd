@@ -463,7 +463,7 @@ func _next_navigation_point(origin: Vector3, target: Vector3) -> Vector3:
     if start_id < 0 or end_id < 0:
         return target
 
-    var path: PackedVector3Array = nav_graph.get_point_path(start_id, end_id, true)
+    var path: PackedVector3Array = nav_graph.get_point_path(start_id, end_id)
     if path.is_empty():
         return target
 
