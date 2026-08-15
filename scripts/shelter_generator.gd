@@ -25,6 +25,25 @@ func interact() -> void:
     if system == null:
         return
 
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
+    if network_client:
+        var percent: int = int(system.call("get_generator_percent")) if system.has_method("get_generator_percent") else 0
+        var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        if percent >= 99:
+            if objective != null:
+                objective.text = "Generator fuel tank is full."
+            return
+        if not player.has_method("remove_item") or not bool(player.call("remove_item", "generator_fuel")):
+            if objective != null:
+                objective.text = "You have no Fuel Can."
+            return
+        if network.has_method("request_shared_shelter_action"):
+            network.call("request_shared_shelter_action", "generator_fuel")
+        if objective != null:
+            objective.text = "Fuel request sent to host."
+        return
+
     var accepted: bool = false
     if powered and system.has_method("refuel_generator"):
         accepted = bool(system.call("refuel_generator", player))
