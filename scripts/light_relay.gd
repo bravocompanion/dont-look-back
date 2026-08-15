@@ -21,12 +21,15 @@ func interact() -> void:
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network != null and network.has_method("is_online") and bool(network.call("is_online")):
         if network.has_method("request_relay_activation"):
+            var host_controls_state: bool = network.has_method("is_server") and bool(network.call("is_server"))
             network.call("request_relay_activation", relay_id)
+            if host_controls_state:
+                set_activated_from_restore(true)
             var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
             if player != null:
                 var objective: Label = player.get_node_or_null("HUD/Objective") as Label
                 if objective != null:
-                    objective.text = "Requesting emergency relay activation from host..."
+                    objective.text = "Emergency relay request sent to host."
         return
 
     var director: Node = get_node_or_null("/root/LabyrinthDirector")
