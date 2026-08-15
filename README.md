@@ -1,6 +1,26 @@
-# DON'T LOOK BACK — Godot v0.18.1
+# DON'T LOOK BACK — Godot v0.18.2
 
 A first-person survival-horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent world saves, Journal discoveries, responsive menus, runtime AI navigation/perception, and separate Labyrinth/Forest maps.
+
+## v0.18.2 — Main Menu Cursor Hotfix
+
+Desktop cursor ownership is now enforced by the front-end while any menu is open.
+
+Fixed behavior:
+- title screen always forces `Input.MOUSE_MODE_VISIBLE`
+- Join / Settings / New Game confirmation keep the pointer visible
+- Esc pause menu keeps the pointer visible
+- a short boot guard handles the scene initialization race where `Player._ready()` captures the mouse after the title UI has already appeared
+- after gameplay resumes, the normal captured first-person mouse behavior is restored
+- mobile behavior is unchanged; touch controls remain the primary input path
+
+Regression test:
+1. launch the game with F5
+2. confirm the cursor is visible and movable on the title screen
+3. open Settings and Join Co-op and confirm it remains visible
+4. start/continue gameplay and confirm mouse-look captures normally
+5. press Esc and confirm the pointer appears in the pause menu
+6. Resume and confirm mouse-look captures again
 
 ## v0.18.1 — Labyrinth Lighting + Separate Forest Map
 
@@ -160,7 +180,7 @@ Mobile:
 
 No new gameplay button is required for the map transition.
 
-## Testing v0.18.1
+## Testing v0.18.1 map split
 
 Solo recommended test:
 1. Start a NEW GAME and reach the expanded labyrinth.
@@ -187,7 +207,7 @@ Co-op recommended test:
 
 Production requirements are tracked in `ASSET_BACKLOG.md`.
 
-Newly important assets from this patch:
+Newly important assets from the map split:
 - low-power labyrinth emergency/maintenance light fixture model
 - emissive/flicker variants for dim maze lighting
 - Forest entrance barrier/tree-line replacement for the current collision placeholder
@@ -208,4 +228,4 @@ Existing high-priority needs remain final survivor/Tenant/Darkness models and an
 
 ## Recommended next update
 
-After validating v0.18.1, the strongest next milestone remains **Art + Audio / AI Presentation Integration**: production labyrinth lighting fixtures/materials, real footsteps and spatial monster audio, final monster/survivor animation states, then a branded loading/front-end pass before another large story map.
+After validating v0.18.2, the strongest next milestone remains **Art + Audio / AI Presentation Integration**: production labyrinth lighting fixtures/materials, real footsteps and spatial monster audio, final monster/survivor animation states, then a branded loading/front-end pass before another large story map.
