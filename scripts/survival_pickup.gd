@@ -58,6 +58,10 @@ func _collect_locally() -> void:
         return
 
     collected = true
+    var save_system: Node = get_node_or_null("/root/SaveSystem")
+    if save_system != null and save_system.has_method("register_claimed_pickup"):
+        save_system.call("register_claimed_pickup", str(get_path()))
+
     if objective != null:
         objective.text = "%s added to inventory." % display_name
     queue_free()
@@ -71,11 +75,18 @@ func _can_player_accept(player: CharacterBody3D) -> bool:
     return names.size() < capacity
 
 func _remove_if_already_claimed() -> void:
+    var pickup_path: String = str(get_path())
+    var save_system: Node = get_node_or_null("/root/SaveSystem")
+    if save_system != null and save_system.has_method("is_pickup_claimed"):
+        if bool(save_system.call("is_pickup_claimed", pickup_path)):
+            queue_free()
+            return
+
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null:
         return
     var claimed: Dictionary = Dictionary(network.get("claimed_pickups"))
-    if bool(claimed.get(str(get_path()), false)):
+    if bool(claimed.get(pickup_path, false)):
         queue_free()
 
 func _build_visual() -> void:
