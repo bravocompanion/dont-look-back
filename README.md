@@ -1,125 +1,132 @@
-# DON'T LOOK BACK — Godot v0.11
+# DON'T LOOK BACK — Godot v0.12
 
-A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive touch controls, LAN co-op, shared survival systems, and host-authoritative horror encounters.
+A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive touch controls, LAN co-op, shared survival systems, host-authoritative horror encounters, and an expanded outdoor survival area.
 
-## v0.11 — Co-op Horror Foundation
-v0.11 moves the main horror logic onto the LAN host so connected survivors fight the same encounter instead of each device simulating a separate monster.
+## v0.12 — Exterior Expansion
+v0.12 extends the forest beyond the original cabin zone. The old far boundary is opened and the playable exterior continues deeper into the abandoned region.
 
-### Host-authoritative The Tenant
-While multiplayer is active:
-- The Tenant AI is controlled only by the host.
-- A client entering the opening horror trigger can request the shared encounter from the host.
-- Entering the safe zone sends a shared stop request so the chase ends for the session rather than only on one device.
-- The host selects the nearest survivor who is still standing.
-- The Tenant can switch target between survivors.
-- Looking at The Tenant from any standing survivor can freeze it.
-- The host uses synchronized player body rotation + camera pitch to evaluate whether a survivor is watching it.
-- World geometry still blocks the watch line-of-sight test.
-- The host decides movement, attacks, panic, and damage.
-- Monster transform/state is broadcast to clients on a separate unreliable RPC channel.
+### Expanded exterior
+The outdoor map now continues beyond the old z≈-132 boundary to roughly z≈-204 and widens to approximately ±56 meters.
 
-Solo mode still uses the original local The Tenant script.
+New paths connect the shelter region to several risk/reward locations:
+- Abandoned House
+- Old Gas Station
+- Warehouse
+- Old Water Pump
+- Deep forest loot route
 
-### Shared Darkness Creature
-While multiplayer is active, the original per-device DarknessDirector simulation is suspended and replaced by one shared Darkness Creature controlled by the host.
+The expansion uses runtime primitive geometry and collisions so it remains compatible with the existing generated world and does not require an external art pack.
 
-- The host watches every survivor's Darkness Exposure and light state.
-- A survivor with dangerous Darkness can cause the shared creature to form.
-- The creature targets standing survivors and can switch targets.
-- Host-authoritative attacks deal synchronized damage.
-- Nearby protective light from another survivor can force the creature to retreat and disappear.
-- Clients render the same shared creature transform sent by the host.
+### Abandoned House
+A damaged house sits west of the deeper road.
 
-When multiplayer is disconnected, the original solo DarknessDirector is enabled again.
+It contains:
+- Canned Food
+- Medkit
+- Flashlight Battery
 
-### Downed survivors
-In an active co-op session, lethal monster damage no longer immediately ends that survivor's run.
+The building has multiple interior sections and narrow entrances, making it more dangerous to search when Darkness Exposure is already high.
 
-Instead:
-- Health reaches 0.
-- The survivor enters DOWNED state.
-- Movement and normal gameplay input are disabled while downed.
-- A full-screen downed warning appears.
-- Other peers see a `DOWNED / USE TO REVIVE` marker on that survivor.
-- The remote survivor receives an interaction collider so the normal E/USE interaction system can start a revive.
+### Old Gas Station
+The gas station is one of the most valuable supply locations.
 
-Other lethal survival conditions are also converted into the co-op downed state when detected while online.
+Loot includes:
+- Two Fuel Cans
+- Bottled Water
+- Scrap
 
-Downed crawling is not implemented yet; v0.11 downed players are immobilized until revived or the team wipes.
+A weak emergency light remains inside the store. It creates a small protective-light pocket, but it does not replace the cabin as a safe base.
 
-### Revive channel
-To revive a teammate:
-1. Move close to the downed survivor.
-2. Look at them and press E on desktop or USE on mobile.
-3. Stay within approximately 2.8 meters for 3 seconds.
-4. Moving away interrupts the revive.
-5. A completed revive restores 45 Health and at least 35 Stamina.
+### Warehouse
+The far warehouse is designed as a high-risk crafting-resource route.
 
-The host validates revive distance, downed state, and completion time.
+Loot includes:
+- Scrap
+- Wood
+- Flashlight Battery
 
-### Team wipe
-The host tracks all connected survivors. If every active survivor is downed at the same time for roughly 2 seconds, the host broadcasts a team wipe and all peers reload the current scene. Existing checkpoint restoration remains responsible for the local restart position/state.
+Shelves and interior walls break sight lines, making the shared Darkness Creature more dangerous at night.
 
-### Survivor authority data
-v0.11 adds a lightweight co-op horror snapshot alongside the existing v0.9 NetworkManager snapshot. The host receives:
-- Player transform
-- Camera pitch
-- Health
-- Downed state
-- Darkness Exposure
-- Protective-light state
-- Flashlight active state
+### Renewable water source
+The Old Water Pump is the first renewable exterior water source.
 
-This information is used for monster targeting, watch checks, revive validation, and team-wipe logic.
+- Interact with E on desktop or USE on mobile.
+- A successful use adds one Bottled Water to the local survivor inventory.
+- The pump has a short recovery cooldown before that survivor can draw again.
+- It is renewable rather than a finite shared pickup.
 
-## Existing multiplayer retained
+Water purification/dirty-water processing is intentionally reserved for the deeper survival update after v0.12.
+
+### More shared loot
+All normal v0.12 loot objects still use the existing `survival_pickup.gd` flow.
+
+In LAN co-op this means Food, Medkits, Batteries, Fuel, Wood, and Scrap in the new landmarks are still coordinated through the host: if one survivor claims a finite pickup, the same pickup is removed for the other peers.
+
+### Stronger night encounters
+The deeper exterior becomes more dangerous after sunset.
+
+Normal outdoor values are retained near the cabin, but at night:
+- Entering the expanded zone lowers the Darkness Creature spawn threshold.
+- Moving into the far/deep zone lowers the threshold further.
+- Shared co-op Darkness Creature movement becomes faster in the deeper region.
+- Its attack damage increases modestly in the far zone.
+- Solo Darkness encounters also receive shorter spawn cooldowns and stronger active-creature tuning.
+
+The strongest current deep-zone values are approximately:
+- Darkness spawn threshold: 52 instead of 72
+- Shared Darkness movement: 2.85 instead of 2.15
+- Shared Darkness attack: 22 instead of 18
+
+These bonuses only apply when the outdoor world is in the night phase and survivors are exploring beyond the original forest boundary.
+
+### Daylight coverage
+A second daylight-protection volume covers the new exterior region so the expanded outdoor map behaves like the original forest during daylight. The weak gas-station emergency light remains a small night refuge.
+
+## Co-op horror retained from v0.11
+While LAN multiplayer is active:
+- The Tenant is host-authoritative.
+- The Darkness Creature is host-authoritative.
+- Monsters can switch between standing survivors.
+- Any standing survivor can freeze The Tenant by watching it.
+- Nearby protective light from another survivor can repel the shared Darkness Creature.
+- Lethal damage causes DOWNED rather than immediate death.
+- Teammates can revive using E/USE and staying close for about 3 seconds.
+- All-survivor downed state triggers a team wipe/reload.
+
+## Existing multiplayer systems
 - Host / Join LAN using Godot ENet
 - 2–4 survivor target
-- Remote survivor movement interpolation
-- Remote flashlight state
+- Remote survivor interpolation and flashlight state
 - Health/Hunger/Thirst/Stamina/Battery snapshots
-- Shared survival pickups
+- Shared finite survival pickups
 - Shared emergency relay progress
 - Shared day/night clock
 - Shared generator and campfire fuel
 - Shared host shelter storage state
 - Touch-operable CO-OP lobby
 
-### Multiplayer limits still remaining
-v0.11 is a stronger co-op foundation but is not final production netcode.
+LAN remains the intended multiplayer test environment.
 
-Still planned:
-- Downed crawling
-- Revive animation/progress UI
-- Shared story-key ownership
-- Full client-controlled chest transfers
-- Shared checkpoint authority instead of per-peer checkpoint restoration
-- Better monster collision/pathfinding in larger outdoor structures
-- Reconnect/session recovery
-- Internet matchmaking / NAT traversal
-
-LAN is still the intended multiplayer test environment.
-
-## Mobile gameplay retained from v0.10
+## Mobile gameplay retained
 - Left virtual joystick — Move
 - Right-side swipe — Camera look
 - RUN — Sprint
-- USE — Interact / revive
+- USE — Interact / pick up / revive / water pump
 - LIGHT — Flashlight
 - BATT — Replacement battery
 - FOOD — Eat
 - WATER — Drink
 - MED — Heal
-- RESTART — Solo/death restart when available
+- RESTART — Restart when available
 - CO-OP — Host/Join lobby
 
-Touch controls scale from the current viewport and normal keyboard/mouse controls remain active on desktop builds.
+HUD and controls continue to resize for narrow/mobile viewports while keyboard/mouse controls remain active on desktop builds.
 
 ## Desktop controls
 - W A S D — Move
 - Mouse — Look
 - Shift — Sprint
-- E — Interact / begin revive
+- E — Interact / revive / collect water
 - F — Flashlight
 - B or 4 — Replace Flashlight Battery
 - 1 — Eat Canned Food
@@ -130,30 +137,31 @@ Touch controls scale from the current viewport and normal keyboard/mouse control
 - R — Solo death restart / restore active checkpoint
 
 ## Current survival loop
-1. Enter the opening horror corridor.
-2. Survive the shared The Tenant encounter in co-op.
-3. Search Apartment 03.
-4. Restore the emergency relays.
-5. Exit into the forest.
-6. Gather Fuel, Food, Water, Batteries, Wood, and Scrap.
-7. Power and maintain the cabin shelter.
-8. Craft supplies and use storage.
-9. Survive Darkness Creature encounters together.
-10. Revive downed teammates instead of abandoning them.
-11. Maintain Health, Hunger, Thirst, Stamina, Battery, Darkness, and Cold through the day/night loop.
+1. Survive the opening labyrinth and The Tenant.
+2. Search Apartment 03.
+3. Restore the emergency relays.
+4. Exit into the forest.
+5. Find and power the cabin shelter.
+6. Gather/craft supplies and maintain generator/campfire light.
+7. Push beyond the original forest boundary.
+8. Search the Abandoned House for medical/food supplies.
+9. Raid the Gas Station for fuel.
+10. Search the Warehouse for Wood, Scrap, and Batteries.
+11. Use the Old Water Pump as a renewable water route.
+12. Return to shelter before deep-zone night threat becomes overwhelming.
+13. In co-op, keep teammates alive and revive downed survivors.
 
-## Testing v0.11 co-op
-1. Pull the latest `main` branch on two devices.
-2. Put both devices on the same LAN/Wi-Fi.
-3. Device A opens CO-OP and presses HOST.
-4. Device B enters Device A's LAN IPv4 and presses JOIN.
-5. Verify both survivor avatars are visible.
-6. Enter the opening encounter and confirm both devices see the same The Tenant position.
-7. Have either survivor look at The Tenant and confirm the shared monster freezes.
-8. Allow one survivor to take lethal monster damage and confirm DOWNED appears instead of immediate game over.
-9. The other survivor approaches, presses E/USE, and remains close for 3 seconds.
-10. Verify the downed survivor returns with Health restored.
-11. In a dark area, verify the Darkness Creature is shared and retreats when a nearby survivor reaches protective light.
+## Testing v0.12
+1. Pull the latest `main` branch.
+2. Open the existing Godot project and press F5.
+3. Progress through the labyrinth and reach The Outside.
+4. From the cabin, travel past the old far edge of the forest.
+5. Confirm the previous far wall is gone and the new ground continues.
+6. Visit the Abandoned House, Gas Station, Warehouse, and Water Pump.
+7. Verify new finite loot can be picked up normally.
+8. Use the Water Pump twice and confirm its cooldown message appears.
+9. Wait until night, enter the deep exterior, and verify Darkness encounters become more aggressive.
+10. For co-op, repeat on two devices and confirm finite expansion loot disappears for the other peer after one survivor claims it.
 
 ## Android/iOS export note
 Generating APK/AAB or iOS builds still requires the appropriate Godot export templates and platform setup on the development machine.
@@ -169,8 +177,16 @@ If the repository is already cloned:
 5. Return to the existing Godot project.
 6. Press F5.
 
+## Current limitations
+- Runtime Godot validation still needs to be performed on the development machine.
+- Downed crawling and revive progress UI are not implemented yet.
+- Story-key ownership is not globally synchronized.
+- Shared checkpoint authority is still per-peer/local rather than one host world save.
+- Outdoor enemies still use direct movement rather than full navigation/pathfinding through complex structures.
+- Internet matchmaking/NAT traversal is not implemented.
+
 ## Next targets
-- v0.11.1 — fixes discovered during two-device monster/revive testing
-- v0.12 — Exterior Expansion: abandoned structures, water source, larger loot routes, and stronger night encounters
-- v0.13 — deeper survival conditions and resource processing
-- Later — persistent host world saves, multiplayer polish, and internet-session support
+- v0.12.1 — fixes from exterior/mobile/co-op testing
+- v0.13 — Survival Depth: dirty/clean water, boiling, bleeding/bandages, infection, and resource processing
+- v0.14 — persistent world/save foundation
+- Later — multiplayer polish, reconnect/session recovery, stronger outdoor AI/pathfinding, and internet-session support
