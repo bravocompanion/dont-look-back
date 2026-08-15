@@ -2,6 +2,8 @@ extends "res://scripts/outside_director.gd"
 
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
 var entry_boundary_scene_id: int = 0
+var forest_polish_scene_id: int = 0
+var moon_fill: DirectionalLight3D
 
 func _process(delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -10,6 +12,8 @@ func _process(delta: float) -> void:
         return
     super._process(delta)
     _ensure_forest_entry_boundary(scene)
+    _ensure_v183_forest_polish(scene)
+    _apply_v183_forest_visibility()
 
 func enter_outside(player: CharacterBody3D) -> void:
     var scene: Node = get_tree().current_scene
@@ -42,3 +46,60 @@ func _ensure_forest_entry_boundary(scene: Node) -> void:
     boundary.material = material
     outside_root.add_child(boundary)
     entry_boundary_scene_id = scene_id
+
+func _ensure_v183_forest_polish(scene: Node) -> void:
+    if outside_root == null or not is_instance_valid(outside_root):
+        return
+    var scene_id: int = int(scene.get_instance_id())
+    if forest_polish_scene_id == scene_id:
+        return
+
+    if not outside_root.has_node("CabinEntryStepV183"):
+        var porch_material: StandardMaterial3D = StandardMaterial3D.new()
+        porch_material.albedo_color = Color(0.16, 0.105, 0.065, 1.0)
+        porch_material.roughness = 0.92
+
+        var entry_step: CSGBox3D = CSGBox3D.new()
+        entry_step.name = "CabinEntryStepV183"
+        entry_step.position = Vector3(14.0, 0.055, -77.95)
+        entry_step.size = Vector3(2.15, 0.11, 1.05)
+        entry_step.use_collision = true
+        entry_step.material = porch_material
+        outside_root.add_child(entry_step)
+
+    if not outside_root.has_node("CabinEntryDimV183"):
+        var entry_light: OmniLight3D = OmniLight3D.new()
+        entry_light.name = "CabinEntryDimV183"
+        entry_light.position = Vector3(14.0, 2.25, -78.15)
+        entry_light.light_color = Color(0.58, 0.52, 0.39, 1.0)
+        entry_light.light_energy = 0.075
+        entry_light.omni_range = 4.4
+        entry_light.shadow_enabled = false
+        outside_root.add_child(entry_light)
+
+    moon_fill = outside_root.get_node_or_null("ForestMoonFillV183") as DirectionalLight3D
+    if moon_fill == null:
+        moon_fill = DirectionalLight3D.new()
+        moon_fill.name = "ForestMoonFillV183"
+        moon_fill.light_color = Color(0.38, 0.46, 0.58, 1.0)
+        moon_fill.light_energy = 0.0
+        moon_fill.shadow_enabled = false
+        moon_fill.rotation_degrees = Vector3(-52.0, 24.0, 0.0)
+        outside_root.add_child(moon_fill)
+
+    forest_polish_scene_id = scene_id
+
+func _apply_v183_forest_visibility() -> void:
+    var daylight: float = _get_daylight_factor()
+    if world_environment != null and world_environment.environment != null:
+        var environment: Environment = world_environment.environment
+        var night_color: Color = Color(0.014, 0.020, 0.030, 1.0)
+        var day_color: Color = Color(0.34, 0.42, 0.48, 1.0)
+        var night_ambient: Color = Color(0.20, 0.23, 0.28, 1.0)
+        var day_ambient: Color = Color(0.60, 0.64, 0.62, 1.0)
+        environment.background_color = night_color.lerp(day_color, daylight)
+        environment.ambient_light_color = night_ambient.lerp(day_ambient, daylight)
+        environment.ambient_light_energy = lerpf(0.16, 0.62, daylight)
+
+    if moon_fill != null and is_instance_valid(moon_fill):
+        moon_fill.light_energy = 0.18 * (1.0 - daylight)
