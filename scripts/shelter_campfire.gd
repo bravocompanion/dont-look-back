@@ -4,7 +4,7 @@ func _ready() -> void:
     _build_visual()
 
 func get_interaction_text() -> String:
-    var director: Node = get_node_or_null("/root/OutsideDirector")
+    var director: Node = get_node_or_null("/root/ShelterSystem")
     if director != null and director.has_method("get_campfire_percent"):
         var percent: int = int(director.call("get_campfire_percent"))
         if percent > 0:
@@ -16,7 +16,7 @@ func interact() -> void:
     if player == null:
         return
 
-    var director: Node = get_node_or_null("/root/OutsideDirector")
+    var director: Node = get_node_or_null("/root/ShelterSystem")
     if director == null or not director.has_method("fuel_campfire"):
         return
 
