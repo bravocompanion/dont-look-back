@@ -33,6 +33,19 @@ func save_checkpoint(player: CharacterBody3D, world_position: Vector3, label: St
         "flashlight_on": _is_flashlight_on(player)
     }
 
+    var depth: Node = get_node_or_null("/root/SurvivalDepthSystem")
+    if depth != null:
+        checkpoint_state["bleeding"] = float(depth.get("bleeding"))
+        checkpoint_state["infection"] = float(depth.get("infection"))
+
+    var outside: Node = get_node_or_null("/root/OutsideDirector")
+    if outside != null:
+        checkpoint_state["cold_exposure"] = float(outside.get("cold_exposure"))
+
+    var save_system: Node = get_node_or_null("/root/SaveSystem")
+    if save_system != null and save_system.has_method("request_autosave"):
+        save_system.call("request_autosave", label)
+
 func has_checkpoint() -> bool:
     return checkpoint_active
 
@@ -90,6 +103,17 @@ func _restore_player(player: CharacterBody3D) -> void:
     player.set("inventory_names", Dictionary(checkpoint_state.get("inventory_names", {})).duplicate(true))
     player.set("inventory_counts", Dictionary(checkpoint_state.get("inventory_counts", {})).duplicate(true))
     player.set("is_dead", false)
+
+    var depth: Node = get_node_or_null("/root/SurvivalDepthSystem")
+    if depth != null:
+        depth.set("bleeding", clampf(float(checkpoint_state.get("bleeding", 0.0)), 0.0, 100.0))
+        depth.set("infection", clampf(float(checkpoint_state.get("infection", 0.0)), 0.0, 100.0))
+        depth.set("last_health", float(player.get("health")))
+        depth.set("tracked_player_id", int(player.get_instance_id()))
+
+    var outside: Node = get_node_or_null("/root/OutsideDirector")
+    if outside != null and checkpoint_state.has("cold_exposure"):
+        outside.set("cold_exposure", clampf(float(checkpoint_state["cold_exposure"]), 0.0, 100.0))
 
     var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
     if flashlight != null:
