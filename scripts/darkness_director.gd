@@ -48,8 +48,9 @@ func _process(delta: float) -> void:
 
 func _find_spawn_position(player: CharacterBody3D) -> Vector3:
     var world: World3D = player.get_world_3d()
+    var floor_y: float = player.global_position.y - 0.92
     if world == null:
-        return player.global_position + Vector3(0.0, 0.0, 4.0)
+        return Vector3(player.global_position.x, floor_y, player.global_position.z + 4.0)
 
     var state: PhysicsDirectSpaceState3D = world.direct_space_state
     var base_angle: float = randf_range(0.0, TAU)
@@ -58,7 +59,11 @@ func _find_spawn_position(player: CharacterBody3D) -> Vector3:
     for i: int in range(10):
         var angle: float = base_angle + TAU * float(i) / 10.0
         var distance: float = randf_range(3.5, 5.2)
-        var candidate: Vector3 = player.global_position + Vector3(cos(angle) * distance, 0.0, sin(angle) * distance)
+        var candidate: Vector3 = Vector3(
+            player.global_position.x + cos(angle) * distance,
+            floor_y,
+            player.global_position.z + sin(angle) * distance
+        )
         var horizontal_end: Vector3 = candidate + Vector3(0.0, 1.0, 0.0)
 
         var horizontal_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start, horizontal_end)
@@ -76,7 +81,6 @@ func _find_spawn_position(player: CharacterBody3D) -> Vector3:
         if floor_hit.is_empty():
             continue
 
-        var floor_position: Vector3 = floor_hit["position"]
-        return floor_position
+        return candidate
 
-    return player.global_position + Vector3(0.0, 0.0, 3.8)
+    return Vector3(player.global_position.x, floor_y, player.global_position.z + 3.8)
