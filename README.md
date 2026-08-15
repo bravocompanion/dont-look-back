@@ -1,94 +1,125 @@
-# DON'T LOOK BACK — Godot v0.10
+# DON'T LOOK BACK — Godot v0.11
 
-A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive touch controls, and LAN co-op foundation.
+A first-person survival-horror prototype for Godot 4.x with desktop controls, responsive touch controls, LAN co-op, shared survival systems, and host-authoritative horror encounters.
 
-## v0.10 — Mobile Controls
-v0.10 turns the existing responsive HUD into actual mobile gameplay input. The same Player script now accepts keyboard/mouse and touch input, so survival, crafting, shelter interaction, and co-op use one gameplay path rather than separate desktop/mobile implementations.
+## v0.11 — Co-op Horror Foundation
+v0.11 moves the main horror logic onto the LAN host so connected survivors fight the same encounter instead of each device simulating a separate monster.
 
-### Touch movement and camera
-- Left virtual joystick controls walking direction.
-- Right-side free swipe area controls first-person camera look.
-- Multi-touch indices keep movement and camera fingers separate.
-- Joystick has a deadzone and clamped analog movement.
-- RUN is a hold button and uses the existing Stamina sprint system.
+### Host-authoritative The Tenant
+While multiplayer is active:
+- The Tenant AI is controlled only by the host.
+- A client entering the opening horror trigger can request the shared encounter from the host.
+- Entering the safe zone sends a shared stop request so the chase ends for the session rather than only on one device.
+- The host selects the nearest survivor who is still standing.
+- The Tenant can switch target between survivors.
+- Looking at The Tenant from any standing survivor can freeze it.
+- The host uses synchronized player body rotation + camera pitch to evaluate whether a survivor is watching it.
+- World geometry still blocks the watch line-of-sight test.
+- The host decides movement, attacks, panic, and damage.
+- Monster transform/state is broadcast to clients on a separate unreliable RPC channel.
 
-### Mobile action buttons
-Responsive touch buttons are created at runtime:
-- USE — Interact / pick up / activate / craft / storage / sleep
-- RUN — Hold to sprint
-- LIGHT — Flashlight on/off
-- BATT — Replace flashlight battery
-- FOOD — Eat Canned Food
-- WATER — Drink Bottled Water
-- MED — Use Medkit
-- RESTART — Appears after death
+Solo mode still uses the original local The Tenant script.
 
-The existing desktop controls remain active on desktop builds.
+### Shared Darkness Creature
+While multiplayer is active, the original per-device DarknessDirector simulation is suspended and replaced by one shared Darkness Creature controlled by the host.
 
-### Responsive layout
-Touch control sizes and positions scale from the current viewport dimensions.
-- Joystick remains in the lower-left control zone.
-- Primary actions remain on the lower-right.
-- Consumable buttons stay near the lower center.
-- Narrow/portrait layouts leave additional clearance for the responsive CO-OP button.
-- Survival HUD continues using its compact mobile layout.
-- Touch controls are hidden on normal desktop builds.
-- Mobile Web is also detected through the web Android/iOS feature tags.
+- The host watches every survivor's Darkness Exposure and light state.
+- A survivor with dangerous Darkness can cause the shared creature to form.
+- The creature targets standing survivors and can switch targets.
+- Host-authoritative attacks deal synchronized damage.
+- Nearby protective light from another survivor can force the creature to retreat and disappear.
+- Clients render the same shared creature transform sent by the host.
 
-### Mobile interaction prompts
-Desktop interaction prompts continue to use `[E]`.
-Mobile interaction prompts automatically use `[USE]` so prompts match the touch UI.
+When multiplayer is disconnected, the original solo DarknessDirector is enabled again.
 
-### Death / restart
-Desktop keeps `R` to restart.
-On mobile, the normal action cluster hides after death and a large RESTART touch button appears.
+### Downed survivors
+In an active co-op session, lethal monster damage no longer immediately ends that survivor's run.
 
-## Multiplayer foundation retained from v0.9
-LAN co-op remains available while using the new touch controls.
+Instead:
+- Health reaches 0.
+- The survivor enters DOWNED state.
+- Movement and normal gameplay input are disabled while downed.
+- A full-screen downed warning appears.
+- Other peers see a `DOWNED / USE TO REVIVE` marker on that survivor.
+- The remote survivor receives an interaction collider so the normal E/USE interaction system can start a revive.
 
-Current networking includes:
-- Host / Join LAN using ENet
+Other lethal survival conditions are also converted into the co-op downed state when detected while online.
+
+Downed crawling is not implemented yet; v0.11 downed players are immobilized until revived or the team wipes.
+
+### Revive channel
+To revive a teammate:
+1. Move close to the downed survivor.
+2. Look at them and press E on desktop or USE on mobile.
+3. Stay within approximately 2.8 meters for 3 seconds.
+4. Moving away interrupts the revive.
+5. A completed revive restores 45 Health and at least 35 Stamina.
+
+The host validates revive distance, downed state, and completion time.
+
+### Team wipe
+The host tracks all connected survivors. If every active survivor is downed at the same time for roughly 2 seconds, the host broadcasts a team wipe and all peers reload the current scene. Existing checkpoint restoration remains responsible for the local restart position/state.
+
+### Survivor authority data
+v0.11 adds a lightweight co-op horror snapshot alongside the existing v0.9 NetworkManager snapshot. The host receives:
+- Player transform
+- Camera pitch
+- Health
+- Downed state
+- Darkness Exposure
+- Protective-light state
+- Flashlight active state
+
+This information is used for monster targeting, watch checks, revive validation, and team-wipe logic.
+
+## Existing multiplayer retained
+- Host / Join LAN using Godot ENet
 - 2–4 survivor target
-- Remote survivor position/rotation interpolation
+- Remote survivor movement interpolation
 - Remote flashlight state
-- Remote Health/Hunger/Thirst/Stamina/Battery snapshots
-- Shared standard survival pickups
+- Health/Hunger/Thirst/Stamina/Battery snapshots
+- Shared survival pickups
 - Shared emergency relay progress
-- Shared day/night state
-- Shared generator and campfire fuel state
-- Shared shelter storage state from the host
-
-The CO-OP lobby uses normal GUI buttons and can be operated by touch.
+- Shared day/night clock
+- Shared generator and campfire fuel
+- Shared host shelter storage state
+- Touch-operable CO-OP lobby
 
 ### Multiplayer limits still remaining
-v0.10 does not yet make every horror encounter fully server-authoritative.
+v0.11 is a stronger co-op foundation but is not final production netcode.
+
 Still planned:
-- Shared authoritative The Tenant encounter
-- Shared authoritative Darkness Creature targeting/damage
+- Downed crawling
+- Revive animation/progress UI
 - Shared story-key ownership
-- Full client chest transfers
-- Revive/downed survivor system
+- Full client-controlled chest transfers
+- Shared checkpoint authority instead of per-peer checkpoint restoration
+- Better monster collision/pathfinding in larger outdoor structures
+- Reconnect/session recovery
 - Internet matchmaking / NAT traversal
 
 LAN is still the intended multiplayer test environment.
 
-## Survival game loop
-1. Survive The Tenant in the opening horror labyrinth.
-2. Search Apartment 03.
-3. Restore all emergency relays.
-4. Exit into the forest.
-5. Gather Fuel, Food, Water, Batteries, Wood, and Scrap.
-6. Power the cabin generator.
-7. Craft supplies at the workbench.
-8. Maintain generator/campfire light through the night.
-9. Manage Health, Hunger, Thirst, Stamina, Battery, Darkness, and Cold.
-10. Sleep safely when enough light fuel remains.
+## Mobile gameplay retained from v0.10
+- Left virtual joystick — Move
+- Right-side swipe — Camera look
+- RUN — Sprint
+- USE — Interact / revive
+- LIGHT — Flashlight
+- BATT — Replacement battery
+- FOOD — Eat
+- WATER — Drink
+- MED — Heal
+- RESTART — Solo/death restart when available
+- CO-OP — Host/Join lobby
+
+Touch controls scale from the current viewport and normal keyboard/mouse controls remain active on desktop builds.
 
 ## Desktop controls
 - W A S D — Move
 - Mouse — Look
 - Shift — Sprint
-- E — Interact
+- E — Interact / begin revive
 - F — Flashlight
 - B or 4 — Replace Flashlight Battery
 - 1 — Eat Canned Food
@@ -96,41 +127,38 @@ LAN is still the intended multiplayer test environment.
 - 3 — Use Medkit
 - M — Open/close CO-OP lobby
 - Esc — Release/capture mouse
-- R — Restart after death / restore active checkpoint
+- R — Solo death restart / restore active checkpoint
 
-## Mobile controls
-- Left joystick — Move
-- Swipe right side — Look
-- RUN — Sprint
-- USE — Interact
-- LIGHT — Flashlight
-- BATT — Replacement battery
-- FOOD — Eat
-- WATER — Drink
-- MED — Heal
-- RESTART — Restart after death
-- CO-OP — Open Host/Join lobby
+## Current survival loop
+1. Enter the opening horror corridor.
+2. Survive the shared The Tenant encounter in co-op.
+3. Search Apartment 03.
+4. Restore the emergency relays.
+5. Exit into the forest.
+6. Gather Fuel, Food, Water, Batteries, Wood, and Scrap.
+7. Power and maintain the cabin shelter.
+8. Craft supplies and use storage.
+9. Survive Darkness Creature encounters together.
+10. Revive downed teammates instead of abandoning them.
+11. Maintain Health, Hunger, Thirst, Stamina, Battery, Darkness, and Cold through the day/night loop.
+
+## Testing v0.11 co-op
+1. Pull the latest `main` branch on two devices.
+2. Put both devices on the same LAN/Wi-Fi.
+3. Device A opens CO-OP and presses HOST.
+4. Device B enters Device A's LAN IPv4 and presses JOIN.
+5. Verify both survivor avatars are visible.
+6. Enter the opening encounter and confirm both devices see the same The Tenant position.
+7. Have either survivor look at The Tenant and confirm the shared monster freezes.
+8. Allow one survivor to take lethal monster damage and confirm DOWNED appears instead of immediate game over.
+9. The other survivor approaches, presses E/USE, and remains close for 3 seconds.
+10. Verify the downed survivor returns with Health restored.
+11. In a dark area, verify the Darkness Creature is shared and retreats when a nearby survivor reaches protective light.
 
 ## Android/iOS export note
-The gameplay code is now mobile-responsive, but generating an APK/AAB or iOS build still requires the appropriate Godot export templates and platform export setup on the development machine.
+Generating APK/AAB or iOS builds still requires the appropriate Godot export templates and platform setup on the development machine.
 
 For Android LAN multiplayer, enable the INTERNET permission in the Android export preset.
-
-## Testing v0.10
-### Desktop
-1. Pull the latest `main` branch.
-2. Open the existing Godot project.
-3. Press F5.
-4. Desktop controls should behave exactly as before.
-
-### Mobile device
-1. Install/configure the relevant Godot mobile export templates.
-2. Export/deploy the project to the device.
-3. Start the game in landscape or portrait.
-4. Verify joystick movement and simultaneous right-side camera swipe.
-5. Test USE, RUN, LIGHT, BATT, FOOD, WATER, and MED.
-6. Let Health reach zero or test a death encounter and verify RESTART.
-7. For co-op, put devices on the same LAN/Wi-Fi, HOST on one device and JOIN using the host LAN IPv4 on the other.
 
 ## Update in Godot
 If the repository is already cloned:
@@ -142,6 +170,7 @@ If the repository is already cloned:
 6. Press F5.
 
 ## Next targets
-- v0.10.1 — fix device-specific touch/layout issues found during Android testing
-- v0.11 — authoritative co-op monsters + downed/revive foundation
-- Later — exterior expansion, larger loot routes, water systems, stronger night encounters, and internet-session support
+- v0.11.1 — fixes discovered during two-device monster/revive testing
+- v0.12 — Exterior Expansion: abandoned structures, water source, larger loot routes, and stronger night encounters
+- v0.13 — deeper survival conditions and resource processing
+- Later — persistent host world saves, multiplayer polish, and internet-session support
