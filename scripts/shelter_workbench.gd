@@ -3,15 +3,19 @@ extends StaticBody3D
 var recipe_index: int = 0
 var indicator_material: StandardMaterial3D
 
-const RECIPE_NAMES: Array[String] = ["Firewood Bundle", "Improvised Battery"]
+const RECIPE_NAMES: Array[String] = ["Firewood Bundle", "Improvised Battery", "Bandage"]
 
 func _ready() -> void:
     _build_visual()
 
 func get_interaction_text() -> String:
-    if recipe_index == 0:
-        return "Craft Firewood Bundle (2 Wood)"
-    return "Craft Improvised Battery (1 Wood + 2 Scrap)"
+    match recipe_index:
+        0:
+            return "Craft Firewood Bundle (2 Wood)"
+        1:
+            return "Craft Improvised Battery (1 Wood + 2 Scrap)"
+        _:
+            return "Craft Bandage (2 Cloth)"
 
 func interact() -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -21,14 +25,19 @@ func interact() -> void:
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     var crafted: bool = false
 
-    if recipe_index == 0:
-        crafted = _craft_firewood(player)
-        if objective != null:
-            objective.text = "Crafted Firewood Bundle. Next recipe: Improvised Battery." if crafted else "Need 2 Wood. Next recipe: Improvised Battery."
-    else:
-        crafted = _craft_battery(player)
-        if objective != null:
-            objective.text = "Crafted Improvised Battery. Next recipe: Firewood Bundle." if crafted else "Need 1 Wood + 2 Scrap. Next recipe: Firewood Bundle."
+    match recipe_index:
+        0:
+            crafted = _craft_firewood(player)
+            if objective != null:
+                objective.text = "Crafted Firewood Bundle. Next: Improvised Battery." if crafted else "Need 2 Wood. Next: Improvised Battery."
+        1:
+            crafted = _craft_battery(player)
+            if objective != null:
+                objective.text = "Crafted Improvised Battery. Next: Bandage." if crafted else "Need 1 Wood + 2 Scrap. Next: Bandage."
+        _:
+            crafted = _craft_bandage(player)
+            if objective != null:
+                objective.text = "Crafted Bandage. Next: Firewood Bundle." if crafted else "Need 2 Cloth. Next: Firewood Bundle."
 
     recipe_index = (recipe_index + 1) % RECIPE_NAMES.size()
     _flash_indicator(crafted)
@@ -54,6 +63,16 @@ func _craft_battery(player: CharacterBody3D) -> bool:
     if not bool(player.call("add_item", "flashlight_battery", "Flashlight Battery")):
         _refund(player, "wood", "Wood", 1)
         _refund(player, "scrap", "Scrap", 2)
+        return false
+    return true
+
+func _craft_bandage(player: CharacterBody3D) -> bool:
+    if _item_count(player, "cloth") < 2:
+        return false
+    if not _remove_many(player, "cloth", 2):
+        return false
+    if not bool(player.call("add_item", "bandage", "Bandage")):
+        _refund(player, "cloth", "Cloth", 2)
         return false
     return true
 
