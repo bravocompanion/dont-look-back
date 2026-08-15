@@ -1,0 +1,10 @@
+# Godot 4 generated files
+.godot/
+*.tmp
+*.translation
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
