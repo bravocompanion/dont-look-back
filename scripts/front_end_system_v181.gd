@@ -6,7 +6,9 @@ const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
 const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
 const PANIC_TENANT_SYSTEM_SCRIPT: String = "res://scripts/panic_tenant_system.gd"
 const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_network_bridge.gd"
-const VERSION_BADGE_TEXT: String = "v0.24.2  •  PANIC-DRIVEN TENANT"
+const TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT: String = "res://scripts/tenant_flashlight_fx_system.gd"
+const TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT: String = "res://scripts/tenant_death_feedback_system.gd"
+const VERSION_BADGE_TEXT: String = "v0.24.3  •  TENANT FLASHLIGHT KILL FEEDBACK"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -108,9 +110,11 @@ func _initialize_gameplay_frontend() -> void:
 func _ensure_runtime_support_systems() -> void:
     _ensure_root_system("PanicTenantSystem", PANIC_TENANT_SYSTEM_SCRIPT)
     _ensure_root_system("FlashlightMotionSystem", FLASHLIGHT_MOTION_SYSTEM_SCRIPT)
+    _ensure_root_system("TenantFlashlightFXSystem", TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT)
     _ensure_root_system("LanguageSystem", LANGUAGE_SYSTEM_SCRIPT)
     _ensure_root_system("DynamicAudioSystem", DYNAMIC_AUDIO_SYSTEM_SCRIPT)
     _ensure_root_system("TenantPanicNetworkBridge", TENANT_PANIC_NETWORK_BRIDGE_SCRIPT)
+    _ensure_root_system("TenantDeathFeedbackSystem", TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT)
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
