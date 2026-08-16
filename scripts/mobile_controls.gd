@@ -1,11 +1,15 @@
 extends Node
 
+const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+
 @export var joystick_deadzone: float = 0.12
 @export var editor_preview_width: float = 820.0
+@export var enable_editor_mobile_preview: bool = false
 
 var mobile_active: bool = false
 var dead_mode: bool = false
 var external_blocked: bool = false
+var scene_blocked: bool = false
 var sprint_pressed: bool = false
 var move_touch_id: int = -1
 var look_touch_id: int = -1
@@ -34,11 +38,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
     layout_timer -= delta
     if layout_timer <= 0.0:
-        layout_timer = 0.35
+        layout_timer = 0.20
         _refresh_mode_and_layout()
 
 func _input(event: InputEvent) -> void:
-    if not mobile_active or external_blocked or root == null or not root.visible:
+    if not mobile_active or external_blocked or scene_blocked or root == null or not root.visible:
         return
 
     if event is InputEventScreenTouch:
@@ -77,23 +81,26 @@ func _input(event: InputEvent) -> void:
 func is_mobile_active() -> bool:
     return mobile_active
 
+func is_scene_blocked() -> bool:
+    return scene_blocked
+
 func get_move_vector() -> Vector2:
-    if mobile_active and not dead_mode and not external_blocked:
+    if mobile_active and not dead_mode and not external_blocked and not scene_blocked:
         return move_vector
     return Vector2.ZERO
 
 func consume_look_delta() -> Vector2:
     var result: Vector2 = look_delta
     look_delta = Vector2.ZERO
-    if not mobile_active or dead_mode or external_blocked:
+    if not mobile_active or dead_mode or external_blocked or scene_blocked:
         return Vector2.ZERO
     return result
 
 func is_sprint_pressed() -> bool:
-    return mobile_active and not dead_mode and not external_blocked and sprint_pressed
+    return mobile_active and not dead_mode and not external_blocked and not scene_blocked and sprint_pressed
 
 func consume_action(action: String) -> bool:
-    if external_blocked:
+    if external_blocked or scene_blocked:
         return false
     var requested: bool = bool(queued_actions.get(action, false))
     if requested:
@@ -115,6 +122,10 @@ func set_external_blocked(value: bool) -> void:
 func is_external_blocked() -> bool:
     return external_blocked
 
+func set_editor_mobile_preview_enabled(value: bool) -> void:
+    enable_editor_mobile_preview = value
+    _refresh_mode_and_layout()
+
 func _clear_touch_state() -> void:
     sprint_pressed = false
     move_touch_id = -1
@@ -124,14 +135,14 @@ func _clear_touch_state() -> void:
     _update_joystick_visual()
 
 func _queue_action(action: String) -> void:
-    if external_blocked:
+    if external_blocked or scene_blocked:
         return
     if dead_mode and action != "restart":
         return
     queued_actions[action] = true
 
 func _set_sprint(value: bool) -> void:
-    sprint_pressed = value and not dead_mode and not external_blocked
+    sprint_pressed = value and not dead_mode and not external_blocked and not scene_blocked
 
 func _update_move_vector(screen_position: Vector2) -> void:
     if joystick_base == null:
@@ -156,14 +167,25 @@ func _update_joystick_visual() -> void:
 func _refresh_mode_and_layout() -> void:
     if root == null:
         return
+
     var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-    var editor_preview: bool = OS.has_feature("editor") and viewport_size.x <= editor_preview_width
+    var scene: Node = get_tree().current_scene
+    scene_blocked = scene != null and scene.scene_file_path == MAIN_MENU_SCENE_PATH
+
+    var editor_preview: bool = enable_editor_mobile_preview and OS.has_feature("editor") and viewport_size.x <= editor_preview_width
     var web_mobile: bool = OS.has_feature("web_android") or OS.has_feature("web_ios")
     mobile_active = OS.has_feature("mobile") or web_mobile or editor_preview
-    root.visible = mobile_active
-    if not mobile_active:
+
+    # The dedicated main menu owns touch/mouse input. Gameplay controls must not
+    # remain active invisibly underneath it, otherwise an emulated touch can be
+    # consumed in _input() before Control/Button gets the event.
+    root.visible = mobile_active and not scene_blocked
+    if scene_blocked or not mobile_active:
+        queued_actions.clear()
         _clear_touch_state()
+        _update_action_visibility()
         return
+
     _layout_ui(viewport_size)
     _update_action_visibility()
 
@@ -218,7 +240,7 @@ func _layout_ui(viewport_size: Vector2) -> void:
 func _update_action_visibility() -> void:
     if interact_button == null:
         return
-    var gameplay_visible: bool = mobile_active and not dead_mode and not external_blocked
+    var gameplay_visible: bool = mobile_active and not dead_mode and not external_blocked and not scene_blocked
     joystick_base.visible = gameplay_visible
     joystick_knob.visible = gameplay_visible
     interact_button.visible = gameplay_visible
@@ -228,7 +250,7 @@ func _update_action_visibility() -> void:
     food_button.visible = gameplay_visible
     water_button.visible = gameplay_visible
     medkit_button.visible = gameplay_visible
-    restart_button.visible = mobile_active and dead_mode and not external_blocked
+    restart_button.visible = mobile_active and dead_mode and not external_blocked and not scene_blocked
 
 func _is_over_action_button(point: Vector2) -> bool:
     var buttons: Array[Button] = [
