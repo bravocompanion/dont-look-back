@@ -68,14 +68,14 @@ func _process(delta: float) -> void:
     if player == null:
         _release_player()
         _fade_monster_audio(delta, INF)
-        _update_tenant_battery_audio()
+        _update_interference_battery_audio()
         return
 
     _track_player(player)
     player_grace_timer = maxf(0.0, player_grace_timer - delta)
 
     _update_hurt_audio(player)
-    _update_tenant_battery_audio()
+    _update_interference_battery_audio()
     _update_monster_audio(player, delta)
 
 func _build_players() -> void:
@@ -95,7 +95,7 @@ func _build_players() -> void:
     add_child(monster_player)
 
     battery_player = AudioStreamPlayer.new()
-    battery_player.name = "TenantFlashlightInterference"
+    battery_player.name = "FlashlightMonsterInterference"
     battery_player.volume_db = interference_battery_far_volume_db
     add_child(battery_player)
 
@@ -217,22 +217,29 @@ func _update_hurt_audio(player: CharacterBody3D) -> void:
         hurt_player.play()
     last_health = health
 
-func _update_tenant_battery_audio() -> void:
+func _update_interference_battery_audio() -> void:
     if battery_player == null:
         return
 
-    var panic_system: Node = get_node_or_null("/root/PanicTenantSystem")
-    var tenant_contact: bool = panic_system != null and panic_system.has_method("is_tenant_in_flashlight") and bool(panic_system.call("is_tenant_in_flashlight"))
-    if not tenant_contact or battery_stream == null:
+    var flashlight_system: Node = get_node_or_null("/root/FlashlightMotionSystem")
+    var active: bool = flashlight_system != null and flashlight_system.has_method("is_monster_interference_active") and bool(flashlight_system.call("is_monster_interference_active"))
+    if not active or battery_stream == null:
         if battery_player.playing:
             battery_player.stop()
         return
 
     var strength: float = 0.0
-    if panic_system.has_method("get_tenant_flashlight_hold"):
-        strength = clampf(float(panic_system.call("get_tenant_flashlight_hold")) / 3.0, 0.0, 1.0)
+    if flashlight_system.has_method("get_monster_interference_strength"):
+        strength = clampf(float(flashlight_system.call("get_monster_interference_strength")), 0.0, 1.0)
+
+    var panic_system: Node = get_node_or_null("/root/PanicTenantSystem")
+    var tenant_contact: bool = panic_system != null and panic_system.has_method("is_tenant_in_flashlight") and bool(panic_system.call("is_tenant_in_flashlight"))
+    if tenant_contact and panic_system.has_method("get_tenant_flashlight_hold"):
+        var tenant_strength: float = clampf(float(panic_system.call("get_tenant_flashlight_hold")) / 3.0, 0.0, 1.0)
+        strength = maxf(strength, tenant_strength)
+
     battery_player.volume_db = lerpf(interference_battery_far_volume_db, interference_battery_near_volume_db, strength)
-    battery_player.pitch_scale = lerpf(0.98, 1.12, strength)
+    battery_player.pitch_scale = lerpf(0.96, 1.12 if tenant_contact else 1.08, strength)
     if battery_player.stream != battery_stream:
         battery_player.stream = battery_stream
     if not battery_player.playing:
