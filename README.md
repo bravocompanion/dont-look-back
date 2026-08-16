@@ -1,72 +1,127 @@
-# DON'T LOOK BACK — Godot v0.24.1
+# DON'T LOOK BACK — Godot v0.24.2
 
 First-person survival horror prototype for Godot 4.x with responsive desktop/mobile controls, 2–4 player LAN co-op, persistent saves, bilingual Indonesian/English UI, dynamic flashlight handling, survival systems, adaptive horror AI, Labyrinth Arc 1 progression, reverse evacuation finale, Forest transition, and dynamic horror audio.
 
-## Current build — v0.24.1 FLASHLIGHT MONSTER INTERFERENCE
+## Current build — v0.24.2 PANIC-DRIVEN TENANT
 
-v0.24.1 keeps the runtime `DynamicAudioSystem` from v0.24 and changes `battery` audio into a flashlight-versus-monster interference cue.
+v0.24.2 changes PANIC from a monster-proximity meter into a player-motion meter and rebuilds The Tenant around that rule.
 
-The system auto-discovers `.wav`, `.ogg`, or `.mp3` audio under common project folders such as `res://assets`, `res://audio`, `res://sounds`, `res://sfx`, and `res://music`.
+PANIC sources:
+
+- horizontal movement above roughly `4.75 m/s`
+- fast mouse/touch-look above roughly `95 deg/s`
+- full movement contribution near `6.75 m/s`
+- full look contribution near `420 deg/s`
+- movement contributes up to `16 panic/s`
+- fast look contributes up to `20 panic/s`
+- combined gain is capped around `32 panic/s`
+- calm movement/look lets panic decay around `6/s`
+
+Normal walking does not automatically increase panic. Sprinting, hard direction changes, fast mouse flicks, and fast touch swipes do.
+
+### The 2-second stillness rule
+
+When a player remains effectively still for `2.0 seconds` — horizontal speed <= `0.12 m/s` and look motion <= `3 deg/s` — The Tenant appears near that player if it is not already active.
+
+The old corridor HorrorTrigger no longer spawns Tenant directly. Pause, menu, Journal, transition, death, and downed state do not count toward the stillness timer.
+
+Tenant spawn now tries to appear around `4.2 m` behind/near the player and uses the current navigation clamp, so lower-Labyrinth placement is not restricted to the old opening corridor coordinates.
+
+### Panic-scaled Tenant
+
+Tenant movement speed scales continuously with the panic of the survivor it is hunting:
+
+- 0% panic — `1.65 m/s`
+- 25% — `~1.99 m/s`
+- 50% — `~2.33 m/s`
+- 75% — `~2.66 m/s`
+- 100% — `3.00 m/s`
+
+Tenant damage remains `28 HP` per hit.
+
+Attack cooldown scales with panic:
+
+- 0% panic — `2.40 s`
+- 25% — `~2.06 s`
+- 50% — `~1.73 s`
+- 75% — `~1.39 s`
+- 100% — `1.05 s`
+
+At panic 100%, movement is roughly `1.82x` the zero-panic speed and attack attempts can occur roughly `2.29x` as often.
+
+The existing watched/freeze rule remains: keeping The Tenant clearly in sight stops its movement. Looking at it alone does not remove it.
+
+### 3-second flashlight banish
+
+The Tenant now disappears only after a continuous `3.0-second` flashlight hold.
+
+Requirements:
+
+- flashlight ON
+- battery above zero
+- Tenant inside the actual flashlight cone/range
+- clear world line-of-sight
+- continuous beam contact for 3 seconds
+
+Breaking beam contact resets the Tenant-specific banish hold.
+
+The old SafeZone story trigger no longer deletes Tenant automatically.
+
+This works together with v0.24.1 monster interference: while the flashlight is held on Tenant, `battery.mp3` plays, the flashlight flickers, and battery drain ramps from `1.0x` toward a maximum `2.0x` over the same 3-second window.
+
+### Co-op behavior
+
+Each survivor owns a local PANIC meter. A runtime `TenantPanicNetworkBridge` sends local panic + Tenant flashlight contact to the host on RPC channel 17.
+
+The host:
+
+- uses the panic of the survivor currently being hunted for Tenant movement/attack scaling
+- owns the 3-second flashlight-dismiss validation
+- keeps Tenant navigation/attack authoritative through the existing host simulation
+- prevents the older direct co-op Tenant movement path from stacking with AINavigation movement
+
+No new mobile or desktop button is required.
+
+See `V0242_PANIC_TENANT.md` for full tuning and test cases, and `ASSET_DELTA_V0242.md` for production-asset requirements.
+
+## v0.24.1 flashlight monster interference
+
+`battery.mp3` is not a low-battery warning. It is a flashlight-versus-monster interference cue.
+
+The moved SpotLight beam is tested against visible threats using beam direction, cone angle, range, and line-of-sight. Current prototype monster collision is not required for the contact test.
+
+Battery-cost scaling during continuous monster exposure:
+
+- initial contact — `~1.0x`
+- 0.75 s — `~1.25x`
+- 1.5 s — `~1.5x`
+- 2.25 s — `~1.75x`
+- 3.0 s+ — maximum `2.0x`
+
+Base flashlight drain is `1.15/s`, so maximum sustained interference drain is approximately `2.30/s`.
+
+Low battery still has visual weakness/flicker, but it does not play `battery.mp3`.
+
+## v0.24 dynamic horror audio
+
+Runtime audio auto-discovers `.wav`, `.ogg`, or `.mp3` under common folders such as `res://assets`, `res://audio`, `res://sounds`, `res://sfx`, and `res://music`.
 
 Recognized keywords:
 
-- `music` — gameplay background music
-- `hurt` — player hit/damage reaction
-- `monster` — monster proximity/threat layer
-- `battery` — flashlight/monster electrical interference
+- `music` — gameplay BGM
+- `hurt` — player damage reaction
+- `monster` — proximity threat layer
+- `battery` — flashlight/monster interference
 
-Exact filenames like `assets/music.ogg` and `assets/battery.mp3` are preferred, but partial keyword names are also accepted.
-
-### Dynamic audio behavior
-
-- Gameplay BGM runs while inside gameplay maps and stops on the dedicated main menu.
-- BGM restarts after finishing, giving continuous background-music behavior.
-- Monster proximity audio begins around 22 m from an active visible threat and becomes louder as the threat gets closer.
-- BGM is automatically ducked by up to roughly 5.5 dB during close monster pressure.
-- Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden are included in proximity checks.
-- `hurt` triggers on significant HP loss, avoiding repeated SFX from tiny starvation/bleeding/infection ticks.
-- `battery.mp3` is no longer a low-battery warning. It plays only while the flashlight beam is contacting a visible monster through a clear line of sight.
-- `battery.mp3` volume and pitch rise slightly as continuous monster exposure approaches 3 seconds.
-- All channels use the existing Master bus and therefore follow the Settings MASTER VOLUME slider.
-
-### Flashlight monster interference
-
-When the flashlight is ON, the game tests the actual moved SpotLight beam against active monsters using beam direction, cone angle, current range, and world line-of-sight.
-
-The check does not depend on production monster collision. This is important because current procedural Mourner/Crawler visuals are Node3D-based prototype meshes.
-
-Continuous monster exposure is capped at 3 seconds for battery-cost scaling:
-
-- initial contact — approximately `1.0x` normal flashlight drain
-- 0.75 s — approximately `1.25x`
-- 1.5 s — approximately `1.5x`
-- 2.25 s — approximately `1.75x`
-- 3.0 s and longer — maximum `2.0x`
-
-Current base battery drain is `1.15/s`, so maximum sustained interference drain is approximately `2.30/s`.
-
-The flashlight also flickers while a monster remains inside the beam. Flicker becomes faster/deeper as exposure approaches 3 seconds. A short `0.16 s` contact grace prevents normal procedural flashlight sway from constantly resetting the effect.
-
-Leaving the monster, turning the flashlight off, losing line-of-sight, or running out of battery resets interference and returns drain to `1.0x`.
-
-Low battery still has its existing visual weakness/flicker behavior, but it no longer plays `battery.mp3`.
-
-At the time the audio system was introduced, GitHub `main` did not contain an `assets/` directory. Local audio files work if already inside the Godot project, but they must also be committed if audio should be present after clone/pull or in repository-only builds.
-
-See `ASSET_DELTA_V024.md` for exact audio requirements and testing.
+BGM follows Master Volume and ducks during close monster pressure. Monster proximity begins around 22 m and includes Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden.
 
 ## v0.23 language settings
 
-Settings supports:
+Settings supports Bahasa Indonesia and English. Language changes immediately and persists in:
 
-- Bahasa Indonesia
-- English
+`user://dont_look_back_language.cfg`
 
-Language changes are immediate and persistent in `user://dont_look_back_language.cfg`.
-
-The main menu, gameplay settings, core HUD, survival stat labels, inventory/common items, interaction prompts, death/restart messaging, mission UI, and major Arc 1 objective language have bilingual coverage. Sector and co-op callouts such as M-01, F-02, A-03, L-04, SYNC, LOCKDOWN, and Warden remain stable across languages.
-
-Long-form Journal lore is still intended for curated translation rather than automatic replacement.
+Core menu/HUD/gameplay text is bilingual. Stable co-op/sector callouts such as M-01, F-02, A-03, L-04, SYNC, LOCKDOWN, and Warden remain consistent between languages.
 
 ## v0.22 flashlight and lighting feel
 
@@ -76,25 +131,14 @@ Full flashlight baseline:
 - range `13 m`
 - cone angle `28°`
 
-Flashlight motion is procedural rather than rigidly attached to the camera:
+Flashlight handling includes idle breathing sway, walk bob, stronger sprint sway, look inertia, jump/landing response, stress instability, and reduced motion amplitude on mobile. The camera remains comparatively stable to reduce motion sickness.
 
-- idle — subtle breathing sway
-- walk — breathing + footstep bob
-- sprint — larger pitch/yaw/roll movement
-- fast look — small flashlight inertia/lag
-- jump — takeoff kick
-- landing — impact dip
-- low stamina / health / panic / darkness — additional controlled instability
-- mobile — approximately 74% of desktop motion amplitude
-
-The camera remains comparatively stable to reduce motion sickness.
-
-Normal Labyrinth ambience lights remain below the protective-light threshold. Decorative/fault/evacuation lights are navigation and mood sources, not automatic safe zones.
+Normal Labyrinth ambience/fault/evacuation lights remain visually distinct from genuine protective safe lights.
 
 ## Current Arc 1 route
 
 1. Opening Corridor + Apartment 03
-2. Restore 3 original emergency relays
+2. Restore 3 emergency relays
 3. M-01 Maintenance — Fuse A/B/C
 4. F-02 Flooded Service — Valve A/B
 5. A-03 Archive — Breaker B → A → C
@@ -102,56 +146,19 @@ Normal Labyrinth ambience lights remain below the protective-light threshold. De
 7. Return to L-04 Lockdown
 8. Survive the 120-second three-phase Lockdown
 9. Evacuation Protocol begins
-10. Reverse through A-03 and restore Emergency Override
-11. Reverse through F-02 and restore Extraction Override
+10. Restore A-03 Emergency Override while reversing route
+11. Restore F-02 Extraction Override
 12. Return toward M-01 while Evacuation Warden hunts
 13. Reach M-01 extraction beacon
 14. Transition to Forest
 
-A blind Arc 1 run is intended to be roughly 40–60 minutes depending on exploration, co-op coordination, shortcuts, SYNC use, route variation, failed Archive attempts, resources, and enemy pressure.
-
-## Labyrinth gameplay systems
-
-The lower Labyrinth contains:
-
-- adaptive Encounter Director
-- Mourner + Crawler enemy rotation
-- Tenant and Darkness pressure
-- The Warden elite hunt
-- three saved Isolation route variants
-- temporary pressure shutters
-- environmental steam/electrical hazards
-- sector color/signage language
-- optional supply bays
-- Journal notes
-- one-way service shortcuts
-- paired optional co-op SYNC stations
-- temporary genuine safe-light rewards
-- 3-phase Lockdown finale
-- reverse-route Evacuation finale
-
-The evacuation timer is a pressure target rather than an instant death timer. At zero it becomes `EVACUATION CRITICAL`; the run remains completable but the Warden and horror pressure intensify.
+A blind Arc 1 run is intended to be roughly 40–60 minutes depending on exploration, co-op coordination, shortcuts, SYNC use, route variation, Archive mistakes, resources, and enemy pressure.
 
 ## Multiplayer
 
-LAN/IP co-op supports 2–4 survivors.
+LAN/IP co-op supports 2–4 survivors with Host/Join, Ready/Not Ready, shared checkpoints, revive/downed crawl, late join, reconnect support, remote survivor/flashlight representation, and host-led monster/objective/hazard state.
 
-Existing systems include:
-
-- Host / Join
-- Ready / Not Ready
-- host Start
-- survivor names
-- remote flashlight/avatar representation
-- teammate/downed UI
-- revive
-- downed crawl
-- shared checkpoint
-- reconnect support
-- late-join map/state synchronization
-- host-led monster/objective/hazard state
-
-Important current limitation: multiplayer is still prototype-grade LAN authority rather than hardened competitive server authority. Some older RPC paths need additional server-side position/sanity validation before public release.
+Multiplayer remains prototype-grade LAN authority rather than hardened competitive-server authority; several older RPC paths still need stronger server-side sanity/distance validation before public release.
 
 ## Save / Continue
 
@@ -159,9 +166,9 @@ Persistent world save:
 
 `user://dont_look_back_save_v1.json`
 
-It includes player survival state, inventory, finite pickup claims, relay/world state, checkpoints, Journal progress, Arc 1 progression, Isolation state, route variant, Lockdown state, shortcuts, co-op SYNC completion, and Evacuation progress.
+It stores survival/inventory state, finite pickup claims, checkpoints, world state, Journal progress, Arc 1 objectives, Isolation/route state, Lockdown, shortcuts, SYNC completion, and Evacuation progress.
 
-Language preference is intentionally stored separately from world save.
+Language is intentionally stored separately from world save.
 
 ## Controls
 
@@ -180,7 +187,7 @@ Desktop:
 - J — Journal
 - M — co-op UI
 - K — save
-- L — offline load / language toggle inside language UI context
+- L — offline load / language toggle in language-setting context
 - Esc — menu
 
 Mobile:
@@ -198,56 +205,46 @@ Mobile:
 - JOURNAL
 - MENU
 
-UI and button layout scale from viewport short-side values for phone/tablet/desktop responsiveness.
+## Recommended v0.24.2 test
 
-## Recommended v0.24.1 test
-
-Audio + flashlight interference quick pass:
-
-1. Place/confirm `music`, `hurt`, `monster`, and `battery` files under the local project assets/audio folders and let Godot finish importing them.
-2. NEW GAME: BGM should begin.
-3. Change MASTER VOLUME: BGM/SFX should follow it.
-4. Take a normal monster hit: `hurt` should play once.
-5. Approach an active monster from more than 22 m without aiming the flashlight at it: `monster` proximity should fade in; `battery.mp3` should remain silent.
-6. Drain flashlight below 22% while not aiming at a monster: `battery.mp3` should remain silent.
-7. Aim the flashlight directly at a visible monster: `battery.mp3` should start and the flashlight should flicker.
-8. Hold beam for about 1.5 seconds: total battery drain should be around `1.5x` normal.
-9. Hold beam for 3 seconds or more: drain should cap at `2.0x` and must not continue increasing.
-10. Aim away or put a wall between player and monster: interference audio/flicker should stop and drain should return to `1.0x`.
-11. Repeat against Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden.
-12. Return to title: gameplay audio stops.
-
-Regression pass:
-
-- flashlight remains energy 6.7 at full battery
-- idle/walk/sprint flashlight sway remains functional
-- low-battery visual behavior still functions without `battery.mp3`
-- Indonesian/English switching still persists
-- Labyrinth objective route remains unchanged
-- desktop and mobile controls remain responsive
+1. Walk normally and look slowly: PANIC should remain stable or fall.
+2. Sprint: PANIC should rise.
+3. Stand in place and flick mouse/touch rapidly: PANIC should rise.
+4. Sprint + fast look: PANIC should rise fastest, capped around 32/s.
+5. Stay completely still for 2 seconds: Tenant should appear close to the player.
+6. Move/look before 2 seconds: stillness timer should reset.
+7. Compare Tenant at PANIC 0/25/50/75/100 and verify continuous speed scaling.
+8. Verify each Tenant hit remains 28 HP while attack cooldown becomes shorter at high panic.
+9. Watch Tenant without flashlight: it should freeze but remain present.
+10. Flash Tenant for less than 3 seconds then look away: banish hold should reset.
+11. Hold flashlight on Tenant for 3 seconds: Tenant should disappear.
+12. Put a wall between flashlight and Tenant: banish must not progress.
+13. Verify `battery.mp3`, flicker, and increased battery drain occur during the flashlight hold.
+14. Verify PANIC does not reset to zero when Tenant disappears.
+15. Co-op: each player should have local panic; host Tenant should scale from the survivor it is currently hunting.
 
 ## Current technical priorities
 
-Before treating the project as a public demo/release candidate, priority stabilization work includes:
+Before public demo/release-candidate status:
 
-- harden host-side validation for older Arc objective/map-transition RPCs
+- harden older host-side objective/map-transition RPC validation
 - make checkpoint + finite-loot rollback consistent
 - block MovementSystem while Journal is open
 - simplify Evacuation Warden state ownership
 - rebalance flashlight battery/darkness economy after runtime playtesting
-- profile runtime CSG/lights/navigation on real Android hardware
-- move more prototype procedural art/audio into production assets
+- profile CSG/lights/navigation on real Android hardware
+- replace procedural prototype presentation with production assets
 
 ## Git workflow note
 
-`project.godot` is intentionally not modified by v0.22–v0.24.1 runtime feature additions. Flashlight, Language, and DynamicAudio systems are bootstrapped through existing runtime/autoload systems to reduce conflict risk with local project settings.
+`project.godot` remains intentionally untouched by v0.22–v0.24.2 runtime feature additions. Flashlight, Language, DynamicAudio, PanicTenant, and TenantPanicNetworkBridge systems are bootstrapped through existing runtime/autoload infrastructure to reduce conflicts with local project settings.
 
-The visible in-menu build badge for current `main` is:
+Current visible menu badge:
 
-`v0.24.1 • FLASHLIGHT MONSTER INTERFERENCE`
+`v0.24.2 • PANIC-DRIVEN TENANT`
 
-When local `project.godot` differs from remote, back it up or stash changes before Pull instead of blindly discarding local settings.
+If local `project.godot` differs from remote, back it up or stash changes before Pull instead of blindly discarding local settings.
 
 ## Runtime validation limitation
 
-The assistant environment does not contain the Godot executable, so repository changes receive static code/logic review but still require F5/device runtime validation on the development machine.
+The assistant environment does not contain the Godot executable. Repository changes receive static code/logic review but still require F5/device validation on the development machine.
