@@ -29,8 +29,6 @@ var last_health: float = 100.0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
-    # PanicTenantSystem runs at -20. Run immediately after it, but before the
-    # Player consumes MobileControls.look_delta and before the network bridge.
     process_priority = -10
     _disable_legacy_panic_calculation()
 
@@ -86,6 +84,9 @@ func get_idle_time() -> float:
 func add_monster_hit_panic(amount: float = -1.0) -> void:
     var gain: float = monster_hit_panic_gain if amount < 0.0 else maxf(0.0, amount)
     panic_value = minf(100.0, panic_value + gain)
+    idle_timer = 0.0
+    if player != null:
+        last_health = float(player.get("health"))
     _publish_panic()
 
 func _ensure_player() -> bool:
@@ -128,8 +129,6 @@ func _consume_real_look_speed(delta: float) -> float:
     if _mobile_active():
         var mobile: Node = get_node_or_null("/root/MobileControls")
         if mobile != null:
-            # Read the gameplay look accumulator before Player consumes it.
-            # This is actual right-side swipe input, not camera transform drift.
             var look_value: Variant = mobile.get("look_delta")
             if look_value is Vector2:
                 var touch_delta: Vector2 = look_value
@@ -275,8 +274,6 @@ func _disable_legacy_panic_calculation() -> void:
     if legacy == null:
         return
 
-    # The legacy system still owns Tenant beam-banishing and runtime spawning,
-    # but it no longer owns PANIC or the two-second idle decision.
     legacy.set("movement_panic_gain_per_second", 0.0)
     legacy.set("look_panic_gain_per_second", 0.0)
     legacy.set("maximum_combined_gain_per_second", 0.0)
