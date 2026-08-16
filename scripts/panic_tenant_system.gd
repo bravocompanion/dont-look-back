@@ -27,6 +27,8 @@ var idle_timer: float = 0.0
 var request_cooldown: float = 0.0
 var current_move_speed: float = 0.0
 var current_look_speed_deg: float = 0.0
+var tenant_flashlight_hold: float = 0.0
+var tenant_flashlight_contact: bool = false
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -45,13 +47,15 @@ func _process(delta: float) -> void:
 
     if not _gameplay_allowed():
         idle_timer = 0.0
+        tenant_flashlight_hold = 0.0
+        tenant_flashlight_contact = false
         _update_hud()
         return
 
     _sample_motion(delta)
     _update_panic(delta)
     _update_idle_tenant(delta)
-    _update_tenant_flashlight_dismissal()
+    _update_tenant_flashlight_dismissal(delta)
     _update_hud()
 
 func get_panic() -> float:
@@ -65,6 +69,12 @@ func get_movement_speed() -> float:
 
 func get_look_speed_degrees() -> float:
     return current_look_speed_deg
+
+func is_tenant_in_flashlight() -> bool:
+    return tenant_flashlight_contact
+
+func get_tenant_flashlight_hold() -> float:
+    return tenant_flashlight_hold
 
 func _ensure_player() -> bool:
     var found: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -87,6 +97,8 @@ func _ensure_player() -> bool:
     panic_value = clampf(float(player.get("flashlight_panic")), 0.0, 100.0)
     idle_timer = 0.0
     request_cooldown = 1.25
+    tenant_flashlight_hold = 0.0
+    tenant_flashlight_contact = false
     last_yaw = player.rotation.y
     last_pitch = camera.rotation.x
     view_initialized = true
@@ -100,6 +112,8 @@ func _release_player() -> void:
     player = null
     camera = null
     idle_timer = 0.0
+    tenant_flashlight_hold = 0.0
+    tenant_flashlight_contact = false
     view_initialized = false
     current_move_speed = 0.0
     current_look_speed_deg = 0.0
@@ -132,18 +146,15 @@ func _sample_motion(delta: float) -> void:
 func _update_panic(delta: float) -> void:
     var move_denominator: float = maxf(0.05, movement_full_panic_speed - movement_panic_threshold)
     var movement_factor: float = clampf((current_move_speed - movement_panic_threshold) / move_denominator, 0.0, 1.0)
-
     var look_denominator: float = maxf(1.0, look_full_panic_speed_deg - look_panic_threshold_deg)
     var look_factor: float = clampf((current_look_speed_deg - look_panic_threshold_deg) / look_denominator, 0.0, 1.0)
 
     var panic_gain: float = movement_factor * movement_panic_gain_per_second + look_factor * look_panic_gain_per_second
     panic_gain = minf(maximum_combined_gain_per_second, panic_gain)
-
     if panic_gain > 0.001:
         panic_value = minf(100.0, panic_value + panic_gain * delta)
     else:
         panic_value = maxf(0.0, panic_value - calm_panic_decay_per_second * delta)
-
     _apply_panic_to_player()
 
 func _update_idle_tenant(delta: float) -> void:
@@ -175,30 +186,65 @@ func _update_idle_tenant(delta: float) -> void:
     idle_timer = 0.0
     request_cooldown = spawn_request_cooldown
 
-func _update_tenant_flashlight_dismissal() -> void:
-    if _network_online():
-        return
+func _update_tenant_flashlight_dismissal(delta: float) -> void:
     var tenant: Node3D = _tenant_node()
     if tenant == null or not tenant.visible or not bool(tenant.get("active")):
+        tenant_flashlight_hold = 0.0
+        tenant_flashlight_contact = false
         return
 
-    var flashlight_system: Node = get_node_or_null("/root/FlashlightMotionSystem")
-    if flashlight_system == null:
-        return
-    if not flashlight_system.has_method("get_monster_interference_target_id") or not flashlight_system.has_method("get_monster_exposure_seconds"):
-        return
+    tenant_flashlight_contact = _tenant_inside_flashlight_beam(tenant)
+    if tenant_flashlight_contact:
+        tenant_flashlight_hold = minf(tenant_flashlight_dismiss_seconds, tenant_flashlight_hold + delta)
+    else:
+        tenant_flashlight_hold = 0.0
 
-    var target_id: int = int(flashlight_system.call("get_monster_interference_target_id"))
-    if target_id != int(tenant.get_instance_id()):
-        return
-    var exposure: float = float(flashlight_system.call("get_monster_exposure_seconds"))
-    if exposure < tenant_flashlight_dismiss_seconds:
+    if _network_online() or tenant_flashlight_hold < tenant_flashlight_dismiss_seconds:
         return
 
     if tenant.has_method("stop_stalking"):
         tenant.call("stop_stalking")
+    tenant_flashlight_hold = 0.0
+    tenant_flashlight_contact = false
     idle_timer = 0.0
     request_cooldown = 0.35
+
+func _tenant_inside_flashlight_beam(tenant: Node3D) -> bool:
+    if player == null:
+        return false
+    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
+    if flashlight == null or not flashlight.visible or float(player.get("flashlight_battery")) <= 0.0:
+        return false
+
+    var origin: Vector3 = flashlight.global_position
+    var focus: Vector3 = tenant.global_position + Vector3(0.0, 1.35, 0.0)
+    var to_tenant: Vector3 = focus - origin
+    var distance: float = to_tenant.length()
+    if distance <= 0.05 or distance > flashlight.spot_range + 0.65:
+        return false
+
+    var forward: Vector3 = -flashlight.global_transform.basis.z.normalized()
+    var direction: Vector3 = to_tenant / distance
+    var half_angle: float = clampf(flashlight.spot_angle * 0.64, 10.0, 22.0)
+    if forward.dot(direction) < cos(deg_to_rad(half_angle)):
+        return false
+
+    var world: World3D = player.get_world_3d()
+    if world == null:
+        return true
+    var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, focus)
+    var excludes: Array[RID] = [player.get_rid()]
+    query.exclude = excludes
+    query.collide_with_areas = false
+    query.collide_with_bodies = true
+    var hit: Dictionary = world.direct_space_state.intersect_ray(query)
+    if hit.is_empty():
+        return true
+    var hit_position_value: Variant = hit.get("position", null)
+    if not (hit_position_value is Vector3):
+        return false
+    var hit_position: Vector3 = hit_position_value
+    return origin.distance_to(hit_position) >= distance - 0.40
 
 func _apply_panic_to_player() -> void:
     if player == null:
@@ -216,7 +262,6 @@ func _update_hud() -> void:
         var language: Node = get_node_or_null("/root/LanguageSystem")
         var prefix: String = "PANIK" if language != null and language.has_method("is_indonesian") and bool(language.call("is_indonesian")) else "PANIC"
         panic_label.text = "%s %d%%" % [prefix, int(round(panic_value))]
-
     var overlay: ColorRect = player.get_node_or_null("HUD/PanicOverlay") as ColorRect
     if overlay != null:
         var alpha: float = lerpf(0.0, 0.23, panic_value / 100.0)
@@ -239,23 +284,18 @@ func _tenant_active() -> bool:
 func _gameplay_allowed() -> bool:
     if player == null or bool(player.get("is_dead")) or get_tree().paused:
         return false
-
     var front_end: Node = get_node_or_null("/root/FrontEndSystem")
     if front_end != null and bool(front_end.get("menu_open")):
         return false
-
     var transition: Node = get_node_or_null("/root/MapTransitionSystem")
     if transition != null and bool(transition.get("transitioning")):
         return false
-
     var journal: Node = get_node_or_null("/root/JournalSystem")
     if journal != null and journal.has_method("is_open") and bool(journal.call("is_open")):
         return false
-
     var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
     if coop != null and bool(coop.get("local_downed")):
         return false
-
     return true
 
 func _network_online() -> bool:
