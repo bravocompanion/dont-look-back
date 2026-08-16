@@ -19,7 +19,7 @@ func _process(_delta: float) -> void:
 
     var geometry_ready: bool = false
     if scene.scene_file_path == LABYRINTH_SCENE_PATH:
-        geometry_ready = scene.get_node_or_null("LabyrinthExpansion") != null
+        geometry_ready = scene.get_node_or_null("LabyrinthExpansion") != null and scene.get_node_or_null("Arc1Expansion") != null
     elif scene.scene_file_path == FOREST_SCENE_PATH:
         geometry_ready = scene.get_node_or_null("OutsideWorld/ExteriorExpansion") != null
 
@@ -28,7 +28,7 @@ func _process(_delta: float) -> void:
         return
 
     ready_frames += 1
-    if ready_frames < 4:
+    if ready_frames < 6:
         return
 
     var navigation: Node = get_node_or_null("/root/AINavigationSystem")
