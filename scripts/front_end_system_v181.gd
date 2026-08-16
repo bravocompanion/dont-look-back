@@ -1,6 +1,7 @@
 extends "res://scripts/front_end_system.gd"
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+const VERSION_BADGE_TEXT: String = "v0.19  •  ARC 1: THE LABYRINTH"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -23,6 +24,10 @@ func _process(delta: float) -> void:
         gameplay_started = false
         menu_open = false
         current_mode = "title"
+
+        var version_label: Label = scene.get_node_or_null("MenuLayer/Root/Center/MainPanel/VBox/Version") as Label
+        if version_label != null and version_label.text != VERSION_BADGE_TEXT:
+            version_label.text = VERSION_BADGE_TEXT
 
         var mobile: Node = get_node_or_null("/root/MobileControls")
         if mobile != null and mobile.has_method("set_external_blocked") and mobile.has_method("is_external_blocked"):
