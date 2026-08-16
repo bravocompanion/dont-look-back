@@ -1,6 +1,25 @@
 extends "res://scripts/mobile_controls.gd"
 
+const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+
 var jump_button: Button
+var menu_forced_block: bool = false
+
+func _process(delta: float) -> void:
+    var scene: Node = get_tree().current_scene
+    var on_main_menu: bool = scene != null and scene.scene_file_path == MAIN_MENU_SCENE_PATH
+    if on_main_menu:
+        if not menu_forced_block:
+            menu_forced_block = true
+            set_external_blocked(true)
+        if root != null:
+            root.visible = false
+        return
+
+    if menu_forced_block:
+        menu_forced_block = false
+        set_external_blocked(false)
+    super._process(delta)
 
 func _build_ui() -> void:
     super._build_ui()
