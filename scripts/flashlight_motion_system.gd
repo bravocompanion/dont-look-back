@@ -1,6 +1,7 @@
 extends Node
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+const FULL_BATTERY_ENERGY: float = 6.7
 
 @export var mobile_motion_scale: float = 0.74
 @export var idle_pitch_degrees: float = 0.42
@@ -74,6 +75,9 @@ func _ensure_player() -> bool:
     base_rotation = flashlight.rotation
     base_spot_range = flashlight.spot_range
     base_spot_angle = flashlight.spot_angle
+    player.set("flashlight_base_energy", FULL_BATTERY_ENERGY)
+    if float(player.get("flashlight_battery")) > 0.0:
+        flashlight.light_energy = FULL_BATTERY_ENERGY
     breath_phase = 0.0
     bob_phase = 0.0
     look_lag = Vector3.ZERO
