@@ -15,6 +15,7 @@ const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 @export var idle_look_speed_deg: float = 3.0
 @export var spawn_request_cooldown: float = 2.5
 @export var tenant_flashlight_dismiss_seconds: float = 3.0
+@export var tenant_flashlight_contact_grace_seconds: float = 0.16
 
 var tracked_player_id: int = 0
 var player: CharacterBody3D
@@ -29,6 +30,7 @@ var current_move_speed: float = 0.0
 var current_look_speed_deg: float = 0.0
 var tenant_flashlight_hold: float = 0.0
 var tenant_flashlight_contact: bool = false
+var tenant_flashlight_grace: float = 0.0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -49,6 +51,7 @@ func _process(delta: float) -> void:
         idle_timer = 0.0
         tenant_flashlight_hold = 0.0
         tenant_flashlight_contact = false
+        tenant_flashlight_grace = 0.0
         _update_hud()
         return
 
@@ -99,6 +102,7 @@ func _ensure_player() -> bool:
     request_cooldown = 1.25
     tenant_flashlight_hold = 0.0
     tenant_flashlight_contact = false
+    tenant_flashlight_grace = 0.0
     last_yaw = player.rotation.y
     last_pitch = camera.rotation.x
     view_initialized = true
@@ -114,6 +118,7 @@ func _release_player() -> void:
     idle_timer = 0.0
     tenant_flashlight_hold = 0.0
     tenant_flashlight_contact = false
+    tenant_flashlight_grace = 0.0
     view_initialized = false
     current_move_speed = 0.0
     current_look_speed_deg = 0.0
@@ -191,12 +196,20 @@ func _update_tenant_flashlight_dismissal(delta: float) -> void:
     if tenant == null or not tenant.visible or not bool(tenant.get("active")):
         tenant_flashlight_hold = 0.0
         tenant_flashlight_contact = false
+        tenant_flashlight_grace = 0.0
         return
 
-    tenant_flashlight_contact = _tenant_inside_flashlight_beam(tenant)
-    if tenant_flashlight_contact:
+    var raw_contact: bool = _tenant_inside_flashlight_beam(tenant)
+    if raw_contact:
+        tenant_flashlight_grace = tenant_flashlight_contact_grace_seconds
+        tenant_flashlight_contact = true
+        tenant_flashlight_hold = minf(tenant_flashlight_dismiss_seconds, tenant_flashlight_hold + delta)
+    elif tenant_flashlight_grace > 0.0:
+        tenant_flashlight_grace = maxf(0.0, tenant_flashlight_grace - delta)
+        tenant_flashlight_contact = true
         tenant_flashlight_hold = minf(tenant_flashlight_dismiss_seconds, tenant_flashlight_hold + delta)
     else:
+        tenant_flashlight_contact = false
         tenant_flashlight_hold = 0.0
 
     if _network_online() or tenant_flashlight_hold < tenant_flashlight_dismiss_seconds:
@@ -206,6 +219,7 @@ func _update_tenant_flashlight_dismissal(delta: float) -> void:
         tenant.call("stop_stalking")
     tenant_flashlight_hold = 0.0
     tenant_flashlight_contact = false
+    tenant_flashlight_grace = 0.0
     idle_timer = 0.0
     request_cooldown = 0.35
 
@@ -240,11 +254,24 @@ func _tenant_inside_flashlight_beam(tenant: Node3D) -> bool:
     var hit: Dictionary = world.direct_space_state.intersect_ray(query)
     if hit.is_empty():
         return true
+
+    var collider_value: Variant = hit.get("collider", null)
+    if collider_value is Node and _collider_belongs_to_tenant(collider_value as Node, tenant):
+        return true
+
     var hit_position_value: Variant = hit.get("position", null)
     if not (hit_position_value is Vector3):
         return false
     var hit_position: Vector3 = hit_position_value
     return origin.distance_to(hit_position) >= distance - 0.40
+
+func _collider_belongs_to_tenant(collider: Node, tenant: Node3D) -> bool:
+    var current: Node = collider
+    while current != null:
+        if current == tenant:
+            return true
+        current = current.get_parent()
+    return false
 
 func _apply_panic_to_player() -> void:
     if player == null:
