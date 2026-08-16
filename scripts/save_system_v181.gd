@@ -30,11 +30,18 @@ func _process(delta: float) -> void:
 func _collect_state(player: CharacterBody3D) -> Dictionary:
     var state: Dictionary = super._collect_state(player)
     state["map_scene"] = _current_map_scene_path()
+
     var arc: Node = get_node_or_null("/root/LabyrinthArc1System")
     if arc != null and arc.has_method("get_save_state"):
         var arc_value: Variant = arc.call("get_save_state")
         if arc_value is Dictionary:
             state["arc1"] = Dictionary(arc_value).duplicate(true)
+
+    var exploration: Node = get_node_or_null("/root/LabyrinthExplorationSystem")
+    if exploration != null and exploration.has_method("get_save_state"):
+        var exploration_value: Variant = exploration.call("get_save_state")
+        if exploration_value is Dictionary:
+            state["arc1_exploration"] = Dictionary(exploration_value).duplicate(true)
     return state
 
 func _prepare_clean_reload() -> void:
@@ -42,6 +49,10 @@ func _prepare_clean_reload() -> void:
     var arc: Node = get_node_or_null("/root/LabyrinthArc1System")
     if arc != null and arc.has_method("reset_progress"):
         arc.call("reset_progress")
+
+    var exploration: Node = get_node_or_null("/root/LabyrinthExplorationSystem")
+    if exploration != null and exploration.has_method("reset_progress"):
+        exploration.call("reset_progress")
 
 func _load_from_disk(automatic: bool) -> bool:
     var file: FileAccess = FileAccess.open(SAVE_PATH, FileAccess.READ)
@@ -121,6 +132,11 @@ func _restore_state(state: Dictionary) -> void:
     var arc_value: Variant = migrated.get("arc1", {})
     if arc != null and arc.has_method("restore_save_state") and arc_value is Dictionary:
         arc.call("restore_save_state", Dictionary(arc_value))
+
+    var exploration: Node = get_node_or_null("/root/LabyrinthExplorationSystem")
+    var exploration_value: Variant = migrated.get("arc1_exploration", {})
+    if exploration != null and exploration.has_method("restore_save_state") and exploration_value is Dictionary:
+        exploration.call("restore_save_state", Dictionary(exploration_value))
 
 func register_claimed_pickup(node_path: String) -> void:
     var normalized: String = _normalize_pickup_path(node_path)
