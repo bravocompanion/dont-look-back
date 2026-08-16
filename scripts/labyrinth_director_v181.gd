@@ -11,6 +11,19 @@ func _process(delta: float) -> void:
     _open_arc1_threshold(scene)
     _ensure_v181_labyrinth_lighting(scene)
 
+func activate_relay(relay_id: int) -> bool:
+    var activated: bool = super.activate_relay(relay_id)
+    if not activated:
+        return false
+
+    if _active_relay_count() >= 3:
+        var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+        if player != null:
+            var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+            if objective != null:
+                objective.text = "All 3 relays are online. The lower Labyrinth is open — follow the beacon deeper."
+    return true
+
 func _open_arc1_threshold(scene: Node) -> void:
     if scene.get_node_or_null("Arc1Expansion") == null:
         return
