@@ -3,7 +3,8 @@ extends "res://scripts/front_end_system.gd"
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
 const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.23  •  INDONESIAN / ENGLISH LANGUAGE"
+const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
+const VERSION_BADGE_TEXT: String = "v0.24  •  DYNAMIC HORROR AUDIO"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -105,6 +106,7 @@ func _initialize_gameplay_frontend() -> void:
 func _ensure_runtime_support_systems() -> void:
     _ensure_root_system("FlashlightMotionSystem", FLASHLIGHT_MOTION_SYSTEM_SCRIPT)
     _ensure_root_system("LanguageSystem", LANGUAGE_SYSTEM_SCRIPT)
+    _ensure_root_system("DynamicAudioSystem", DYNAMIC_AUDIO_SYSTEM_SCRIPT)
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
