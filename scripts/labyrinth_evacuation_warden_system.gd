@@ -20,6 +20,8 @@ func _process(_delta: float) -> void:
     if arc_root == null or warden_script == null:
         return
 
+    _suppress_original_warden_during_evacuation()
+
     var scene_id: int = int(scene.get_instance_id())
     if scene_id != configured_scene_id:
         configured_scene_id = scene_id
@@ -28,6 +30,16 @@ func _process(_delta: float) -> void:
 
     if arc_root.get_node_or_null("EvacuationWarden") == null:
         call_deferred("_ensure_warden", scene, arc_root)
+
+func _suppress_original_warden_during_evacuation() -> void:
+    var evacuation: Node = get_node_or_null("/root/LabyrinthEvacuationSystem")
+    if evacuation == null or not evacuation.has_method("is_escape_active"):
+        return
+    if not bool(evacuation.call("is_escape_active")):
+        return
+    var major: Node = get_node_or_null("/root/LabyrinthMajorSystem")
+    if major != null:
+        major.set("warden_active", false)
 
 func _ensure_warden(scene: Node, arc_root: Node3D) -> void:
     await get_tree().process_frame
