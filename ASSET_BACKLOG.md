@@ -1,114 +1,276 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.19.3 — LABYRINTH CO-OP & TEAM TENSION**.
+Updated for **v0.20 — LABYRINTH MAJOR OVERHAUL**.
 
-The prototype remains code/procedural-first. v0.19.3 adds paired co-op sync panels, temporary emergency safe-light pockets, team-separation pressure, and shared finite rewards while retaining full solo compatibility.
+The prototype remains code/procedural-first. v0.20 adds the Isolation Sweep, three saved route variants, temporary route shutters, 12 additional guidance-light points, a three-phase Lockdown finale, and a new elite enemy: **The Warden**.
 
-## P0 — New needs from v0.19.3
+## P0 — New needs from v0.20
 
-### SYNC panel kit
+### The Warden
 
-Need a production paired-panel family for Maintenance, Flooded Service, and Archive:
+Need a final elite monster visually distinct from Tenant, Mourner, Crawler and Darkness Creature.
 
-- industrial wall-mounted SYNC panel body
-- A/B plate variants
-- sector-color variants: dirty yellow, desaturated blue, industrial green
-- chunky physical activation switch/button
-- cable/conduit connection points
-- locked/no-power state
-- armed/waiting state
-- paired-success state
-- small indicator lamp that is clearly **not** a protective safe light
+Model direction:
+
+- broad-shouldered industrial/humanoid horror silhouette
+- noticeably heavier upper body than The Mourner
+- narrow or masked head shape
+- one readable chest/core feature for silhouette recognition
+- damaged security/maintenance language optional
+- should remain intimidating at medium distance in dim corridors
+- final mesh needs mobile LODs
+- simple collision proxy; gameplay collision does not require detailed mesh collision
+
+Rig / animation:
+
+- heavy idle
+- slow patrol
+- deliberate pursuit walk
+- isolated-target acceleration
+- safe-light hesitation/slow reaction
+- turn left/right
+- search/listen
+- short heavy attack
+- attack follow-through
+- reactivation/appearance pose
+- Lockdown Phase 3 aggressive locomotion variant optional
+
+Audio:
+
+- heavy distant footstep family
+- mechanical/body creak
+- low chest/core pulse
+- isolated-target pursuit cue
+- safe-light discomfort cue
+- close breathing/growl
+- impact/attack transient
+- distant Warden identification sting, used sparingly
+
+Important design rule:
+
+- the Warden should sound recognizably heavier than Mourner
+- do not make every appearance use a loud music sting
+- personal flashlight should not communicate that it completely defeats the Warden
+- strong world safe-light needs a clearer reaction language
+
+### Isolation Node kit
+
+Three sector variants are required:
+
+- M-01 Maintenance Isolation Node
+- F-02 Flooded Service Isolation Node
+- A-03 Archive Isolation Node
+
+Shared kit:
+
+- industrial wall/floor control body
+- central isolation core / rotary element
+- power conduit connections
+- OFF / NO POWER state
+- ACTIVE RED state
+- ISOLATED / COMPLETE state
+- sector-color markings
+- large enough silhouette to find while moving through dim corridors
 
 Animations:
 
-- button/switch press
-- relay engage
-- armed pulse
-- timeout/failure reset
-- paired synchronization success
+- activation / shutdown interaction
+- core spin-down or relay drop
+- electrical discharge
+- completed dead-state
 
 Audio:
 
-- panel button clack
-- relay click
-- electrical handshake chirp
-- armed countdown pulse
-- timeout buzz
-- successful two-panel synchronization tone
+- electrical hum
+- interaction clunk
+- isolation relay drop
+- power collapse
+- short sector alarm
+- distant system response after shutdown
+
+VFX:
+
+- small sparks
+- short red pulse
+- power-down flicker
+- low-cost mobile electrical version
+
+### Lockdown Isolation Interlock
+
+The final Lockdown Console needs a physical cover/interlock that clearly prevents early activation.
+
+Need:
+
+- heavy red metal cover
+- warning text / isolation iconography
+- visible lock mechanism
+- 3-node status treatment optional
+- open/retracted state after Isolation Sweep
+
+Animation/audio:
+
+- locked rattle
+- final third-node release
+- cover retract/open
+- metal stop/clunk
+
+The interlock must visually cover the Lockdown Console collider and should not look like another normal door.
+
+### Temporary route shutters
+
+v0.20 creates short route-block events after Isolation Node shutdown.
+
+Need modular shutter kit:
+
+- compact vertical emergency shutter
+- concrete-wall frame
+- industrial metal slats/panel
+- warning stripe treatment
+- red fault indicator
+- damaged/rusted variants optional
+
+Animation:
+
+- fast slam/close
+- brief closed vibration
+- reopen after event
+- final settle
+
+Audio:
+
+- warning relay click
+- heavy shutter slam
+- metal vibration
+- reopening motor
+- final clunk
+
+Gameplay readability:
+
+- must clearly look temporary/emergency rather than permanently locked
+- opening animation must be obvious so players do not assume a dead end
+
+### Guidance floor/wall lights
+
+v0.20 adds 12 low-energy route guidance points.
+
+Need:
+
+- small recessed floor strip
+- wall strip variant
+- dirty amber maintenance version
+- warm red Lockdown version
+- broken/flickering version optional
+
+Important:
+
+- guidance lights are **not protective lights**
+- they must remain visibly weaker than safe/checkpoint/SYNC lamps
+- emission needs to remain readable on low-brightness phones without high realtime-light cost
+- production implementation should prefer emissive geometry; tiny OmniLight support only where necessary
+
+### Three route variants
+
+The geometry remains authored, but Isolation targets move among vetted locations.
+
+Production art should support this without obvious empty sockets:
+
+- 2–3 generic node mounting plates per sector
+- cable/conduit dead-end caps for unused locations
+- removable access-panel dressing
+- sector labels that work regardless of selected route variant
+- subtle environmental clues near possible node locations
+
+Avoid large unique signage that reveals inactive node positions too easily.
+
+### Lockdown Phase 1 / 2 / 3 presentation
+
+Need finale layers that escalate without changing the whole rendering pipeline.
+
+Phase 1:
+
+- machinery startup
+- slow emergency pulse
+- low alarm layer
+- initial power-fault sparks
+
+Phase 2:
+
+- stronger alarm layer
+- faster red-light response
+- heavier machinery vibration
+- Warden re-entry cue
+
+Phase 3:
+
+- fastest emergency pulse
+- intermittent sparks/dust
+- high-intensity but short alarm layer
+- final stabilization countdown texture/audio cues
+- final release sting
+
+Mobile requirement:
+
+- no heavy volumetric fog dependency
+- particle counts must scale down cleanly
+- avoid many simultaneous shadowed lights
+
+## P0 — v0.19.3 co-op assets retained
+
+### SYNC panels
+
+- industrial A/B panel body
+- Maintenance/Flooded/Archive variants
+- button/switch
+- NO POWER / ARMED / COMPLETE states
+- relay/cable connections
+- small non-protective indicator light
+
+Animations/audio:
+
+- switch press
+- armed pulse
+- paired success
+- timeout reset
+- relay clicks
+- synchronization tone
 
 ### Emergency team-light fixture
 
-The 36-second support-light reward needs final art distinct from normal dim lamps:
-
-- heavy emergency ceiling/wall fixture
-- protected industrial lens/cage
-- powered ON state
-- short startup/flicker animation
-- shutdown/fade state
-- optional floor/wall safe-light marking
+- clearly protective emergency fixture
+- startup/flicker
+- stable powered state
+- shutdown state
+- strong visual distinction from dim route lighting
 
 Audio:
 
-- emergency lamp startup
-- stable powered hum
-- 10-second remaining warning optional
-- shutdown click/power-down
-
-Gameplay readability requirement:
-
-- support light must be immediately recognizable as genuinely protective
-- normal M/F/A/L route colors must not look equally safe
-- safe-light readability must survive low-brightness mobile screens
-- keep realtime shadows disabled for the temporary support lights
+- startup
+- powered hum
+- optional 10-second warning
+- shutdown
 
 ### Team-tension audio
 
-The team-separation mechanic should eventually communicate pressure through sound instead of a large HUD:
+- subtle radio/static increase when survivors split
+- distant environmental activity escalation
+- teammate interference cue
+- short regroup relief option
 
-- subtle radio/static increase when survivors are far apart
-- distant footstep/metal activity escalation layer
-- teammate radio interference cue
-- short regroup relief sting optional
-- support-light ambience that masks or lowers tension layers
+Do not use a large arcade danger alarm for normal team separation.
 
-Avoid explicit arcade warning sirens for normal separation. The horror should imply that splitting up is dangerous rather than display a large numeric danger meter.
+## P0 — v0.19.2 readability / exploration retained
 
-### Co-op reward cache presentation
+### Sector identity kit
 
-SYNC completion rewards need a small shared cache style:
-
-- compact battery case for M-01
-- emergency water container/crate for F-02
-- medical wall box/case for A-03
-- opened/claimed state optional
-- shared-world pickup icon treatment
-
-### Co-op signage
-
-Need unobtrusive environmental instructions:
-
-- `SYNC A`
-- `SYNC B`
-- `PAIRED EMERGENCY CIRCUIT`
-- `TWO OPERATORS REQUIRED` variant for online flavor
-- maintenance diagram showing two separated terminals feeding one emergency light
-
-Solo mode must not visually imply a hard multiplayer requirement because solo can complete both panels sequentially.
-
-## P0 — v0.19.2 readability/exploration assets retained
-
-### Sector readability kit
-
-- `M-01 MAINTENANCE` wall sign
-- `F-02 FLOODED SERVICE` wall sign
-- `A-03 ARCHIVE` wall sign
-- `L-04 LOCKDOWN` wall sign
-- M-07 / F-09 / A-12 number plates
+- `M-01 MAINTENANCE`
+- `F-02 FLOODED SERVICE`
+- `A-03 ARCHIVE`
+- `L-04 LOCKDOWN`
+- M-07 / F-09 / A-12 plates
 - directional arrows
 - worn stencils
-- warning/hazard stripes
-- wall route legend
+- warning stripes
+- route legend
 
 Color language:
 
@@ -117,250 +279,300 @@ Color language:
 - Archive — industrial green
 - Lockdown — emergency red
 
-### Color-coded conduit / pipe kit
+### Conduit / pipe kit
 
-- horizontal/vertical conduit
-- elbows / T-junctions
+- straight modular conduit
+- elbows
+- T-junctions
 - cable trays
-- brackets/mounts
+- pipe brackets
+- wall/ceiling mounts
 - damaged variants
-- yellow/blue/green/red painted stripe versions
+- yellow/blue/green/red painted variants
 
-Use shared materials/atlases and mostly opaque surfaces for mobile.
+Prefer shared atlases/materials and collision-free decorative modules where possible.
 
-### Shortcut service door
+### Shortcut doors
 
-- industrial service hatch
-- concrete-compatible frame
+- maintenance service hatch/door
+- frame
 - mechanical latch
-- locked-from-other-side state
+- LOCKED FROM OTHER SIDE state
 - open state
-- latch pull / metal scrape / stop clunk audio
+- latch/open/metal scrape audio
 
-### Optional exploration bays
+### Optional-room dressing
 
 M-07 Storage:
+
 - shelves
-- battery crate
-- medical box
-- tool cases
+- battery/medical cases
+- tool boxes
+- conduit spare parts
 - lockers
 
 F-09 Pump Annex:
-- pump assembly
-- manifolds/pipes
-- grates
-- wet decals
-- water storage
+
+- pumps
+- manifolds
+- drains
+- valves
+- water-stain decals
+- emergency water storage
 
 A-12 Records Annex:
-- shelves
+
 - archive boxes
-- folders/papers
-- damaged cabinets
-- medical storage
+- shelves
+- cabinets
+- loose folders/papers
+- inventory tags
+- medical/storage case
 
 ## P0 — v0.19.1 encounter / hazard assets retained
 
 Steam:
-- damaged outlet
-- pressure fixture
-- burst VFX + mobile low-overdraw variant
-- buildup cue
-- steam hiss
+
+- damaged steam outlet
+- pipe pressure fixtures
+- steam burst VFX
+- low-overdraw mobile version
+- pressure cue
+- burst hiss
 
 Electrical:
+
 - electrified puddle material
-- exposed cable / junction box
-- arcs/sparks
+- broken junction box
+- exposed cable
+- sparks/arcs
 - floor-current pulse
-- buzz/discharge audio
+- electrical buzz/discharge
+- warning decals
 
-Random horror events:
-- 4–6 distant metal slams
+Horror events:
+
+- 4–6 distant metal-slam variants
 - fake concrete/metal footsteps
-- ballast flicker
+- fluorescent failure/flicker
 - blackout power-down/recovery
-- shadow-crossing silhouette + scrape cue
+- fake shadow silhouette
+- cloth/scrape movement cue
 
-## P0 — Arc 1 monsters
+## P0 — Existing Arc enemies
 
 ### The Mourner
 
-- final tall narrow humanoid mesh
-- rig + mobile LOD
-- idle/listen
-- stalk
-- investigate
+- final rigged tall humanoid
+- mobile LOD
+- idle/listen/stalk/investigate/search
 - light-slow reaction
-- turns/search
+- turn animations
 - attack
-- dragging footsteps / cloth creak / breathing / impact audio
+- dragging footsteps
+- cloth/body creak
+- breathing/moan
 
 ### The Crawler
 
-- final distorted low crawling mesh
-- rig + mobile LOD
+- final distorted crawling body
+- mobile LOD
 - idle/slow/fast crawl
-- light hesitation/retreat
+- light hesitation
 - directional turns
 - search/listen
 - attack lunge
-- claw/hand contacts / crawl loop / lunge / hiss audio
+- hand/claw floor contacts
+- pursuit audio
 
 ### The Tenant
 
 - final rigged humanoid horror model
-- freeze transition
+- freeze pose/transition
 - unseen walk
-- chase
-- investigate/search
+- panic chase
+- search/investigate
 - attack
 
 ### Darkness Creature
 
-- unique non-Tenant silhouette
+- distinct non-Tenant silhouette
 - crawl/search
 - attack
 - light recoil
 - retreat/dissolve
 
-## P0 — Arc 1 environment / objectives
+## P0 — Survivor
 
-Maintenance:
-- modular concrete walls
-- Fuse A/B/C
-- conduit/cable trays
-- utility doors
-- pipes
-- grime/rust decals
+Need production multiplayer survivor set:
 
-Flooded Service:
+- one base rigged survivor
+- 3–4 outfit/material variants
+- first-person hands/arms
+- world flashlight attachment
+- backpack/utility attachment points
+- low-cost remote-player LOD
+
+Animations:
+
+- idle
+- walk/run
+- strafe/turn
+- jump takeoff
+- airborne/fall
+- landing
+- downed idle/crawl
+- revive teammate
+- being revived
+- hit
+- death/team-wipe
+
+## P0 — Core Labyrinth environment
+
+Materials:
+
+- clean/dirty concrete
 - wet concrete
-- shallow-water material
-- pressure valves
-- pipe network
-- grates
-- water leak VFX
+- painted plaster
+- tile
+- rusty metal
+- structural dark metal
+- grime/water/blood decals
+- warning stripe decals
 
-Archive:
-- shelves with simple collision proxies
-- document boxes
-- cabinets
+Objective props:
+
+- Fuse A/B/C
+- Pressure Valve A/B
 - Breaker A/B/C
-- aisle signs
-- paper/debris
-
-Lockdown:
-- final console
+- Lockdown Console
+- checkpoint safe-light pillar
 - heavy gate/bulkhead
-- security pillars
-- alarm fixtures
-- final beacon fixture
 
-## P0 — Lighting / audio
+Lighting fixture states:
 
-Fixture states:
 - OFF
 - DIM AMBIENT
 - FAULT / FLICKER
 - SAFE / POWERED
 - SYNC SUPPORT
-- LOCKDOWN PULSE
+- LOCKDOWN PHASE PULSE
 
-Labyrinth ambience:
-- Maintenance hum
-- Flooded drip/pipe loop
+## P0 — Labyrinth audio layers
+
+Need layered ambience:
+
+- original maze room tone
+- Maintenance electrical hum
+- Flooded water/pipe ambience
 - Archive ventilation/paper settling
-- Lockdown machinery/alarm layers
-- fake/real footsteps sharing some sonic language
-- team-separation tension variants
+- Lockdown machinery
+- alarm layers for Phase 1/2/3
+- shutter events
+- Isolation Node failures
+- Warden distant presence
+- final gate release
+- transition sting into The Outside
 
-Player/co-op:
-- concrete/wet/metal footsteps
+Footsteps:
+
+- concrete walk/sprint
+- wet concrete
+- metal
+- wood
+- dirt/grass for Forest
 - jump/landing
-- breathing/sprint breathing
-- heartbeat
-- damage/downed
-- revive / being revived
-- SYNC activation voice/breath effort optional
-
-## P1 — Survivor / UI
-
-Survivor:
-- rigged base model
-- 3–4 outfit/material variants
-- first-person hands
-- world flashlight
-- movement/jump/landing
 - downed crawl
-- revive / being revived
-- hit/death poses
-
-Multiplayer UI:
-- Ready/Host/Ping icons
-- teammate HP/downed/revive
-- reconnect icon
-- compact mobile layouts
-- subtle paired-SYNC status icon optional
-
-Do not turn SYNC into a large permanent HUD objective because the stations are optional.
 
 ## P1 — Forest / exterior retained
 
-- sun/moon discs
-- day/dusk/night sky
-- low-cost clouds/fog
-- cabin kit
-- gas station
-- warehouse
-- abandoned house
+- visible sun disc
+- visible moon disc
+- dawn/day/dusk/night sky
+- lightweight clouds
+- mobile-safe fog
+- forest tree/ground production assets
+- cabin production kit
+- gas station props
+- warehouse props
+- abandoned house props
 - generator/workbench/storage/campfire props
+
+All navigation-sensitive props need simple collision proxies.
+
+## P1 — Front-end / multiplayer UI
+
+- final DON'T LOOK BACK logo
+- title key art 16:9
+- mobile crop
+- menu background
+- button states/icons
+- save/checkpoint/loading assets
+- Ready/Host/Ping icons
+- teammate HP/downed/revive treatment
+- reconnect icon
+- compact mobile layouts
 
 ## P2 — VFX / polish
 
-- SYNC relay sparks
-- emergency-light startup flicker
-- electric arcs
-- steam
-- shallow-water ripple
+Labyrinth:
+
+- Isolation electrical collapse
+- shutter dust/sparks
+- Warden core pulse
+- Warden subtle shadow distortion
+- Lockdown Phase 1/2/3 sparks
+- flooded ripples
 - wet footsteps
-- blackout recovery sparks
-- Lockdown pulse
-- Mourner shadow distortion
-- Crawler floor scrape/dust
-- Darkness dissolve
-- Tenant shadow distortion
-- cold breath
+- steam
+- electrical puddle arcs
+- blackout recovery
+- final-gate dust/debris
+
+Global:
+
 - flashlight dust
+- cold breath
+- blood/bleeding feedback
+- Darkness dissolve
+- Tenant distortion
+- campfire smoke/sparks
+- generator exhaust
+- wind-driven leaves
 
 ## Mobile + desktop constraints
 
-- SYNC panels should use shared materials and simple collision
-- panel indicator lights remain low-energy/non-protective
-- emergency support lights may be strong but keep shadows disabled
-- avoid transparent overdraw-heavy steam/electric effects
-- signage must remain legible at phone resolution
-- route colors and SYNC indicators must remain distinguishable for color-impaired players through labels/shapes, not color alone
-- use low-poly collision proxies for doors, panels, shelves, pipes and crates
-- enemy meshes require LODs
-- avoid 4K textures except hero/menu art
+- all new v0.20 guide lights should keep shadows disabled
+- Warden final mesh requires at least one mobile LOD
+- keep Warden materials compact; prefer one main body material + one core material
+- use simple collision proxies for Isolation Nodes and shutters
+- keep shutter geometry modular and cheap
+- use shared atlases/materials for M/F/A/L signs and conduit
+- avoid high-overdraw electrical/steam effects
+- avoid large transparent surfaces for flooded areas
+- world-space text/signage must remain legible at phone resolution
+- strong safe-light and weak guidance-light visual languages must remain distinct
+- do not rely on 4K textures except hero/menu art
+- test 2–4 survivors + Warden + Encounter Director-selected enemies on mobile performance targets
 
-## Recommended production order after v0.19.3
+## Recommended production order after v0.20
 
-1. SYNC panel A/B kit + interaction animation/audio
-2. Emergency support-light fixture + powered hum/startup/shutdown
-3. Sector signage + M/F/A/L conduit kit
-4. Shortcut service door/hatch
-5. M-07 / F-09 / A-12 room dressing
-6. Team-tension / horror-event spatial audio
-7. Steam/electric hazard production VFX/audio
-8. Arc dim-light fixture kit
-9. Mourner final model/animation/audio
-10. Crawler final model/animation/audio
-11. Fuse/Valve/Breaker/Lockdown objective props
-12. Survivor production model + co-op animations
-13. Tenant final model/animation
-14. Darkness Creature final model/animation
-15. Forest sky/sun/moon art
-16. Front-end branding + multiplayer UI polish
+1. **The Warden production model + core locomotion/attack/audio**
+2. **Isolation Node + Lockdown interlock kit**
+3. **Temporary shutter model/animation/audio**
+4. **Guidance floor/wall strip kit**
+5. Sector signage + conduit kit
+6. SYNC panel + emergency support-light kit
+7. Hazard readability assets: steam/electric
+8. Labyrinth spatial audio: fake footsteps/slams/blackout
+9. Lockdown Phase 1/2/3 audio + VFX
+10. Mourner final model/animation/audio
+11. Crawler final model/animation/audio
+12. Fuse/Valve/Breaker/Lockdown production props
+13. Survivor model + movement/downed/revive animations
+14. Tenant production model/animations
+15. Darkness Creature production model/animations
+16. Optional M-07/F-09/A-12 room dressing
+17. Forest sky/sun/moon art pass
+18. Exterior landmark production assets
+19. Front-end branding/UI polish
