@@ -5,28 +5,28 @@ const SAVE_PATH: String = "user://dont_look_back_save_v1.json"
 const SETTINGS_PATH: String = "user://dont_look_back_settings.cfg"
 const VERSION_TEXT: String = "v0.18.4.4"
 
-@onready var main_panel: PanelContainer = $Center/MainPanel
-@onready var save_summary: Label = $Center/MainPanel/VBox/SaveSummary
-@onready var continue_button: Button = $Center/MainPanel/VBox/ContinueButton
-@onready var new_game_button: Button = $Center/MainPanel/VBox/NewGameButton
-@onready var host_button: Button = $Center/MainPanel/VBox/HostButton
-@onready var join_button: Button = $Center/MainPanel/VBox/JoinButton
-@onready var settings_button: Button = $Center/MainPanel/VBox/SettingsButton
-@onready var quit_button: Button = $Center/MainPanel/VBox/QuitButton
-@onready var status_label: Label = $Status
+@onready var main_panel: PanelContainer = $MenuLayer/Root/Center/MainPanel
+@onready var save_summary: Label = $MenuLayer/Root/Center/MainPanel/VBox/SaveSummary
+@onready var continue_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/ContinueButton
+@onready var new_game_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/NewGameButton
+@onready var host_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/HostButton
+@onready var join_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/JoinButton
+@onready var settings_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/SettingsButton
+@onready var quit_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/QuitButton
+@onready var status_label: Label = $MenuLayer/Root/Status
 
-@onready var join_panel: PanelContainer = $Center/JoinPanel
-@onready var join_address: LineEdit = $Center/JoinPanel/VBox/Address
-@onready var join_connect_button: Button = $Center/JoinPanel/VBox/ConnectButton
+@onready var join_panel: PanelContainer = $MenuLayer/Root/Center/JoinPanel
+@onready var join_address: LineEdit = $MenuLayer/Root/Center/JoinPanel/VBox/Address
+@onready var join_connect_button: Button = $MenuLayer/Root/Center/JoinPanel/VBox/ConnectButton
 
-@onready var settings_panel: PanelContainer = $Center/SettingsPanel
-@onready var volume_slider: HSlider = $Center/SettingsPanel/VBox/VolumeSlider
-@onready var sensitivity_slider: HSlider = $Center/SettingsPanel/VBox/SensitivitySlider
-@onready var fps_option: OptionButton = $Center/SettingsPanel/VBox/FpsOption
-@onready var fullscreen_check: CheckButton = $Center/SettingsPanel/VBox/FullscreenCheck
-@onready var settings_value: Label = $Center/SettingsPanel/VBox/SettingsValue
+@onready var settings_panel: PanelContainer = $MenuLayer/Root/Center/SettingsPanel
+@onready var volume_slider: HSlider = $MenuLayer/Root/Center/SettingsPanel/VBox/VolumeSlider
+@onready var sensitivity_slider: HSlider = $MenuLayer/Root/Center/SettingsPanel/VBox/SensitivitySlider
+@onready var fps_option: OptionButton = $MenuLayer/Root/Center/SettingsPanel/VBox/FpsOption
+@onready var fullscreen_check: CheckButton = $MenuLayer/Root/Center/SettingsPanel/VBox/FullscreenCheck
+@onready var settings_value: Label = $MenuLayer/Root/Center/SettingsPanel/VBox/SettingsValue
 
-@onready var confirm_panel: PanelContainer = $Center/ConfirmPanel
+@onready var confirm_panel: PanelContainer = $MenuLayer/Root/Center/ConfirmPanel
 
 var master_volume: float = 0.85
 var look_multiplier: float = 1.0
@@ -40,7 +40,7 @@ func _ready() -> void:
     get_tree().paused = false
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-    $Center/MainPanel/VBox/Version.text = "%s  •  SURVIVAL HORROR" % VERSION_TEXT
+    $MenuLayer/Root/Center/MainPanel/VBox/Version.text = "%s  •  SURVIVAL HORROR" % VERSION_TEXT
 
     continue_button.pressed.connect(_continue_game)
     new_game_button.pressed.connect(_new_game_pressed)
@@ -49,17 +49,17 @@ func _ready() -> void:
     settings_button.pressed.connect(_show_settings)
     quit_button.pressed.connect(_quit_game)
 
-    $Center/JoinPanel/VBox/BackButton.pressed.connect(_show_main)
+    $MenuLayer/Root/Center/JoinPanel/VBox/BackButton.pressed.connect(_show_main)
     join_connect_button.pressed.connect(_connect_join)
 
-    $Center/SettingsPanel/VBox/BackButton.pressed.connect(_close_settings)
+    $MenuLayer/Root/Center/SettingsPanel/VBox/BackButton.pressed.connect(_close_settings)
     volume_slider.value_changed.connect(_on_volume_changed)
     sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
     fps_option.item_selected.connect(_on_fps_selected)
     fullscreen_check.toggled.connect(_on_fullscreen_toggled)
 
-    $Center/ConfirmPanel/VBox/ConfirmButton.pressed.connect(_start_new_game)
-    $Center/ConfirmPanel/VBox/CancelButton.pressed.connect(_show_main)
+    $MenuLayer/Root/Center/ConfirmPanel/VBox/ConfirmButton.pressed.connect(_start_new_game)
+    $MenuLayer/Root/Center/ConfirmPanel/VBox/CancelButton.pressed.connect(_show_main)
 
     _load_settings()
     _apply_runtime_settings()
@@ -86,8 +86,6 @@ func _process(delta: float) -> void:
     var connecting: bool = bool(network.get("connecting"))
     if online:
         _set_status("Terhubung. Menyamakan map dengan HOST...")
-        # MapTransitionSystem normally receives the host map immediately. If an
-        # older host does not send it, fall back to the Labyrinth after a short wait.
         if join_elapsed >= 1.5 and get_tree().current_scene == self:
             join_waiting = false
             get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
