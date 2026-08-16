@@ -1,7 +1,6 @@
 extends "res://scripts/front_end_system.gd"
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
-const DEEP_AUDIT_VERSION_TEXT: String = "v0.18.4.6"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -9,6 +8,7 @@ func _ready() -> void:
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
     if not OS.has_feature("mobile") and not OS.has_feature("web_android") and not OS.has_feature("web_ios"):
         Input.emulate_touch_from_mouse = false
+    Input.emulate_mouse_from_touch = true
 
 func _process(delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -24,13 +24,6 @@ func _process(delta: float) -> void:
         menu_open = false
         current_mode = "title"
 
-        var version_label: Label = scene.get_node_or_null("MenuLayer/Root/Center/MainPanel/VBox/Version") as Label
-        if version_label != null:
-            version_label.text = "%s  •  SURVIVAL HORROR" % DEEP_AUDIT_VERSION_TEXT
-
-        # Dedicated menu owns all pointer/touch input. Gameplay touch controls
-        # are an autoload and must stay blocked even when the desktop editor
-        # viewport is narrow enough to resemble a phone screen.
         var mobile: Node = get_node_or_null("/root/MobileControls")
         if mobile != null and mobile.has_method("set_external_blocked") and mobile.has_method("is_external_blocked"):
             if not bool(mobile.call("is_external_blocked")):
@@ -38,6 +31,7 @@ func _process(delta: float) -> void:
 
         if not OS.has_feature("mobile") and not OS.has_feature("web_android") and not OS.has_feature("web_ios"):
             Input.emulate_touch_from_mouse = false
+        Input.emulate_mouse_from_touch = true
         if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
             Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
         return
@@ -108,8 +102,8 @@ func _return_to_title() -> void:
     if layer != null:
         layer.visible = false
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-    var error: Error = get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
-    if error != OK and layer != null:
+    var change_error: Error = get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+    if change_error != OK and layer != null:
         layer.visible = true
         gameplay_started = true
         current_mode = "gameplay"
