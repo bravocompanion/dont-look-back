@@ -14,17 +14,8 @@ func _on_body_entered(body: Node3D) -> void:
 
     triggered = true
 
-    var network: Node = get_node_or_null("/root/NetworkManager")
-    var shared_system: Node = get_node_or_null("/root/CoopHorrorSystem")
-    var online: bool = network != null and network.has_method("is_online") and bool(network.call("is_online"))
-
-    if online and shared_system != null and shared_system.has_method("request_tenant_stop"):
-        shared_system.call("request_tenant_stop")
-    else:
-        var monster: Node = get_node_or_null(monster_path)
-        if monster != null and monster.has_method("stop_stalking"):
-            monster.call("stop_stalking")
-
+    # v0.24.2: entering this old story/safe trigger no longer deletes the
+    # Tenant. The learned counter is now a continuous 3-second flashlight beam.
     var objective: Label = get_node_or_null(objective_label_path) as Label
     if objective != null:
-        objective.text = "Search Apartment 03 for the exit key."
+        objective.text = "Search Apartment 03 for the exit key. Keep the Tenant in your light if it appears."
