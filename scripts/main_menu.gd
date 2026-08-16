@@ -3,7 +3,7 @@ extends Node
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const SAVE_PATH: String = "user://dont_look_back_save_v1.json"
 const SETTINGS_PATH: String = "user://dont_look_back_settings.cfg"
-const VERSION_TEXT: String = "v0.18.4.7"
+const VERSION_TEXT: String = "v0.18.4.8"
 
 @onready var menu_root: Control = $MenuLayer/Root
 @onready var main_panel: PanelContainer = $MenuLayer/Root/Center/MainPanel
@@ -39,6 +39,7 @@ var probe_timer: float = 0.0
 var mouse_was_down: bool = false
 var join_waiting: bool = false
 var join_elapsed: float = 0.0
+var scene_booting: bool = false
 var master_volume: float = 0.85
 var look_multiplier: float = 1.0
 var fps_limit: int = 60
@@ -52,7 +53,7 @@ func _ready() -> void:
         Input.emulate_touch_from_mouse = false
     Input.emulate_mouse_from_touch = true
 
-    version_label.text = "%s  •  INPUT CORE ONLINE" % VERSION_TEXT
+    version_label.text = "%s  •  SAFE SCENE BOOT" % VERSION_TEXT
     _build_input_probe()
     _connect_buttons()
     _load_settings()
@@ -74,6 +75,8 @@ func _process(delta: float) -> void:
         _process_join(delta)
 
 func _input(event: InputEvent) -> void:
+    if scene_booting:
+        return
     if event is InputEventMouseButton:
         var mouse_event: InputEventMouseButton = event as InputEventMouseButton
         if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
@@ -86,7 +89,7 @@ func _input(event: InputEvent) -> void:
                 get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
-    if not (event is InputEventKey):
+    if scene_booting or not (event is InputEventKey):
         return
     var key_event: InputEventKey = event as InputEventKey
     if not key_event.pressed or key_event.echo:
@@ -130,6 +133,8 @@ func _update_input_probe() -> void:
     ]
 
 func _poll_mouse_click() -> void:
+    if scene_booting:
+        return
     var mouse_down: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
     if mouse_down and not mouse_was_down:
         _dispatch_navigation_click(get_viewport().get_mouse_position())
@@ -175,6 +180,8 @@ func _connect_buttons() -> void:
     fullscreen_check.toggled.connect(_on_fullscreen_toggled)
 
 func _continue_game() -> void:
+    if scene_booting:
+        return
     if not FileAccess.file_exists(SAVE_PATH):
         _set_status("Belum ada save. Pilih NEW GAME.")
         return
@@ -190,6 +197,8 @@ func _continue_game() -> void:
         _set_status("Save tidak dapat dimuat.")
 
 func _new_game_pressed() -> void:
+    if scene_booting:
+        return
     if FileAccess.file_exists(SAVE_PATH):
         _hide_all_panels()
         confirm_panel.visible = true
@@ -198,8 +207,10 @@ func _new_game_pressed() -> void:
     _start_new_game()
 
 func _start_new_game() -> void:
+    if scene_booting:
+        return
     _set_menu_buttons_enabled(false)
-    _set_status("Memulai nightmare baru...")
+    _set_status("Memverifikasi Labyrinth...")
     _disconnect_network()
 
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -218,13 +229,11 @@ func _start_new_game() -> void:
         movement.set("coyote_timer", 0.0)
         movement.set("jump_buffer_timer", 0.0)
 
-    var change_error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
-    if change_error != OK:
-        _set_menu_buttons_enabled(true)
-        _show_main()
-        _set_status("Labyrinth gagal dibuka: %s" % error_string(change_error))
+    _enter_scene_safely(LABYRINTH_SCENE_PATH, "NEW GAME")
 
 func _host_game() -> void:
+    if scene_booting:
+        return
     _disconnect_network()
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null or not network.has_method("host_game"):
@@ -234,18 +243,20 @@ func _host_game() -> void:
     if not (network.has_method("is_online") and bool(network.call("is_online"))):
         _set_status("HOST gagal dibuat.")
         return
-    _set_status("HOST aktif. Membuka Labyrinth...")
-    var change_error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
-    if change_error != OK:
-        _set_status("Labyrinth gagal dibuka: %s" % error_string(change_error))
+    _set_menu_buttons_enabled(false)
+    _enter_scene_safely(LABYRINTH_SCENE_PATH, "HOST CO-OP")
 
 func _show_join() -> void:
+    if scene_booting:
+        return
     _hide_all_panels()
     join_panel.visible = true
     join_connect_button.disabled = false
     _set_status("Masukkan IPv4 HOST pada LAN/Wi-Fi yang sama.")
 
 func _connect_join() -> void:
+    if scene_booting:
+        return
     var address: String = join_address.text.strip_edges()
     if address.is_empty():
         _set_status("Masukkan IP, contoh 192.168.1.10")
@@ -273,10 +284,10 @@ func _process_join(delta: float) -> void:
     var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
     var connecting: bool = bool(network.get("connecting"))
     if online:
-        _set_status("Terhubung ke HOST...")
+        _set_status("Terhubung. Memverifikasi Labyrinth...")
         if join_elapsed >= 1.0:
             join_waiting = false
-            get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
+            _enter_scene_safely(LABYRINTH_SCENE_PATH, "JOIN CO-OP")
         return
 
     if not connecting and join_elapsed > 0.35:
@@ -284,7 +295,78 @@ func _process_join(delta: float) -> void:
         join_connect_button.disabled = false
         _set_status("Gagal terhubung. Periksa IP HOST.")
 
+func _enter_scene_safely(scene_path: String, reason: String) -> bool:
+    if scene_booting:
+        return false
+
+    scene_booting = true
+    _set_menu_buttons_enabled(false)
+    _set_status("%s — loading scene resource..." % reason)
+
+    if not ResourceLoader.exists(scene_path, "PackedScene"):
+        scene_booting = false
+        _set_menu_buttons_enabled(true)
+        _set_status("BOOT FAILED: PackedScene tidak ditemukan: %s" % scene_path)
+        return false
+
+    var resource: Resource = ResourceLoader.load(scene_path)
+    var packed_scene: PackedScene = resource as PackedScene
+    if packed_scene == null:
+        scene_booting = false
+        _set_menu_buttons_enabled(true)
+        _set_status("BOOT FAILED: resource bukan PackedScene.")
+        return false
+
+    _set_status("%s — instantiating gameplay..." % reason)
+    var next_scene: Node = packed_scene.instantiate()
+    if next_scene == null:
+        scene_booting = false
+        _set_menu_buttons_enabled(true)
+        _set_status("BOOT FAILED: PackedScene.instantiate() menghasilkan null.")
+        return false
+
+    var player: CharacterBody3D = next_scene.get_node_or_null("Player") as CharacterBody3D
+    var camera: Camera3D = next_scene.get_node_or_null("Player/Camera3D") as Camera3D
+    var hud: CanvasLayer = next_scene.get_node_or_null("Player/HUD") as CanvasLayer
+    if player == null or camera == null or hud == null:
+        next_scene.free()
+        scene_booting = false
+        _set_menu_buttons_enabled(true)
+        _set_status("BOOT FAILED: main.tscn missing Player, Camera3D, atau HUD.")
+        return false
+
+    var old_scene: Node = get_tree().current_scene
+    get_tree().root.add_child(next_scene)
+    get_tree().current_scene = next_scene
+    camera.current = true
+
+    if not player.is_in_group("player"):
+        player.add_to_group("player")
+
+    set_process(false)
+    set_process_input(false)
+    set_process_unhandled_key_input(false)
+
+    if old_scene != null and old_scene != next_scene:
+        old_scene.queue_free()
+
+    call_deferred("_verify_gameplay_boot", next_scene, player, camera)
+    return true
+
+func _verify_gameplay_boot(next_scene: Node, player: CharacterBody3D, camera: Camera3D) -> void:
+    await get_tree().process_frame
+    await get_tree().process_frame
+
+    if not is_instance_valid(next_scene) or get_tree().current_scene != next_scene:
+        return
+    if is_instance_valid(camera):
+        camera.current = true
+    if is_instance_valid(player) and not player.is_in_group("player"):
+        player.add_to_group("player")
+
 func _show_settings() -> void:
+    if scene_booting:
+        return
     _hide_all_panels()
     settings_panel.visible = true
     _sync_settings_controls()
@@ -296,11 +378,13 @@ func _close_settings() -> void:
     _show_main()
 
 func _show_main() -> void:
+    if scene_booting:
+        return
     _hide_all_panels()
     main_panel.visible = true
     _set_menu_buttons_enabled(true)
     _refresh_save_summary()
-    _set_status("INPUT CORE ONLINE — click a button or press N for New Game.")
+    _set_status("SAFE SCENE BOOT ONLINE — click NEW GAME or press N.")
 
 func _hide_all_panels() -> void:
     main_panel.visible = false
