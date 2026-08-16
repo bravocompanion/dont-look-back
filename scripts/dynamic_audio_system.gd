@@ -24,16 +24,19 @@ const SEARCH_ROOTS: Array[String] = [
 @export var music_monster_duck_db: float = 5.5
 @export var interference_battery_far_volume_db: float = -9.0
 @export var interference_battery_near_volume_db: float = -2.5
+@export var tenant_death_volume_db: float = -1.5
 
 var music_player: AudioStreamPlayer
 var hurt_player: AudioStreamPlayer
 var monster_player: AudioStreamPlayer
 var battery_player: AudioStreamPlayer
+var tenant_death_player: AudioStreamPlayer
 
 var music_stream: AudioStream
 var hurt_stream: AudioStream
 var monster_stream: AudioStream
 var battery_stream: AudioStream
+var tenant_death_stream: AudioStream
 
 var tracked_player_id: int = 0
 var last_health: float = 100.0
@@ -65,14 +68,14 @@ func _process(delta: float) -> void:
     if player == null:
         _release_player()
         _fade_monster_audio(delta, INF)
-        _update_interference_battery_audio()
+        _update_tenant_battery_audio()
         return
 
     _track_player(player)
     player_grace_timer = maxf(0.0, player_grace_timer - delta)
 
     _update_hurt_audio(player)
-    _update_interference_battery_audio()
+    _update_tenant_battery_audio()
     _update_monster_audio(player, delta)
 
 func _build_players() -> void:
@@ -92,9 +95,14 @@ func _build_players() -> void:
     add_child(monster_player)
 
     battery_player = AudioStreamPlayer.new()
-    battery_player.name = "FlashlightMonsterInterference"
+    battery_player.name = "TenantFlashlightInterference"
     battery_player.volume_db = interference_battery_far_volume_db
     add_child(battery_player)
+
+    tenant_death_player = AudioStreamPlayer.new()
+    tenant_death_player.name = "TenantDeath"
+    tenant_death_player.volume_db = tenant_death_volume_db
+    add_child(tenant_death_player)
 
 func _load_audio_assets() -> void:
     if music_stream == null:
@@ -121,10 +129,16 @@ func _load_audio_assets() -> void:
             battery_stream = found_battery
             battery_player.stream = battery_stream
 
-    loaded_assets = music_stream != null and hurt_stream != null and monster_stream != null and battery_stream != null
+    if tenant_death_stream == null:
+        var found_tenant_death: AudioStream = _find_audio_stream("tenantdeath")
+        if found_tenant_death != null:
+            tenant_death_stream = found_tenant_death
+            tenant_death_player.stream = tenant_death_stream
+
+    loaded_assets = music_stream != null and hurt_stream != null and monster_stream != null and battery_stream != null and tenant_death_stream != null
     if not loaded_assets and not reported_missing_assets:
         reported_missing_assets = true
-        print("DynamicAudioSystem: waiting for music/hurt/monster/battery audio under res://assets (wav/ogg/mp3).")
+        print("DynamicAudioSystem: waiting for music/hurt/monster/battery/tenant death audio under res://assets (wav/ogg/mp3).")
 
 func _find_audio_stream(keyword: String) -> AudioStream:
     var candidates: Array[String] = []
@@ -132,20 +146,24 @@ func _find_audio_stream(keyword: String) -> AudioStream:
         _collect_audio_paths(root, candidates)
     candidates.sort()
 
-    var keyword_lower: String = keyword.to_lower()
+    var normalized_keyword: String = _normalize_audio_name(keyword)
     var fallback_path: String = ""
     for path: String in candidates:
-        var filename: String = path.get_file().get_basename().to_lower()
-        if filename == keyword_lower:
+        var filename: String = path.get_file().get_basename()
+        var normalized_filename: String = _normalize_audio_name(filename)
+        if normalized_filename == normalized_keyword:
             var exact_stream: AudioStream = load(path) as AudioStream
             if exact_stream != null:
                 return exact_stream
-        if fallback_path.is_empty() and filename.contains(keyword_lower):
+        if fallback_path.is_empty() and normalized_filename.contains(normalized_keyword):
             fallback_path = path
 
     if not fallback_path.is_empty():
         return load(fallback_path) as AudioStream
     return null
+
+func _normalize_audio_name(value: String) -> String:
+    return value.to_lower().replace("_", "").replace("-", "").replace(" ", "")
 
 func _collect_audio_paths(root: String, output: Array[String]) -> void:
     var directory: DirAccess = DirAccess.open(root)
@@ -199,26 +217,38 @@ func _update_hurt_audio(player: CharacterBody3D) -> void:
         hurt_player.play()
     last_health = health
 
-func _update_interference_battery_audio() -> void:
+func _update_tenant_battery_audio() -> void:
     if battery_player == null:
         return
 
-    var flashlight_system: Node = get_node_or_null("/root/FlashlightMotionSystem")
-    var active: bool = flashlight_system != null and flashlight_system.has_method("is_monster_interference_active") and bool(flashlight_system.call("is_monster_interference_active"))
-    if not active or battery_stream == null:
+    var panic_system: Node = get_node_or_null("/root/PanicTenantSystem")
+    var tenant_contact: bool = panic_system != null and panic_system.has_method("is_tenant_in_flashlight") and bool(panic_system.call("is_tenant_in_flashlight"))
+    if not tenant_contact or battery_stream == null:
         if battery_player.playing:
             battery_player.stop()
         return
 
     var strength: float = 0.0
-    if flashlight_system.has_method("get_monster_interference_strength"):
-        strength = clampf(float(flashlight_system.call("get_monster_interference_strength")), 0.0, 1.0)
+    if panic_system.has_method("get_tenant_flashlight_hold"):
+        strength = clampf(float(panic_system.call("get_tenant_flashlight_hold")) / 3.0, 0.0, 1.0)
     battery_player.volume_db = lerpf(interference_battery_far_volume_db, interference_battery_near_volume_db, strength)
-    battery_player.pitch_scale = lerpf(0.96, 1.08, strength)
+    battery_player.pitch_scale = lerpf(0.98, 1.12, strength)
     if battery_player.stream != battery_stream:
         battery_player.stream = battery_stream
     if not battery_player.playing:
         battery_player.play()
+
+func play_tenant_death() -> void:
+    if battery_player != null and battery_player.playing:
+        battery_player.stop()
+    if tenant_death_player == null or tenant_death_stream == null:
+        return
+    if tenant_death_player.stream != tenant_death_stream:
+        tenant_death_player.stream = tenant_death_stream
+    tenant_death_player.stop()
+    tenant_death_player.pitch_scale = 1.0
+    tenant_death_player.volume_db = tenant_death_volume_db
+    tenant_death_player.play()
 
 func _update_monster_audio(player: CharacterBody3D, delta: float) -> void:
     var nearest_distance: float = _nearest_active_monster_distance(player.global_position)
@@ -292,3 +322,5 @@ func _stop_gameplay_audio() -> void:
         hurt_player.stop()
     if battery_player != null and battery_player.playing:
         battery_player.stop()
+    if tenant_death_player != null and tenant_death_player.playing:
+        tenant_death_player.stop()
