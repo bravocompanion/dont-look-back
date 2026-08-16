@@ -241,7 +241,10 @@ func _build_loading_ui() -> void:
 
     overlay = ColorRect.new()
     overlay.color = Color(0.003, 0.004, 0.006, 1.0)
-    overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    # Loading state already blocks player/mobile input explicitly. Keeping this
+    # visual ColorRect IGNORE prevents a stale/high-layer overlay from stealing
+    # menu clicks after a scene transition or failed load.
+    overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(overlay)
     overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -255,6 +258,7 @@ func _build_loading_ui() -> void:
     title_label.offset_right = 300.0
     title_label.offset_bottom = -20.0
     title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     title_label.add_theme_font_size_override("font_size", 34)
     overlay.add_child(title_label)
 
@@ -268,6 +272,7 @@ func _build_loading_ui() -> void:
     detail_label.offset_right = 300.0
     detail_label.offset_bottom = 30.0
     detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    detail_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     detail_label.add_theme_font_size_override("font_size", 16)
     overlay.add_child(detail_label)
 
@@ -280,6 +285,7 @@ func _build_loading_ui() -> void:
     progress_bar.offset_top = 52.0
     progress_bar.offset_right = 180.0
     progress_bar.offset_bottom = 72.0
+    progress_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
     progress_bar.show_percentage = false
     overlay.add_child(progress_bar)
 
