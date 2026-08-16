@@ -1,10 +1,37 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for v0.18.3 Movement + Cabin + Forest Visibility.
+Updated for v0.18.4 Dynamic Sun + Moon Lighting.
 
-The project remains code/procedural-first. v0.18.3 adds jump, auto-step, a cabin-entry fix and brighter non-protective forest night lighting. Production art/audio should now support movement readability, threshold geometry and night navigation without making horror spaces feel safe.
+The project remains code/procedural-first. v0.18.4 adds a clock-driven Forest sun/moon cycle on top of v0.18.3 jump, auto-step, cabin-entry and night-visibility work. Production art/audio should now support readable sunrise/day/dusk/night transitions without weakening the horror-light rules.
 
-## P0 — New needs from v0.18.3
+## P0 — New needs from v0.18.4
+
+Dynamic sky / celestial presentation:
+- visible sun disc or lightweight procedural sun representation
+- visible moon disc with horror-appropriate size/brightness
+- sunrise sky gradient/reference
+- clear daytime sky gradient/reference
+- warm dusk/sunset gradient/reference
+- deep night sky gradient/reference
+- optional stars layer for night
+- 2–4 lightweight cloud variants or procedural cloud layer
+- cloud tint variants for dawn/day/dusk/night
+- mobile-safe sky material with minimal overdraw
+- optional subtle moon halo that does not imply a safe zone
+
+Lighting reference targets:
+- sunrise around 06:00: low warm directional light
+- noon around 12:00: strongest neutral daylight
+- sunset around 18:00: low warm light fading out
+- midnight around 00:00: cool dim moonlight
+- powered shelter/campfire/flashlight must remain visually stronger and clearly different from moonlight
+
+Important gameplay constraint:
+- sun/daylight may support the existing daytime protective behavior
+- moonlight and general Environment ambient light must remain atmospheric/readability lighting only
+- moonlight must not visually read like a monster-repelling safe zone
+
+## P0 — Movement / cabin needs from v0.18.3
 
 Character movement:
 - survivor jump takeoff animation
@@ -26,16 +53,10 @@ Cabin entrance:
 - threshold/door-sill piece with simple collision proxy
 - small exterior cabin fixture for the current dim entrance light
 
-Forest night presentation:
-- moonlit forest lighting reference/key look
-- tree silhouettes that remain readable under low ambient light
+Forest presentation:
+- tree silhouettes readable across changing sun/moon angles
 - fog layers that do not crush visibility on mobile
-- optional moon/cloud sky treatment
 - subtle reflective/wet material variants for road/rocks where useful
-
-Important gameplay constraint:
-- ambient/moon/cabin guide lighting must improve readability without visually implying a safe zone
-- generator/campfire/strong powered lights must remain clearly brighter than ambient forest lighting
 
 ## P0 — Character assets
 
@@ -119,8 +140,10 @@ Monster cues:
 Ambience:
 - labyrinth room tone
 - fluorescent/electrical hum
-- forest day
-- forest night
+- forest dawn ambience variation
+- forest day ambience
+- forest dusk ambience variation
+- forest night ambience
 - wind
 - branch snaps
 - cabin ambience
@@ -260,28 +283,34 @@ Journal:
 - Tenant shadow distortion
 - wind-driven leaves
 - loading fade/grain
+- subtle dawn/dusk volumetric haze if performance allows
+- cloud shadow treatment only if mobile budget allows
 
 ## Mobile + desktop constraints
 
+- use one low-cost sky solution across desktop/mobile where possible
+- avoid heavy volumetric clouds on mobile
+- moon shadow remains optional/off on mobile
+- sun shadow quality should be scalable later through graphics settings
+- preserve night readability on low-brightness mobile displays
+- avoid making ambient celestial light as strong as protective lights
 - keep movement buttons readable and separated on narrow screens
 - jump/landing animation must remain readable on remote co-op survivors
 - use LODs for characters, monsters and vegetation
 - use low-cost collision proxies
 - keep transparency/overdraw limited
-- preserve night readability on low-brightness mobile displays
-- avoid making ambient forest lighting as strong as protective lights
 - reserve 4K textures for hero assets only
-- provide lower-cost shadow/material variants for mobile
 
-## Recommended integration order after v0.18.3
+## Recommended integration order after v0.18.4
 
-1. Real footsteps + jump/landing + interaction SFX
-2. Survivor model with walk/run/jump/downed/revive animations
-3. Tenant final model + freeze/search/chase animation
-4. Darkness final model + crawl/search/light-retreat
-5. Labyrinth fixture/material/door pass
-6. Cabin porch/threshold + shelter props
-7. Forest vegetation/night presentation pass
-8. Branded title/loading art
-9. Gas Station/House/Warehouse props
-10. Multiplayer UI + VFX polish
+1. Production sky gradient + sun/moon discs + light cloud layer
+2. Real footsteps + jump/landing + interaction SFX
+3. Survivor model with walk/run/jump/downed/revive animations
+4. Tenant final model + freeze/search/chase animation
+5. Darkness final model + crawl/search/light-retreat
+6. Labyrinth fixture/material/door pass
+7. Cabin porch/threshold + shelter props
+8. Forest vegetation/fog/day-night presentation pass
+9. Branded title/loading art
+10. Gas Station/House/Warehouse props
+11. Multiplayer UI + VFX polish
