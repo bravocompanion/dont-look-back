@@ -45,6 +45,7 @@ var battery_drain_multiplier: float = 1.0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
+    process_priority = 50
 
 func _process(delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -269,7 +270,7 @@ func _update_monster_interference(delta: float) -> void:
         return
 
     var battery: float = float(player.get("flashlight_battery"))
-    var can_interfere: bool = flashlight.visible and battery > 0.0 and not bool(player.get("is_dead"))
+    var can_interfere: bool = player.can_process() and flashlight.visible and battery > 0.0 and not bool(player.get("is_dead"))
     var touching_monster: bool = can_interfere and _flashlight_hits_any_monster()
 
     if touching_monster:
@@ -397,8 +398,10 @@ func _has_clear_beam_line(origin: Vector3, target: Vector3, monster: Node3D) -> 
         return true
 
     var collider_value: Variant = hit.get("collider", null)
-    if collider_value is Node and _collider_belongs_to_monster(collider_value as Node, monster):
-        return true
+    if collider_value is Node:
+        var collider_node: Node = collider_value
+        if _collider_belongs_to_monster(collider_node, monster):
+            return true
 
     var hit_position_value: Variant = hit.get("position", null)
     if not (hit_position_value is Vector3):
