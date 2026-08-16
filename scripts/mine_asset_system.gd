@@ -9,6 +9,7 @@ var _configured_scene_id: int = 0
 var _check_timer: float = 0.0
 var _prop_source: Node3D
 var _modular_source: Node3D
+var _missing_assets_warned: bool = false
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -39,17 +40,23 @@ func _process(delta: float) -> void:
     _build_layer(scene, arc_root)
 
 func _ensure_sources() -> bool:
+    if not ResourceLoader.exists(PROP_SCENE_PATH) or not ResourceLoader.exists(MODULAR_SCENE_PATH):
+        if not _missing_assets_warned:
+            _missing_assets_warned = true
+            push_warning("MineAssetSystem: runtime Mine asset belum tersedia. Salin folder runtime/assets dari paket integrasi ke project.")
+        return false
+
+    _missing_assets_warned = false
+
     if _prop_source == null:
         var prop_scene := load(PROP_SCENE_PATH) as PackedScene
         if prop_scene == null:
-            push_warning("MineAssetSystem: gagal memuat %s" % PROP_SCENE_PATH)
             return false
         _prop_source = prop_scene.instantiate() as Node3D
 
     if _modular_source == null:
         var modular_scene := load(MODULAR_SCENE_PATH) as PackedScene
         if modular_scene == null:
-            push_warning("MineAssetSystem: gagal memuat %s" % MODULAR_SCENE_PATH)
             return false
         _modular_source = modular_scene.instantiate() as Node3D
 
