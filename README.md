@@ -1,6 +1,103 @@
-# DON'T LOOK BACK — Godot v0.19
+# DON'T LOOK BACK — Godot v0.19.1
 
-First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative monsters, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AI navigation, and dynamic Forest sun/moon lighting.
+First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative monsters, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AI navigation, dynamic Forest sun/moon lighting, and adaptive Labyrinth encounter pacing.
+
+## v0.19.1 — LABYRINTH ENCOUNTER & PACING
+
+v0.19.1 keeps the v0.19 Arc 1 route and adds a dynamic encounter layer so the 30–45 minute Labyrinth run is not just a fixed sequence of always-active monsters.
+
+### Threat budget
+
+`LabyrinthEncounterDirector` now selects which Arc enemies are active instead of allowing every Mourner/Crawler to pressure the team at once.
+
+Internal pressure states:
+- `CALM`
+- `UNEASY`
+- `DANGER`
+- `SEVERE`
+- `LOCKDOWN`
+
+The pressure state is intentionally not exposed as a large arcade HUD. It changes the encounter budget behind the scenes.
+
+Budget behavior:
+- Maintenance begins with light pressure
+- Flooded Service supports more simultaneous Arc pressure
+- Archive increases the budget
+- Lockdown can use the highest Arc-enemy budget
+- if The Tenant or Darkness Creature is already active, their pressure reduces the available Mourner/Crawler budget
+- a DOWNED survivor or survivor below roughly 35 HP reduces the Arc budget
+- very slow first runs can receive slightly more pressure after long time in the lower Labyrinth
+
+Arc enemies rotate in and out between encounter windows. When an enemy becomes active again, it restarts from its authored home sector rather than appearing at the position where it previously disappeared.
+
+### Random horror events
+
+The host/solo authority can trigger low-cost events between encounters:
+- distant metal slam
+- fake footsteps/noise
+- maintenance-light flicker
+- short blackout
+- fake shadow crossing a corridor
+
+These events can also create AI noise, so a harmless event can cause a real enemy to investigate the wrong corridor or unexpectedly redirect toward the team.
+
+The current slam/footstep events are gameplay hooks awaiting production spatial audio from the asset backlog. Flicker/blackout/shadow have prototype visual behavior now.
+
+### Environmental hazards
+
+Arc 1 now contains timed hazards:
+- one Maintenance steam vent
+- two electrified Flooded Service puddles
+- one Flooded Service steam vent
+- one Archive steam vent
+
+Steam bursts cycle on/off and deal non-instant-kill damage when a survivor crosses during an active burst.
+
+Electrified puddles pulse on/off. Standing/running through the current damages the survivor; jumping high enough over the active floor current can avoid the hit, giving the v0.18.3 jump system an actual Labyrinth use case.
+
+Hazard damage is host-authoritative in co-op and uses the existing health/downed/revive pipeline.
+
+### Multiplayer synchronization
+
+The host owns:
+- encounter enemy selection
+- threat budget
+- random horror-event selection
+- hazard damage
+- shared hazard clock
+
+Clients receive encounter state and a regularly corrected shared clock so hazard pulses and event presentation stay reasonably aligned without running independent authoritative encounter logic.
+
+### Performance intent
+
+The encounter pass is deliberately mobile-conscious:
+- no volumetric hazard system
+- simple primitive prototype hazard visuals
+- short fake-shadow mesh instead of a full extra AI entity
+- most additional hazard lights have shadows disabled
+- fewer monsters can be active when another high-cost horror threat is already present
+
+### Testing v0.19.1
+
+Important solo checks:
+1. Complete the old three relays and enter Lower Labyrinth.
+2. Confirm only a limited subset of Mourner/Crawler enemies is active at a time.
+3. Continue between Maintenance/Flooded/Archive and verify pressure generally increases.
+4. Trigger The Tenant or Darkness Creature and verify Arc enemy pressure can reduce instead of stacking every monster together.
+5. Enter the Maintenance steam vent only during an active burst and confirm health damage is non-lethal per hit.
+6. Test both electrified puddles while grounded, then jump across and verify sufficient height avoids floor-current damage.
+7. Wait for random horror events; check light flicker/blackout/shadow events and whether noise can redirect AI.
+8. Start Lockdown and verify the encounter rotations become faster/more dangerous.
+9. Complete Lockdown and verify Arc encounter budget clears for the final exit.
+
+Important co-op checks:
+1. Host + client reach Lower Labyrinth.
+2. Verify both devices show the same Mourner/Crawler activation state after synchronization settles.
+3. Verify only the host applies steam/electric damage.
+4. Verify a damaged or DOWNED teammate reduces pressure rather than causing all enemies to remain active.
+5. Confirm horror events appear on both peers and do not create duplicate authoritative AI noise from clients.
+
+`project.godot` is intentionally not modified for v0.19.1. `Arc1NavigationBridge`, which is already autoloaded in v0.19, creates `LabyrinthEncounterDirector` at `/root/LabyrinthEncounterDirector`. This avoids another local `project.godot` Pull conflict. The title-menu badge is updated by the existing `FrontEndSystem` and reads `v0.19.1 • LABYRINTH ENCOUNTER & PACING`.
 
 ## v0.19 — ARC 1: THE LABYRINTH
 
@@ -196,8 +293,6 @@ Mobile:
 
 ## Testing v0.19
 
-Use a clean Pull before testing. Because `project.godot` changed, preserve local edits with stash instead of discarding important local settings.
-
 Recommended solo test:
 1. Start NEW GAME.
 2. Complete Apartment 03 and all three old relays.
@@ -232,7 +327,7 @@ Recommended co-op test:
 
 ## Retained systems
 
-v0.19 retains:
+v0.19.1 retains:
 - separate `main.tscn` Labyrinth and `forest.tscn` Forest maps
 - v0.18 AI CHASE / INVESTIGATE / SEARCH / PATROL
 - The Tenant freeze-when-watched rule
@@ -253,11 +348,13 @@ v0.19 retains:
 - Runtime F5 validation still has to be performed on the development machine; the assistant environment does not contain the Godot executable.
 - Arc 1 production geometry is still procedural CSG/primitive art.
 - Mourner/Crawler visuals are prototype meshes without final rigs or animations.
-- Arc 1 has gameplay pacing designed for 30–45 minutes first-run, but actual completion time depends on player behavior.
+- Steam/electrical hazard visuals are prototype geometry without final particles, decals or audio.
+- Fake slam/footstep events currently generate AI noise but still need production spatial audio to be perceptible as intended to the player.
+- Arc 1 pacing is designed for 30–45 minutes first-run, but actual completion time depends on player behavior.
 - AI navigation remains a hand-authored runtime AStar waypoint graph rather than baked NavigationMesh.
 - Internet matchmaking/NAT traversal is not implemented; multiplayer remains LAN/IP based.
 - Final production audio, VFX, character art, environment modules and animation are still required.
 
 ## Asset status
 
-See `ASSET_BACKLOG.md`. v0.19 adds new priority needs for Mourner/Crawler production models, Arc 1 maintenance/flood/archive/lockdown environment kits, objective props, additional dim-light fixtures, alarm/blackout audio, and Lockdown presentation.
+See `ASSET_BACKLOG.md`. v0.19.1 adds priority needs for steam/electrical hazard art and audio, fake-footstep/metal-slam spatial audio, shadow-event presentation, electrical sparks, warning signage, and low-cost mobile VFX variants.
