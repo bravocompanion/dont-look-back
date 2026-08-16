@@ -26,8 +26,8 @@ func _process(_delta: float) -> void:
         return
 
     var tenant_active: bool = _tenant_active()
-    if tenant_active and _flashlight_kill_near_complete():
-        kill_armed = true
+    if tenant_active:
+        kill_armed = _flashlight_kill_near_complete()
 
     if last_tenant_active and not tenant_active and kill_armed:
         _play_death_feedback()
