@@ -60,17 +60,20 @@ This keeps the effect readable on phones without excessive screen-motion discomf
 
 ## Beam behavior
 
-The scene baseline remains:
+The active full-battery runtime baseline is:
 
-- SpotLight energy: 3.5
+- SpotLight energy: **6.7**
 - range: 13 m
 - angle: 28 degrees
+
+`FlashlightMotionSystem` applies the 6.7 energy baseline to the Player at runtime, so the same full-battery output is used in both the Labyrinth and Forest even if an older scene resource still contains the previous prototype value.
 
 v0.22 additionally:
 
 - shortens range gradually below roughly 22% battery
 - slightly widens the cone during sprint
 - leaves energy/flicker ownership in Player so battery and panic systems do not conflict with the motion controller
+- low-battery and panic multipliers scale downward from the new 6.7 full-battery baseline
 
 ## Labyrinth light feel
 
@@ -103,16 +106,19 @@ This is deliberate to avoid adding another `project.godot` merge/pull conflict.
 Desktop:
 
 1. Stand still and watch a wall edge — beam should breathe slightly.
-2. Walk forward — beam should bob more than idle.
-3. Sprint — beam should clearly become less stable without large camera shake.
-4. Flick mouse left/right — beam should lag and recover smoothly.
-5. Jump — small takeoff motion should appear.
-6. Land from a jump — short landing kick should appear.
-7. Drain stamina — hand instability should increase subtly.
-8. Take damage — instability should increase but remain controllable.
-9. Reach low battery — beam range should reduce while existing battery flicker still works.
-10. Trigger an Archive breaker fault — old-maze dim lights should become much less stable without becoming protective.
-11. Reach evacuation — dim lights should pulse differently from the red/orange evacuation strobes.
+2. Confirm a fresh/full battery uses energy 6.7.
+3. Walk forward — beam should bob more than idle.
+4. Sprint — beam should clearly become less stable without large camera shake.
+5. Flick mouse left/right — beam should lag and recover smoothly.
+6. Jump — small takeoff motion should appear.
+7. Land from a jump — short landing kick should appear.
+8. Drain stamina — hand instability should increase subtly.
+9. Take damage — instability should increase but remain controllable.
+10. Reach low battery — beam range and output should reduce while existing battery flicker still works.
+11. Replace the battery — output should return to the 6.7 baseline.
+12. Trigger an Archive breaker fault — old-maze dim lights should become much less stable without becoming protective.
+13. Reach evacuation — dim lights should pulse differently from the red/orange evacuation strobes.
+14. Transition to Forest — full-battery output should remain at the same 6.7 baseline.
 
 Mobile:
 
