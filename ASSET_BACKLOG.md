@@ -1,8 +1,71 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.19 — ARC 1: THE LABYRINTH**.
+Updated for **v0.19.1 — LABYRINTH ENCOUNTER & PACING**.
 
-The project is still code/procedural-first. v0.19 adds a large lower Labyrinth, two new enemy archetypes, more objective props, 24+ additional dim-light points across the old/new maze, flooded/archive/lockdown sectors, and a final stabilization holdout. Production art/audio now needs to catch up with the gameplay depth.
+The project is still code/procedural-first. v0.19.1 adds adaptive encounter pacing, horror-event presentation hooks, steam/electrical environmental hazards, and dynamic enemy budgeting on top of the v0.19 Arc 1 expansion. Production art/audio now needs to make those systems readable without making the Labyrinth feel gamey.
+
+## P0 — New needs from v0.19.1
+
+### Environmental hazards
+
+Steam / pipe hazards:
+- damaged steam-pipe outlet model
+- valve/pipe pressure fixture variants
+- steam burst VFX with low-cost mobile version
+- condensation/drip decal set
+- warning paint / hot-pipe signage
+- steam hiss loop + burst transient
+- pressure build-up cue before each burst
+
+Electrical hazards:
+- electrified puddle material
+- exposed cable / broken junction-box prop
+- electrical arc / spark VFX
+- short floor-current pulse VFX
+- electric buzz idle cue
+- high-voltage crack / discharge cue
+- warning signage / hazard stripe decal
+
+Gameplay readability requirement:
+- hazard OFF/Safe and ACTIVE states must be readable from several meters away
+- effects must remain readable on low-brightness mobile displays
+- electrical puddle effects must not resemble protective safe-light visuals
+- steam/electric VFX need low-overdraw mobile variants
+
+### Encounter Director presentation
+
+Random horror events now need production presentation for:
+- distant metal slam
+- fake footsteps behind/around the survivor
+- maintenance-light flicker
+- short blackout event
+- fake shadow crossing a corridor
+
+Audio priority:
+- 4–6 metal impact/slam variants with distance filtering
+- 4+ concrete/metal fake-footstep variants
+- electrical flicker / ballast failure
+- blackout power-down + recovery transient
+- short shadow movement / cloth scrape cue
+
+Visual priority:
+- fast shadow silhouette material/mesh
+- light-flicker fixture response
+- blackout recovery sparks optional
+- subtle environmental movement props that can be triggered later
+
+Important horror rule:
+- not every horror event should spawn or reveal a real monster
+- fake events should share some audio language with real AI movement so players cannot instantly classify them
+
+### Threat-state support
+
+The encounter system now uses CALM / UNEASY / DANGER / SEVERE / LOCKDOWN pressure internally. Do not expose this as a large arcade HUD. Assets should communicate pressure through environment and audio instead:
+- ambience layers with low/high tension variants
+- heartbeat/breathing escalation options
+- lamp hum intensity variants
+- distant monster cue variants
+- Lockdown alarm escalation layers
 
 ## P0 — New needs from v0.19 Arc 1
 
@@ -391,23 +454,25 @@ Global:
 - enemy final meshes need LODs
 - prefer one skeleton/skin material budget per monster where possible
 - use simple collision proxies for shelves, pipes and gates
-- minimize transparent flooded-water overdraw
-- keep dim-lamp readability on low-brightness phone displays
+- minimize transparent flooded-water/steam overdraw
+- keep dim-lamp and hazard readability on low-brightness phone displays
 - keep objective controls large/readable enough for first-person mobile interaction
-- keep co-op remote survivor + four Arc enemies within mobile draw-call budget
+- keep co-op remote survivor + encounter-selected enemies within mobile draw-call budget
 - avoid 4K textures except hero/menu art
 
-## Recommended production order after v0.19
+## Recommended production order after v0.19.1
 
-1. Arc 1 dim fixture + concrete/metal material kit
-2. Mourner model + core stalk/listen/attack animations
-3. Crawler model + crawl/light-retreat/attack animations
-4. Arc objective props: fuse/valve/breaker/console
-5. Arc audio pass: ambience, switches, alarms, enemy cues
-6. Survivor final model + movement/downed/revive animations
-7. Tenant final model + animation pass
-8. Darkness Creature final model + animation pass
-9. Archive/Flooded/Lockdown environment props
-10. Forest sky/sun/moon art pass
-11. Cabin/exterior landmark production props
-12. Front-end branding + multiplayer UI polish
+1. Hazard readability pass: steam pipe + electric puddle + sparks/audio
+2. Horror-event audio pass: fake footsteps, metal slam, flicker, blackout
+3. Arc 1 dim fixture + concrete/metal material kit
+4. Mourner model + core stalk/listen/attack animations
+5. Crawler model + crawl/light-retreat/attack animations
+6. Arc objective props: fuse/valve/breaker/console
+7. Arc ambience + Lockdown audio layers
+8. Survivor final model + movement/downed/revive animations
+9. Tenant final model + animation pass
+10. Darkness Creature final model + animation pass
+11. Archive/Flooded/Lockdown environment props
+12. Forest sky/sun/moon art pass
+13. Cabin/exterior landmark production props
+14. Front-end branding + multiplayer UI polish
