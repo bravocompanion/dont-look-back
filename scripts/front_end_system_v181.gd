@@ -10,7 +10,8 @@ func _ready() -> void:
     if title_box != null and title_box.get_child_count() > 1:
         var subtitle: Label = title_box.get_child(1) as Label
         if subtitle != null:
-            subtitle.text = "v0.18.4.1  •  SURVIVAL HORROR"
+            subtitle.text = "v0.18.4.2  •  SURVIVAL HORROR"
+    _force_menu_input_ready()
     _force_menu_cursor_visible()
 
 func _process(delta: float) -> void:
@@ -26,28 +27,57 @@ func _process(delta: float) -> void:
     elif menu_open:
         _force_menu_cursor_visible()
 
+    if menu_open:
+        _force_menu_input_ready()
+
 func _force_menu_cursor_visible() -> void:
     if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
+func _force_menu_input_ready() -> void:
+    # Decorative fullscreen controls must not consume pointer/touch input.
+    if overlay != null:
+        overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+    # Once the short boot window has completed, keep actionable title controls
+    # explicitly enabled. This protects against stale disabled state after a
+    # scene reload/save autoload while leaving CONTINUE dependent on save data.
+    if boot_frames <= 0:
+        if new_game_button != null:
+            new_game_button.disabled = false
+        if host_button != null:
+            host_button.disabled = false
+        if join_button != null:
+            join_button.disabled = false
+        if settings_button != null:
+            settings_button.disabled = false
+        if quit_button != null:
+            quit_button.disabled = false
+        if continue_button != null:
+            continue_button.disabled = not title_resume_available and not _has_valid_save()
+
 func _show_title_menu() -> void:
     super._show_title_menu()
     menu_cursor_guard_frames = 12
+    _force_menu_input_ready()
     _force_menu_cursor_visible()
 
 func _open_pause_menu() -> void:
     super._open_pause_menu()
     menu_cursor_guard_frames = 4
+    _force_menu_input_ready()
     _force_menu_cursor_visible()
 
 func _open_join_menu() -> void:
     super._open_join_menu()
     menu_cursor_guard_frames = 4
+    _force_menu_input_ready()
     _force_menu_cursor_visible()
 
 func _open_settings() -> void:
     super._open_settings()
     menu_cursor_guard_frames = 4
+    _force_menu_input_ready()
     _force_menu_cursor_visible()
 
 func _start_new_game_confirmed() -> void:
@@ -81,6 +111,7 @@ func _start_new_game_confirmed() -> void:
     _set_all_panels_hidden()
     if overlay != null:
         overlay.visible = true
+        overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
     _set_status("Starting a new nightmare...")
     menu_cursor_guard_frames = 12
     _force_menu_cursor_visible()
