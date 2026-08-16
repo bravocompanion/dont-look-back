@@ -1,12 +1,35 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.24.2 — PANIC-DRIVEN TENANT**.
+Updated for **v0.24.3 — TENANT FLASHLIGHT KILL FEEDBACK**.
 
 The project is still code/procedural-first. Gameplay systems are ahead of final art/audio production, so the highest-value work now is replacing prototype presentation while keeping mobile/desktop performance targets.
 
+## P0 — v0.24.3 Tenant flashlight kill feedback
+
+New required audio:
+
+- `tenant death` — one-shot confirmation when The Tenant is successfully removed after a 3-second flashlight hold.
+
+Accepted examples:
+
+- `assets/tenant death.mp3`
+- `assets/tenant_death.mp3`
+- `assets/tenant-death.ogg`
+- `assets/tenantdeath.wav`
+
+The resolver normalizes spaces, underscores, and dashes. See `ASSET_DELTA_V0243.md` for the exact contract.
+
+Tenant flashlight presentation now also needs:
+
+- rapid light-reactive flicker/readability response while Tenant is inside the beam
+- flashlight-hit animation or material reaction loop
+- final 3-second death/banish dissolve
+- death/banish SFX that remains readable over BGM + proximity audio
+- future Reduce Flashing accessibility variant for the rapid flashlight effect
+
 ## P0 — v0.24.2 Panic-Driven Tenant
 
-The Tenant production pass now needs to support movement-driven panic and a 3-second flashlight banish mechanic.
+The Tenant production pass needs to support movement-driven panic and a 3-second flashlight banish mechanic.
 
 Animation / presentation:
 
@@ -27,7 +50,7 @@ VFX/audio:
 - emergence sting
 - panic-scaled footsteps/breath/body-creak
 - flashlight burn/interference layer
-- banish release sound
+- banish/death release sound
 
 Optional panic feedback:
 
@@ -35,18 +58,19 @@ Optional panic feedback:
 - stronger pulse at 75%+
 - restrained movement-driven heartbeat/breath layer
 
-See `ASSET_DELTA_V0242.md` for the exact v0.24.2 production delta.
+See `ASSET_DELTA_V0242.md` for the panic/Tenant production delta.
 
-## P0 — v0.24 audio integration
+## P0 — Runtime audio integration
 
-### Required existing audio files
+### Required audio files
 
-The runtime audio system expects these four keyword assets inside the Godot project, preferably under `res://assets/`:
+The runtime audio system now expects five keyword assets inside the Godot project, preferably under `res://assets/`:
 
 - `music` — background music
 - `hurt` — player hit reaction
 - `monster` — proximity threat cue/layer
-- `battery` — flashlight/monster interference cue while the beam is held on a monster
+- `battery` — flashlight/monster electrical interference cue
+- `tenant death` — Tenant flashlight-kill confirmation
 
 Accepted runtime resolver formats:
 
@@ -60,12 +84,13 @@ Recommended naming:
 - `assets/hurt.wav`
 - `assets/monster.ogg`
 - `assets/battery.mp3`
+- `assets/tenant_death.mp3`
 
-Partial names such as `background_music`, `player_hurt`, and `monster_near` are also recognized. For the interference cue, prefer a basename containing `battery`.
+Partial names such as `background_music`, `player_hurt`, and `monster_near` are recognized. For Tenant death, spaces/underscores/dashes are normalized before matching.
 
 ### Repository requirement
 
-At implementation time GitHub `main` did not contain an `assets/` directory. If these files currently exist only on the development PC, they need to be committed so clones, collaborators, and repository-based Android/desktop builds include them.
+If these files currently exist only on the development PC, they need to be committed so clones, collaborators, and repository-based Android/desktop builds include them.
 
 ### Audio production recommendations
 
@@ -95,6 +120,13 @@ Battery / interference:
 - readable on phone speakers without becoming piercing
 - optional 2–3 variants later to reduce repetition
 
+Tenant death:
+
+- strong short confirmation that the 3-second kill/banish succeeded
+- avoid a long tail that masks the next threat
+- should remain clear on phone speakers
+- final mix should sit above battery interference without clipping
+
 ## P0 — Flashlight / lighting production
 
 First-person flashlight:
@@ -119,11 +151,11 @@ Lighting fixtures:
 - evacuation red/orange fixture
 - low-overdraw emissive LODs
 
-Audio still needed beyond the four-file integration:
+Audio still needed beyond current runtime integration:
 
 - flashlight switch on/off
 - battery insert/remove
-- electrical buzz/flicker
+- electrical buzz/flicker variants
 - bulb relay clicks
 - failing fluorescent hum
 
@@ -251,10 +283,10 @@ The Tenant:
 - final rigged humanoid horror model
 - freeze/unseen movement/panic-scaled chase/search/attack
 - near-player emergence support
-- flashlight reaction + 3-second banish
+- flashlight reaction + 3-second kill/banish
 - turn animation support
 - distortion/shadow treatment
-- movement/breath/proximity/attack/banish SFX
+- movement/breath/proximity/attack/death SFX
 
 Darkness Creature:
 
@@ -392,7 +424,7 @@ Interaction:
 - flashlight dust
 - Warden core pulse/distortion
 - Darkness dissolve
-- Tenant emergence/flashlight-banishing distortion
+- Tenant emergence/flashlight-death distortion
 - evacuation dust/debris
 - shutter sparks
 - shallow-water ripple/splash
@@ -417,12 +449,13 @@ Interaction:
 - test red/orange/green state readability at low phone brightness
 - high-panic Tenant attack animation must remain readable at 30 FPS
 - Tenant animation/root motion must not fight host-authoritative navigation
+- rapid Tenant flashlight flicker must be tested at 30/60 FPS and receive a Reduce Flashing accessibility pass before public release
 - profile runtime CSG and OmniLights on actual Android hardware
 
-## Recommended production order after v0.24.2
+## Recommended production order after v0.24.3
 
-1. Commit/verify the four audio files (`music`, `hurt`, `monster`, `battery`)
-2. Tenant emergence + flashlight banish animation/VFX/audio
+1. Commit/verify the five audio files (`music`, `hurt`, `monster`, `battery`, `tenant death`)
+2. Tenant emergence + flashlight death/banish animation/VFX/audio
 3. Tenant panic-scaled locomotion + fast attack/recovery variants
 4. First-person flashlight + hand rig + battery animation/SFX
 5. Warden production model/animations/audio
@@ -438,4 +471,4 @@ Interaction:
 15. Forest/exterior production art
 16. Front-end branding + localization polish
 
-See `ASSET_DELTA_V024.md` for the audio integration contract and `ASSET_DELTA_V0242.md` for the current Tenant/PANIC production delta.
+See `ASSET_DELTA_V024.md` for the original audio integration contract, `ASSET_DELTA_V0242.md` for PANIC/Tenant behavior, and `ASSET_DELTA_V0243.md` for Tenant flashlight/death feedback.
