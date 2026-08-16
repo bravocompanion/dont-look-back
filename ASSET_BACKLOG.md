@@ -1,19 +1,52 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.24 — DYNAMIC HORROR AUDIO**.
+Updated for **v0.24.2 — PANIC-DRIVEN TENANT**.
 
 The project is still code/procedural-first. Gameplay systems are ahead of final art/audio production, so the highest-value work now is replacing prototype presentation while keeping mobile/desktop performance targets.
+
+## P0 — v0.24.2 Panic-Driven Tenant
+
+The Tenant production pass now needs to support movement-driven panic and a 3-second flashlight banish mechanic.
+
+Animation / presentation:
+
+- near-player emergence/materialize animation for the 2-second stillness trigger
+- freeze/watched pose that remains readable while the player keeps it in sight
+- low-panic stalk locomotion around 1.65 m/s
+- medium-panic locomotion blend around 2.3 m/s
+- high-panic chase locomotion up to 3.0 m/s
+- attack animation/recovery that can visually support cooldowns from 2.40 s down to about 1.05 s
+- flashlight-hit reaction loop
+- 3-second banish/dissolve/distortion animation
+
+VFX/audio:
+
+- low-overdraw appearance distortion
+- flashlight reaction that intensifies over the 0–3 second hold
+- banish dissolve/pop effect
+- emergence sting
+- panic-scaled footsteps/breath/body-creak
+- flashlight burn/interference layer
+- banish release sound
+
+Optional panic feedback:
+
+- subtle PANIC HUD pulse at 50%+
+- stronger pulse at 75%+
+- restrained movement-driven heartbeat/breath layer
+
+See `ASSET_DELTA_V0242.md` for the exact v0.24.2 production delta.
 
 ## P0 — v0.24 audio integration
 
 ### Required existing audio files
 
-The new runtime audio system expects these four keyword assets inside the Godot project, preferably under `res://assets/`:
+The runtime audio system expects these four keyword assets inside the Godot project, preferably under `res://assets/`:
 
 - `music` — background music
 - `hurt` — player hit reaction
 - `monster` — proximity threat cue/layer
-- `battery` — low flashlight battery warning
+- `battery` — flashlight/monster interference cue while the beam is held on a monster
 
 Accepted runtime resolver formats:
 
@@ -26,9 +59,9 @@ Recommended naming:
 - `assets/music.ogg`
 - `assets/hurt.wav`
 - `assets/monster.ogg`
-- `assets/battery.wav`
+- `assets/battery.mp3`
 
-Partial names such as `background_music`, `player_hurt`, `monster_near`, and `low_battery` are also recognized.
+Partial names such as `background_music`, `player_hurt`, and `monster_near` are also recognized. For the interference cue, prefer a basename containing `battery`.
 
 ### Repository requirement
 
@@ -55,11 +88,12 @@ Monster proximity:
 - dark pulse/drone/breath/heartbeat style works better than a single loud jumpscare hit
 - should remain readable on phone speakers
 
-Battery:
+Battery / interference:
 
-- short electrical chirp/click/weak-beep warning
-- must remain recognizable at low phone volume
-- avoid a long alarm because warning can repeat at low battery
+- electrical instability/glitch character rather than a low-battery alarm
+- should tolerate repeated/looped playback during a flashlight hold
+- readable on phone speakers without becoming piercing
+- optional 2–3 variants later to reduce repetition
 
 ## P0 — Flashlight / lighting production
 
@@ -85,7 +119,7 @@ Lighting fixtures:
 - evacuation red/orange fixture
 - low-overdraw emissive LODs
 
-Audio still needed beyond v0.24 four-file integration:
+Audio still needed beyond the four-file integration:
 
 - flashlight switch on/off
 - battery insert/remove
@@ -215,10 +249,12 @@ Service shortcut doors:
 The Tenant:
 
 - final rigged humanoid horror model
-- freeze/unseen movement/chase/search/attack
+- freeze/unseen movement/panic-scaled chase/search/attack
+- near-player emergence support
+- flashlight reaction + 3-second banish
 - turn animation support
 - distortion/shadow treatment
-- movement/breath/proximity/attack SFX
+- movement/breath/proximity/attack/banish SFX
 
 Darkness Creature:
 
@@ -308,7 +344,7 @@ Player:
 
 - breathing
 - sprint breathing
-- heartbeat/panic
+- movement-driven panic heartbeat
 - multiple hurt variants
 - bleeding/downed/revive
 
@@ -356,7 +392,7 @@ Interaction:
 - flashlight dust
 - Warden core pulse/distortion
 - Darkness dissolve
-- Tenant distortion
+- Tenant emergence/flashlight-banishing distortion
 - evacuation dust/debris
 - shutter sparks
 - shallow-water ripple/splash
@@ -379,24 +415,27 @@ Interaction:
 - monster/survivor mobile LODs
 - avoid 4K textures except hero/menu art
 - test red/orange/green state readability at low phone brightness
+- high-panic Tenant attack animation must remain readable at 30 FPS
+- Tenant animation/root motion must not fight host-authoritative navigation
 - profile runtime CSG and OmniLights on actual Android hardware
 
-## Recommended production order after v0.24
+## Recommended production order after v0.24.2
 
-1. Commit/verify the four v0.24 audio files (`music`, `hurt`, `monster`, `battery`)
-2. First-person flashlight + hand rig + battery animation/SFX
-3. Warden production model/animations/audio
-4. Isolation Node + Lockdown interlock production kit
-5. Evacuation Override + extraction beacon + shutter kit
-6. Sector signage/conduit/environment materials
-7. Mourner production pass
-8. Crawler production pass
-9. Survivor model + co-op animations
-10. Hazard VFX/audio
-11. Tenant production pass
-12. Darkness Creature production pass
-13. Full spatial ambience/footstep mix
-14. Forest/exterior production art
-15. Front-end branding + localization polish
+1. Commit/verify the four audio files (`music`, `hurt`, `monster`, `battery`)
+2. Tenant emergence + flashlight banish animation/VFX/audio
+3. Tenant panic-scaled locomotion + fast attack/recovery variants
+4. First-person flashlight + hand rig + battery animation/SFX
+5. Warden production model/animations/audio
+6. Isolation Node + Lockdown interlock production kit
+7. Evacuation Override + extraction beacon + shutter kit
+8. Sector signage/conduit/environment materials
+9. Mourner production pass
+10. Crawler production pass
+11. Survivor model + co-op animations
+12. Hazard VFX/audio
+13. Darkness Creature production pass
+14. Full spatial ambience/footstep mix
+15. Forest/exterior production art
+16. Front-end branding + localization polish
 
-See `ASSET_DELTA_V024.md` for the exact v0.24 audio integration contract.
+See `ASSET_DELTA_V024.md` for the audio integration contract and `ASSET_DELTA_V0242.md` for the current Tenant/PANIC production delta.
