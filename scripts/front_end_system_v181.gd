@@ -1,7 +1,7 @@
 extends "res://scripts/front_end_system.gd"
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
-const VERSION_BADGE_TEXT: String = "v0.20  •  LABYRINTH MAJOR OVERHAUL"
+const VERSION_BADGE_TEXT: String = "v0.21  •  LABYRINTH EVACUATION & LIVING MAZE"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
