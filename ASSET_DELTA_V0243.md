@@ -4,11 +4,14 @@ v0.24.3 menambah feedback khusus ketika flashlight mengenai The Tenant dan ketik
 
 ## P0 — audio wajib
 
-Asset baru yang dibutuhkan:
+Asset audio yang dipakai mechanic ini:
 
+- `baterai.mp3` — flashlight/monster electrical interference; nama utama yang dipakai project.
 - `tenant death` — one-shot ketika Tenant berhasil dihilangkan oleh flashlight 3 detik.
 
-Resolver menerima `.wav`, `.ogg`, atau `.mp3` dan menormalkan spasi, underscore, dan dash. Contoh nama yang valid:
+Runtime resolver memprioritaskan `baterai` untuk interference. Alias `battery` tetap diterima hanya sebagai fallback kompatibilitas agar file lama tidak langsung rusak.
+
+Resolver menerima `.wav`, `.ogg`, atau `.mp3` dan menormalkan spasi, underscore, dan dash. Contoh nama Tenant death yang valid:
 
 - `assets/tenant death.mp3`
 - `assets/tenant_death.mp3`
@@ -18,19 +21,19 @@ Resolver menerima `.wav`, `.ogg`, atau `.mp3` dan menormalkan spasi, underscore,
 
 Rekomendasi produksi:
 
-- pendek dan jelas sebagai death/banish confirmation
+- death cue pendek dan jelas sebagai death/banish confirmation
 - jangan terlalu panjang agar tidak menutupi monster proximity atau objective audio
 - hindari clipping pada speaker HP
-- peak boleh lebih kuat daripada `battery.mp3`, tetapi tetap mengikuti Master Volume
+- peak boleh lebih kuat daripada `baterai.mp3`, tetapi tetap mengikuti Master Volume
 
 ## Existing audio retained
 
 - `music.*` — gameplay BGM
 - `hurt.*` — damage reaction
 - `monster.*` — proximity threat layer
-- `battery.mp3` — flashlight/monster electrical interference
+- `baterai.mp3` — flashlight/monster electrical interference
 
-`battery.mp3` tetap berlaku pada monster lain seperti v0.24.1. Saat beam mengenai Tenant, cue yang sama tetap aktif dan pitch/volume dapat meningkat mengikuti hold 0–3 detik.
+`baterai.mp3` tetap berlaku pada monster lain seperti mechanic v0.24.1. Saat beam mengenai Tenant, cue yang sama tetap aktif dan pitch/volume dapat meningkat mengikuti hold 0–3 detik.
 
 ## Tenant rapid flashlight flicker
 
@@ -66,18 +69,18 @@ Tidak ada tombol baru. Mechanic sama pada desktop dan mobile.
 Perlu diuji pada HP:
 
 - rapid flicker tetap terbaca pada 30 FPS
-- `battery.mp3` dan `tenant death` tidak clipping pada speaker kecil
+- `baterai.mp3` dan `tenant death` tidak clipping pada speaker kecil
 - death cue tidak tertutup BGM/proximity layer
 - rapid flicker tidak membuat readability corridor terlalu buruk
 
 ## Test checklist
 
-1. Sorot Tenant: `battery.mp3` mulai terdengar.
-2. Sorot monster lain: existing `battery.mp3` interference tetap bekerja.
+1. Sorot Tenant: `baterai.mp3` mulai terdengar.
+2. Sorot monster lain: existing `baterai.mp3` interference tetap bekerja.
 3. Sorot Tenant: flicker harus lebih cepat daripada generic monster flicker.
 4. Lepas beam sebelum 3 detik: Tenant tetap hidup dan `tenant death` tidak berbunyi.
 5. Tahan beam 3 detik: Tenant hilang dan `tenant death` berbunyi sekali.
-6. Setelah death cue, `battery.mp3` berhenti.
+6. Setelah death cue, `baterai.mp3` berhenti.
 7. Tenant muncul lagi pada encounter berikutnya: death cue bisa dipicu lagi setelah kill berikutnya.
 8. Pindah map ketika Tenant aktif: `tenant death` tidak boleh berbunyi hanya karena scene berubah.
 9. Co-op host/client: satu Tenant kill menghasilkan satu death cue pada masing-masing peer.
@@ -91,6 +94,7 @@ P0 baru:
 
 P0 retained:
 
+- `baterai.mp3` interference cue
 - final Tenant model/rig
 - emergence animation
 - low/medium/high panic locomotion
