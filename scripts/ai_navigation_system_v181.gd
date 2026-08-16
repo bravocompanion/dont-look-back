@@ -2,6 +2,7 @@ extends "res://scripts/ai_navigation_system.gd"
 
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
+const TENANT_FLASHLIGHT_SPEED_MULTIPLIER: float = 0.50
 
 const ARC1_NAV_POINTS: Array[Vector3] = [
     Vector3(-7.0, 0.0, -52.0), Vector3(-7.0, 0.0, -57.5), Vector3(-11.0, 0.0, -61.0),
@@ -109,13 +110,16 @@ func _drive_online_host_ai(delta: float) -> void:
             var watched: bool = false
             if coop.has_method("_tenant_is_watched"):
                 watched = bool(coop.call("_tenant_is_watched", tenant.global_position + Vector3(0.0, 1.35, 0.0)))
-            if not watched and bool(tenant.get("can_move")):
+            var flashlight_hit: bool = _tenant_flashlight_contact_active()
+            if (not watched or flashlight_hit) and bool(tenant.get("can_move")):
                 tenant_memory = _drive_monster_memory(tenant, tenant_memory, delta, false)
                 var speed: float = 1.65
                 if tenant.has_method("get_current_move_speed"):
                     speed = float(tenant.call("get_current_move_speed"))
                 elif coop.has_method("get_tenant_move_speed"):
                     speed = float(coop.call("get_tenant_move_speed"))
+                if flashlight_hit:
+                    speed *= TENANT_FLASHLIGHT_SPEED_MULTIPLIER
                 _move_monster_to_memory_goal(tenant, tenant_memory, speed, delta, 1.25)
 
     if bool(coop.get("dark_active")):
@@ -134,11 +138,14 @@ func _drive_solo_ai(delta: float) -> void:
     var tenant: Node3D = _get_tenant()
     if tenant != null and bool(tenant.get("active")) and tenant.visible:
         var watched: bool = _survivor_watches_position(tenant.global_position + Vector3(0.0, 1.35, 0.0))
-        if not watched and bool(tenant.get("can_move")):
+        var flashlight_hit: bool = _tenant_flashlight_contact_active()
+        if (not watched or flashlight_hit) and bool(tenant.get("can_move")):
             tenant_memory = _drive_monster_memory(tenant, tenant_memory, delta, false)
             var speed: float = 1.65
             if tenant.has_method("get_current_move_speed"):
                 speed = float(tenant.call("get_current_move_speed"))
+            if flashlight_hit:
+                speed *= TENANT_FLASHLIGHT_SPEED_MULTIPLIER
             _move_monster_to_memory_goal(tenant, tenant_memory, speed, delta, 1.25)
 
     var dark: Node3D = get_tree().get_first_node_in_group("darkness_creature") as Node3D
@@ -158,3 +165,22 @@ func _drive_solo_ai(delta: float) -> void:
     if not player_in_light:
         dark_memory = _drive_monster_memory(dark, dark_memory, delta, true)
         _move_monster_to_memory_goal(dark, dark_memory, speed_hint, delta, 1.15)
+
+func _tenant_flashlight_contact_active() -> bool:
+    if _network_online():
+        var bridge: Node = get_node_or_null("/root/TenantPanicNetworkBridge")
+        if bridge != null:
+            var contacts_value: Variant = bridge.get("peer_flashlight_contact")
+            if contacts_value is Dictionary:
+                var contacts: Dictionary = Dictionary(contacts_value)
+                for contact_variant: Variant in contacts.values():
+                    if bool(contact_variant):
+                        return true
+        return false
+
+    var panic_system: Node = get_node_or_null("/root/PanicTenantSystem")
+    return panic_system != null and panic_system.has_method("is_tenant_in_flashlight") and bool(panic_system.call("is_tenant_in_flashlight"))
+
+func _network_online() -> bool:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    return network != null and network.has_method("is_online") and bool(network.call("is_online"))
