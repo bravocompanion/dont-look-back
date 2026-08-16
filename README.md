@@ -1,144 +1,166 @@
-# DON'T LOOK BACK — Godot v0.18.4.1
+# DON'T LOOK BACK — Godot v0.19
 
-First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent saves, Journal discoveries, separate Labyrinth/Forest maps, runtime AI navigation/perception, and a dynamic Forest day/night lighting cycle.
+First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative monsters, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AI navigation, and dynamic Forest sun/moon lighting.
 
-## v0.18.4.1 — New Game Startup Hotfix
+## v0.19 — ARC 1: THE LABYRINTH
 
-NEW GAME no longer assumes that the Labyrinth and Player are ready after a fixed six-frame delay.
+v0.19 turns the Labyrinth into the first full gameplay arc instead of a short transition area.
 
-The front end now:
-- resets persistent/runtime world state before starting
-- switches explicitly to `res://scenes/main.tscn`
-- waits until the new scene is current
-- waits until a Player exists
-- waits until `LabyrinthExpansion` has actually been created by the runtime director
-- only then closes the loading overlay and enables gameplay
-- resets MovementSystem tracking/jump buffers for the new Player
-- keeps mobile input blocked while startup is incomplete
-- returns to the title with an explicit error message if the Labyrinth does not become ready within the startup timeout
+### Pacing target
 
-Regression test:
-1. Launch with F5 and wait for the title buttons to enable.
-2. Press NEW GAME.
-3. If a save exists, confirm DELETE SAVE & START.
-4. The `Starting a new nightmare...` state should transition into the opening corridor automatically.
-5. Confirm WASD/mouse or touch movement, Space/JUMP, interaction and flashlight work.
-6. Return to title and start another NEW GAME to verify repeated resets.
-7. Also test NEW GAME after a Forest save; the run must return to the Labyrinth opening scene.
+Arc 1 is designed for roughly **30–45 minutes on a first blind run** depending on exploration, co-op coordination, resource detours and failed breaker attempts. Experienced/speedrun play can be faster; there is no artificial 30-minute wall-clock lock.
 
-No new production assets are required for this hotfix; `ASSET_BACKLOG.md` remains current from v0.18.4.
+The old three emergency relays now open the entrance to a much larger lower labyrinth instead of immediately sending the player to Forest.
 
-## v0.18.4 — Dynamic Sun + Moon Lighting
+### Arc 1 route
 
-Forest celestial lighting now follows the existing world clock instead of using a mostly fixed directional light.
+1. Opening Corridor + Apartment 03
+2. Original Labyrinth — restore 3 emergency relays
+3. Maintenance Wing — restore 3 fuse boxes
+4. Flooded Service — turn 2 pressure valves
+5. Archive — complete breaker sequence `B → A → C`
+6. Lockdown — prepare supplies and start the final console
+7. Survive a 2-minute stabilization holdout
+8. Final beacon appears
+9. Exit Arc 1 and load `forest.tscn`
 
-Clock behavior:
-- around `06:00` the sun reaches the horizon and begins rising
-- around `12:00` the sun reaches its highest point and strongest intensity
-- around `18:00` the sun returns to the horizon and fades out
-- around `00:00` the moon reaches its highest point
+A wrong Archive breaker resets the breaker sequence, triggers a temporary maintenance-light blackout/fault alarm, and increases enemy pressure.
 
-The sun is a moving `DirectionalLight3D`:
-- its pitch changes with simulated solar elevation
-- its yaw moves across the sky through the day
-- low sun uses warmer orange/red light
-- high sun becomes brighter and more neutral
-- sun shadows are enabled only while the sun has meaningful intensity
+### Larger labyrinth
 
-The moon uses a second moving directional light on the opposite side of the orbit:
-- moonlight rises as daylight disappears
-- maximum moonlight remains intentionally dim
-- moon shadows remain disabled for mobile performance
-- moonlight is not an OmniLight and therefore does not become a Darkness protective safe-zone source
+`LabyrinthArc1System` builds a second runtime labyrinth section from approximately `z=-51` to `z=-141`.
 
-Environment lighting also follows the cycle:
-- night keeps the cool blue-gray v0.18.3 readability floor
-- sunrise/sunset adds a restrained warm twilight tint
-- daytime ambient energy increases with the sun
-- nighttime receives only a small moon-related ambient lift
+The extension contains:
+- Maintenance Wing zig-zag routes
+- side-room fuse objectives
+- Flooded Service corridors
+- pressure-valve detours
+- Archive shelves and split paths
+- sequential breaker puzzle
+- Lockdown chamber
+- final escape route
+- two mid-arc safe-light/checkpoint pockets
+- survival supply detours
+- three new Journal notes
 
-The existing `game_minutes`, save/load time state, day counter, cold system and host-synchronized outside time remain the source of truth, so loading a saved Forest world restores the matching sun/moon position for that saved clock time.
+The old `PerimeterBack` wall and pre-v0.19 Forest transition are removed once Arc 1 is ready. Forest transition is only created again after Lockdown is completed.
 
-## v0.18.3 retained — Movement + Cabin + Forest Visibility
+## New enemies
 
-### Cabin entry fix
+Arc 1 adds four host-authoritative enemy instances on top of The Tenant and Darkness Creature.
 
-The cabin floor is slightly higher than the surrounding forest terrain. `MovementSystem` owns standing locomotion on Labyrinth and Forest while Player continues handling survival, inventory, interaction, flashlight and HUD.
+### The Mourner
 
-Auto-step behavior:
-- only while grounded
-- only when forward movement is blocked
-- verifies upward and forward clearance
-- probes destination floor height
-- configured maximum `0.80 m`
-- effective height is clamped below half of the player capsule
-- disabled while airborne, dead, downed, in menus, loading, or before co-op START
+Two Mourner instances appear as Arc 1 progresses.
 
-The Forest cabin also has a small physical entry/porch step.
+Behavior:
+- tall humanoid placeholder silhouette
+- tracks nearby survivors
+- investigates AI noise such as footsteps, sprinting, switches and alarms
+- slowed by protective light but not completely disabled
+- uses the shared runtime AStar3D graph
+- non-instant-kill contact damage
 
-### Jump
+### The Crawler
 
-Desktop:
-- `Space` — Jump
+Two Crawler instances become active deeper in the Archive/Lockdown sections.
 
-Mobile:
-- responsive `JUMP` button
+Behavior:
+- low fast silhouette
+- higher detection radius
+- faster pressure than Mourner
+- avoids pursuing survivors who are currently protected by strong light
+- becomes more aggressive during Lockdown
+- host-authoritative damage and movement in co-op
 
-Jump tuning:
-- velocity `4.6`
-- stamina cost `8`
-- coyote time `0.11 s`
-- jump buffer `0.13 s`
+Arc 1 enemy transforms are replicated from host to clients. Clients do not run independent authoritative enemy movement.
 
-Downed survivors continue using the separate v0.15 crawl controller.
+## Arc 1 lighting
 
-### Forest visibility baseline
+The Labyrinth remains dark, but navigation is more readable.
 
-Night remains more readable than the earlier pitch-black version through environment ambient lighting and the dim moon fill. v0.18.4 now moves that moon light with the world clock.
+Original maze:
+- previous dim lamps retained
+- five additional maintenance lamps added
+- fixture placeholders added to dim-light positions
+- ambient lamps remain below `0.1` energy so they do not become protective safe zones
 
-## v0.18.2 retained — Main Menu Cursor
+Arc 1 extension:
+- 19 dim maintenance lamps
+- cool gray/green horror tint
+- broad low-cost coverage with shadows disabled
+- blackout flicker during breaker faults
+- emergency pulsing during Lockdown
+- two stronger safe/checkpoint lamps where players can recover and plan
 
-Desktop menus keep `Input.MOUSE_MODE_VISIBLE` while title, Join, Settings, confirmation and pause UI are open. Gameplay restores captured mouse-look.
+The flashlight, relay lights and designated safe lamps remain meaningfully stronger than ambient lamps.
 
-## v0.18.1 retained — Separate maps
+## Survival / exploration rewards
 
-Maps:
-- `res://scenes/main.tscn` — opening corridor, Apartment 03, Labyrinth
-- `res://scenes/forest.tscn` — The Outside, cabin, forest and exterior landmarks
+Arc 1 side paths contain finite shared supplies:
+- Flashlight Batteries
+- Canned Food
+- Bottled Water
+- Bandage
+- Medkit
+- Cloth
 
-Leaving the final Labyrinth gate loads Forest through `MapTransitionSystem`. Player survival/inventory state is preserved and the Forest entrance becomes a checkpoint/autosave location.
+These pickups use the existing host-authoritative pickup system in co-op and the persistent claimed-pickup save system.
 
-Co-op map transitions are host-authoritative and late join synchronizes to the host's active map.
+## Save / Continue
 
-Save/Continue stores the active map and migrates older pre-map-split saves.
+v0.19 persists Arc 1 state:
+- completed fuse boxes
+- completed valves
+- breaker sequence progress
+- Lockdown active/completed state
+- remaining holdout time
+- Arc elapsed time
+- Arc checkpoint stage
 
-## AI + horror systems retained
+Autosaves occur at major Arc milestones. `NEW GAME` resets Arc 1 progress together with the rest of the world.
 
-v0.18 AI behavior:
-- CHASE
-- INVESTIGATE
-- SEARCH
-- PATROL
-- runtime AStar3D waypoint graph
-- hearing from walking/sprinting and noisy interactions
-- host-authoritative AI in LAN co-op
+Two deeper checkpoint locations are added after major sector completion. Existing v0.15 shared-checkpoint polling distributes host checkpoint changes to connected survivors.
 
-The Tenant still freezes when watched. Darkness Creature still retreats from protective light.
+## Journal
 
-## Survival systems
+The Journal mission tracker is now Arc-aware.
 
-Stats:
-- Health
-- Hunger
-- Thirst
-- Stamina
-- Flashlight Battery
-- Darkness Exposure
-- Cold Exposure
-- Bleeding
-- Infection
+New Arc notes:
+- `Maintenance Route Sheet`
+- `Archive Breaker Tag`
+- `Lockdown Procedure`
 
-Resources include Food, Clean/Dirty Water, Medkit, Cloth, Bandage, Wood, Scrap, Fuel Can, Flashlight Battery and Firewood Bundle.
+The breaker note explicitly records the `B → A → C` sequence so the puzzle can be solved through exploration rather than guessing.
+
+## AI navigation
+
+The v0.18 runtime AStar3D graph now includes Arc 1 waypoint and patrol sets.
+
+In `main.tscn`, positions deeper than the old `z=-53` boundary are now treated as Arc 1 Labyrinth rather than as Forest. Tenant, Darkness and Arc enemies therefore use the correct Labyrinth clamp/patrol/navigation rules.
+
+The navigation rebuild guard waits for both:
+- `LabyrinthExpansion`
+- `Arc1Expansion`
+
+before rebuilding the Labyrinth graph.
+
+## Multiplayer
+
+Arc 1 keeps the existing host-authoritative model.
+
+Shared state includes:
+- Arc stage
+- fuse/valve completion
+- breaker progress
+- Lockdown state/time
+- enemy activation
+- Arc enemy transforms
+- damage
+- finite supplies
+- checkpoints
+
+Objective interactions from clients are requested through the host. A client cannot independently open an Arc gate.
 
 ## Controls
 
@@ -147,7 +169,7 @@ Desktop:
 - Mouse — look
 - Shift — sprint
 - Space — jump
-- E — interact / revive
+- E — interact / revive / Arc objective
 - F — flashlight
 - B or 4 — battery
 - 1 — food
@@ -163,7 +185,7 @@ Mobile:
 - right swipe — look
 - RUN
 - JUMP
-- USE
+- USE — interaction / Arc objective / revive
 - LIGHT
 - BATT
 - FOOD
@@ -172,32 +194,70 @@ Mobile:
 - JOURNAL
 - MENU
 
-## Testing v0.18.4
+## Testing v0.19
 
-Recommended test:
-1. Pull latest `main`, open the existing Godot project and press F5.
-2. Continue or reach the Forest map.
-3. Watch the Forest lighting while the clock advances; the sun direction should visibly move over time.
-4. Around morning/evening verify the directional light becomes lower, weaker and warmer.
-5. Around noon verify stronger neutral daylight and more readable tree/landmark shadows.
-6. At night verify the sun is effectively off and cool moonlight replaces it at much lower intensity.
-7. Verify moonlight does not stop Darkness Exposure by itself and does not repel the Darkness Creature like a real protective OmniLight.
-8. Save at one Forest time, reload, and verify the restored clock produces a matching celestial lighting state.
-9. Test on mobile and verify night remains readable while moon shadows stay disabled.
-10. Re-test cabin entry, jump, auto-step, map transition and two-device co-op after the lighting change.
+Use a clean Pull before testing. Because `project.godot` changed, preserve local edits with stash instead of discarding important local settings.
 
-## Asset status
+Recommended solo test:
+1. Start NEW GAME.
+2. Complete Apartment 03 and all three old relays.
+3. Confirm the old final gate now leads deeper into the Labyrinth instead of directly loading Forest.
+4. Confirm the old back wall has an opening aligned with the final-beacon route.
+5. Restore Fuse A/B/C and verify the first Arc gate disappears.
+6. Turn both pressure valves and verify the next gate opens/checkpoint saves.
+7. Reach Archive and try one intentionally wrong breaker; verify blackout/fault behavior.
+8. Complete `B → A → C` and verify Lockdown opens.
+9. Start the final console and survive the 2-minute holdout.
+10. Verify the final transition only appears after stabilization finishes.
+11. Enter the final transition and confirm `forest.tscn` loads normally.
+12. Save midway through Arc 1, close the game, CONTINUE, and confirm completed objectives stay completed.
 
-Production needs are tracked in `ASSET_BACKLOG.md`.
+Recommended enemy/light test:
+1. Compare walking versus sprinting near a Mourner.
+2. Verify a Mourner can investigate noise.
+3. Verify strong protective light slows a Mourner.
+4. Verify a Crawler refuses normal pursuit of a survivor currently in protective light.
+5. Trigger a breaker fault and observe enemy pressure plus dim-light flicker.
+6. Verify all ambient lamps remain dim and do not stop Darkness Exposure by themselves.
+7. Verify safe checkpoint lamps do provide a clearly stronger lit pocket.
 
-v0.18.4 adds priority needs for a visible sun/moon sky presentation, sunrise/day/dusk/night sky gradients or procedural sky material, cloud layers, and lighting-reference art that keeps the gameplay distinction between ambient celestial light and true protective lights.
+Recommended co-op test:
+1. Host + one client, READY, START.
+2. Let the client interact with a fuse/valve and verify host progress updates for both players.
+3. Verify both clients see the same Arc gate state.
+4. Verify Arc enemy motion originates from host and remains synchronized.
+5. Verify Arc enemy damage uses the existing downed/revive flow.
+6. Verify shared checkpoint state updates after Flooded Service/Archive milestones.
+7. Join/reconnect while host is mid-Arc and verify Arc objective state synchronizes.
+
+## Retained systems
+
+v0.19 retains:
+- separate `main.tscn` Labyrinth and `forest.tscn` Forest maps
+- v0.18 AI CHASE / INVESTIGATE / SEARCH / PATROL
+- The Tenant freeze-when-watched rule
+- Darkness Creature light retreat
+- health/hunger/thirst/stamina
+- battery + Darkness Exposure
+- cold, bleeding and infection
+- crafting/shelter/storage
+- persistent world save
+- LAN Host/Join + Ready/Start
+- downed/revive/crawl
+- shared checkpoint flow
+- desktop + mobile responsive controls
+- Forest dynamic sun/moon cycle
 
 ## Current limitations
 
-- Runtime F5 validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
-- The dynamic sun/moon currently affects directional/environment lighting but does not yet render a final visible sun disc, moon disc, stars or production sky/cloud system.
-- Moon shadows are intentionally disabled for performance.
-- Auto-step remains a lightweight collision solver, not procedural foot IK.
-- Final character models/animations, production audio, VFX and environment art are still missing.
-- Forest/labyrinth navigation remains a hand-authored runtime waypoint graph rather than a baked NavigationMesh.
-- Internet matchmaking/NAT traversal is not implemented; co-op remains LAN/IP based.
+- Runtime F5 validation still has to be performed on the development machine; the assistant environment does not contain the Godot executable.
+- Arc 1 production geometry is still procedural CSG/primitive art.
+- Mourner/Crawler visuals are prototype meshes without final rigs or animations.
+- Arc 1 has gameplay pacing designed for 30–45 minutes first-run, but actual completion time depends on player behavior.
+- AI navigation remains a hand-authored runtime AStar waypoint graph rather than baked NavigationMesh.
+- Internet matchmaking/NAT traversal is not implemented; multiplayer remains LAN/IP based.
+- Final production audio, VFX, character art, environment modules and animation are still required.
+
+## Asset status
+
+See `ASSET_BACKLOG.md`. v0.19 adds new priority needs for Mourner/Crawler production models, Arc 1 maintenance/flood/archive/lockdown environment kits, objective props, additional dim-light fixtures, alarm/blackout audio, and Lockdown presentation.
