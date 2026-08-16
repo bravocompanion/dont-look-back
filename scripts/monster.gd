@@ -106,6 +106,7 @@ func _attack_player(player: CharacterBody3D, target_position: Vector3) -> void:
     var died: bool = false
     if player.has_method("apply_damage"):
         died = bool(player.call("apply_damage", attack_damage, "The Tenant"))
+        _raise_monster_hit_panic()
 
     if died:
         active = false
@@ -124,6 +125,11 @@ func _attack_player(player: CharacterBody3D, target_position: Vector3) -> void:
     await get_tree().create_timer(0.55).timeout
     if active:
         can_move = true
+
+func _raise_monster_hit_panic() -> void:
+    var panic_system: Node = get_node_or_null("/root/PanicInputSystem")
+    if panic_system != null and panic_system.has_method("add_monster_hit_panic"):
+        panic_system.call("add_monster_hit_panic")
 
 func _is_being_watched(camera: Camera3D, player: CharacterBody3D) -> bool:
     var monster_focus: Vector3 = global_position + Vector3(0.0, 1.35, 0.0)
