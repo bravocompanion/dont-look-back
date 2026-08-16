@@ -1,10 +1,11 @@
-extends Control
+extends Node
 
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const SAVE_PATH: String = "user://dont_look_back_save_v1.json"
 const SETTINGS_PATH: String = "user://dont_look_back_settings.cfg"
-const VERSION_TEXT: String = "v0.18.4.4"
+const VERSION_TEXT: String = "v0.18.4.5"
 
+@onready var menu_root: Control = $MenuLayer/Root
 @onready var main_panel: PanelContainer = $MenuLayer/Root/Center/MainPanel
 @onready var save_summary: Label = $MenuLayer/Root/Center/MainPanel/VBox/SaveSummary
 @onready var continue_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/ContinueButton
@@ -18,6 +19,7 @@ const VERSION_TEXT: String = "v0.18.4.4"
 @onready var join_panel: PanelContainer = $MenuLayer/Root/Center/JoinPanel
 @onready var join_address: LineEdit = $MenuLayer/Root/Center/JoinPanel/VBox/Address
 @onready var join_connect_button: Button = $MenuLayer/Root/Center/JoinPanel/VBox/ConnectButton
+@onready var join_back_button: Button = $MenuLayer/Root/Center/JoinPanel/VBox/BackButton
 
 @onready var settings_panel: PanelContainer = $MenuLayer/Root/Center/SettingsPanel
 @onready var volume_slider: HSlider = $MenuLayer/Root/Center/SettingsPanel/VBox/VolumeSlider
@@ -25,8 +27,11 @@ const VERSION_TEXT: String = "v0.18.4.4"
 @onready var fps_option: OptionButton = $MenuLayer/Root/Center/SettingsPanel/VBox/FpsOption
 @onready var fullscreen_check: CheckButton = $MenuLayer/Root/Center/SettingsPanel/VBox/FullscreenCheck
 @onready var settings_value: Label = $MenuLayer/Root/Center/SettingsPanel/VBox/SettingsValue
+@onready var settings_back_button: Button = $MenuLayer/Root/Center/SettingsPanel/VBox/BackButton
 
 @onready var confirm_panel: PanelContainer = $MenuLayer/Root/Center/ConfirmPanel
+@onready var confirm_button: Button = $MenuLayer/Root/Center/ConfirmPanel/VBox/ConfirmButton
+@onready var cancel_button: Button = $MenuLayer/Root/Center/ConfirmPanel/VBox/CancelButton
 
 var master_volume: float = 0.85
 var look_multiplier: float = 1.0
@@ -34,6 +39,8 @@ var fps_limit: int = 60
 var fullscreen_enabled: bool = false
 var join_waiting: bool = false
 var join_elapsed: float = 0.0
+var mouse_was_down: bool = false
+var last_pointer_dispatch_frame: int = -1
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -49,17 +56,17 @@ func _ready() -> void:
     settings_button.pressed.connect(_show_settings)
     quit_button.pressed.connect(_quit_game)
 
-    $MenuLayer/Root/Center/JoinPanel/VBox/BackButton.pressed.connect(_show_main)
+    join_back_button.pressed.connect(_show_main)
     join_connect_button.pressed.connect(_connect_join)
 
-    $MenuLayer/Root/Center/SettingsPanel/VBox/BackButton.pressed.connect(_close_settings)
+    settings_back_button.pressed.connect(_close_settings)
     volume_slider.value_changed.connect(_on_volume_changed)
     sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
     fps_option.item_selected.connect(_on_fps_selected)
     fullscreen_check.toggled.connect(_on_fullscreen_toggled)
 
-    $MenuLayer/Root/Center/ConfirmPanel/VBox/ConfirmButton.pressed.connect(_start_new_game)
-    $MenuLayer/Root/Center/ConfirmPanel/VBox/CancelButton.pressed.connect(_show_main)
+    confirm_button.pressed.connect(_start_new_game)
+    cancel_button.pressed.connect(_show_main)
 
     _load_settings()
     _apply_runtime_settings()
@@ -70,6 +77,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
     if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+    _poll_mouse_fallback()
 
     if not join_waiting:
         return
@@ -95,6 +104,61 @@ func _process(delta: float) -> void:
         join_waiting = false
         join_connect_button.disabled = false
         _set_status("Gagal terhubung. Periksa IP HOST dan LAN/Wi-Fi.")
+
+func _input(event: InputEvent) -> void:
+    var point: Vector2 = Vector2.ZERO
+    var pressed: bool = false
+
+    if event is InputEventMouseButton:
+        var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+        if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+            point = mouse_event.position
+            pressed = true
+    elif event is InputEventScreenTouch:
+        var touch_event: InputEventScreenTouch = event as InputEventScreenTouch
+        if touch_event.pressed:
+            point = touch_event.position
+            pressed = true
+
+    if not pressed:
+        return
+
+    if _dispatch_pointer_to_navigation_button(point):
+        get_viewport().set_input_as_handled()
+
+func _poll_mouse_fallback() -> void:
+    var mouse_down: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+    if mouse_down and not mouse_was_down:
+        _dispatch_pointer_to_navigation_button(get_viewport().get_mouse_position())
+    mouse_was_down = mouse_down
+
+func _dispatch_pointer_to_navigation_button(point: Vector2) -> bool:
+    var frame: int = int(Engine.get_process_frames())
+    if frame == last_pointer_dispatch_frame:
+        return false
+
+    var buttons: Array[Button] = [
+        continue_button,
+        new_game_button,
+        host_button,
+        join_button,
+        settings_button,
+        quit_button,
+        join_connect_button,
+        join_back_button,
+        settings_back_button,
+        confirm_button,
+        cancel_button
+    ]
+
+    for button: Button in buttons:
+        if button == null or not button.is_visible_in_tree() or button.disabled:
+            continue
+        if button.get_global_rect().has_point(point):
+            last_pointer_dispatch_frame = frame
+            button.pressed.emit()
+            return true
+    return false
 
 func _continue_game() -> void:
     if not FileAccess.file_exists(SAVE_PATH):
