@@ -34,7 +34,6 @@ var completed_stations: Dictionary = {}
 var station_progress: Dictionary = {}
 var support_remaining: Dictionary = {}
 var support_lights: Dictionary = {}
-var pending_restore_state: Dictionary = {}
 var state_dirty: bool = true
 var sync_timer: float = 0.0
 
@@ -51,11 +50,15 @@ func _process(delta: float) -> void:
         coop_root = null
         configured_scene_id = 0
         station_progress.clear()
+        support_remaining.clear()
+        support_lights.clear()
         return
 
     var arc_root: Node3D = scene.get_node_or_null("Arc1Expansion") as Node3D
     if arc_root == null:
         return
+
+    _sync_completed_from_arc()
 
     var scene_id: int = int(scene.get_instance_id())
     if scene_id != configured_scene_id:
@@ -72,6 +75,7 @@ func _process(delta: float) -> void:
     if _is_authoritative():
         _update_windows(delta)
         _update_support_timers(delta)
+        _apply_team_tension_to_encounter()
         sync_timer -= delta
         if state_dirty or sync_timer <= 0.0:
             sync_timer = 0.45
@@ -121,20 +125,6 @@ func get_panel_visual_state(station_id: String, panel_id: String) -> int:
         return 1
     return 0
 
-func get_threat_budget_modifier() -> int:
-    var modifier: int = 0
-    if _has_active_support_light():
-        modifier -= 1
-    if _network_online() and _team_spread_distance() >= TEAM_SPLIT_DISTANCE:
-        modifier += 1
-    return clampi(modifier, -1, 1)
-
-func get_save_state() -> Dictionary:
-    return {
-        "completed_stations": completed_stations.duplicate(true),
-        "support_remaining": support_remaining.duplicate(true)
-    }
-
 func get_network_state() -> Dictionary:
     return {
         "completed_stations": completed_stations.duplicate(true),
@@ -142,15 +132,10 @@ func get_network_state() -> Dictionary:
         "support_remaining": support_remaining.duplicate(true)
     }
 
-func restore_save_state(state: Dictionary) -> void:
-    pending_restore_state = state.duplicate(true)
-    _apply_restored_state(state, false)
-
 func reset_progress() -> void:
     completed_stations.clear()
     station_progress.clear()
     support_remaining.clear()
-    pending_restore_state.clear()
     state_dirty = true
     _update_support_lights()
 
@@ -165,7 +150,7 @@ func _request_panel_remote(station_id: String, panel_id: String) -> void:
 
 @rpc("authority", "call_remote", "reliable", 13)
 func _receive_coop_state(state: Dictionary) -> void:
-    _apply_restored_state(state, true)
+    _apply_network_state(state)
 
 @rpc("authority", "call_remote", "reliable", 13)
 func _receive_feedback(text: String) -> void:
@@ -187,7 +172,7 @@ func _server_activate_panel(station_id: String, panel_id: String, requester_id: 
         return
 
     var requester_position: Vector3 = _requester_position(requester_id)
-    var panel_position: Vector3 = Vector3(PANEL_POSITIONS.get("%s:%s" % [station_id, panel_id], Vector3.ZERO))
+    var panel_position: Vector3 = _dictionary_vector(PANEL_POSITIONS, "%s:%s" % [station_id, panel_id])
     if requester_position == Vector3.INF or requester_position.distance_to(panel_position) > PANEL_USE_DISTANCE:
         _feedback_to_peer(requester_id, "Move closer to the sync panel.")
         return
@@ -223,11 +208,12 @@ func _complete_station(station_id: String, requester_id: int) -> void:
     completed_stations[station_id] = true
     station_progress.erase(station_id)
     support_remaining[station_id] = SUPPORT_LIGHT_DURATION
+    _persist_station_to_arc(station_id)
     state_dirty = true
     _spawn_station_reward(station_id)
     _update_support_lights()
 
-    var support_position: Vector3 = Vector3(SUPPORT_POSITIONS.get(station_id, Vector3.ZERO))
+    var support_position: Vector3 = _dictionary_vector(SUPPORT_POSITIONS, station_id)
     _report_noise(support_position, 0.74, "emergency team light online")
     _feedback_to_peer(requester_id, "TEAM SYNC COMPLETE — emergency safe light online for %.0f seconds." % SUPPORT_LIGHT_DURATION)
     _set_local_status("TEAM SYNC COMPLETE — emergency safe light online.")
@@ -260,6 +246,23 @@ func _update_support_timers(delta: float) -> void:
         support_remaining.erase(station_id)
         state_dirty = true
 
+func _apply_team_tension_to_encounter() -> void:
+    var director: Node = get_node_or_null("/root/LabyrinthEncounterDirector")
+    if director == null:
+        return
+
+    var encounter_timer: float = float(director.get("encounter_timer"))
+    var horror_timer: float = float(director.get("horror_event_timer"))
+
+    if _has_active_support_light():
+        director.set("encounter_timer", maxf(encounter_timer, 8.0))
+        director.set("horror_event_timer", maxf(horror_timer, 12.0))
+        return
+
+    if _network_online() and _team_spread_distance() >= TEAM_SPLIT_DISTANCE:
+        director.set("encounter_timer", minf(encounter_timer, 5.0))
+        director.set("horror_event_timer", minf(horror_timer, 12.0))
+
 func _configure_scene(scene: Node, arc_root: Node3D) -> void:
     for _frame_index: int in range(45):
         await get_tree().process_frame
@@ -279,19 +282,18 @@ func _configure_scene(scene: Node, arc_root: Node3D) -> void:
     coop_root.name = "CoopExpansion"
     arc_root.add_child(coop_root)
 
-    _spawn_panel("maintenance_sync", "a", "M-01 SYNC A", Vector3(PANEL_POSITIONS["maintenance_sync:a"]))
-    _spawn_panel("maintenance_sync", "b", "M-01 SYNC B", Vector3(PANEL_POSITIONS["maintenance_sync:b"]))
-    _spawn_panel("flood_sync", "a", "F-02 SYNC A", Vector3(PANEL_POSITIONS["flood_sync:a"]))
-    _spawn_panel("flood_sync", "b", "F-02 SYNC B", Vector3(PANEL_POSITIONS["flood_sync:b"]))
-    _spawn_panel("archive_sync", "a", "A-03 SYNC A", Vector3(PANEL_POSITIONS["archive_sync:a"]))
-    _spawn_panel("archive_sync", "b", "A-03 SYNC B", Vector3(PANEL_POSITIONS["archive_sync:b"]))
+    _spawn_panel("maintenance_sync", "a", "M-01 SYNC A", _dictionary_vector(PANEL_POSITIONS, "maintenance_sync:a"))
+    _spawn_panel("maintenance_sync", "b", "M-01 SYNC B", _dictionary_vector(PANEL_POSITIONS, "maintenance_sync:b"))
+    _spawn_panel("flood_sync", "a", "F-02 SYNC A", _dictionary_vector(PANEL_POSITIONS, "flood_sync:a"))
+    _spawn_panel("flood_sync", "b", "F-02 SYNC B", _dictionary_vector(PANEL_POSITIONS, "flood_sync:b"))
+    _spawn_panel("archive_sync", "a", "A-03 SYNC A", _dictionary_vector(PANEL_POSITIONS, "archive_sync:a"))
+    _spawn_panel("archive_sync", "b", "A-03 SYNC B", _dictionary_vector(PANEL_POSITIONS, "archive_sync:b"))
 
     _spawn_support_light("maintenance_sync")
     _spawn_support_light("flood_sync")
     _spawn_support_light("archive_sync")
 
-    if not pending_restore_state.is_empty():
-        _apply_restored_state(pending_restore_state, false)
+    _sync_completed_from_arc()
     for station_variant: Variant in completed_stations.keys():
         var station_id: String = str(station_variant)
         if bool(completed_stations.get(station_id, false)):
@@ -316,7 +318,7 @@ func _spawn_support_light(station_id: String) -> void:
         return
     var light: OmniLight3D = OmniLight3D.new()
     light.name = "SupportLight_%s" % station_id
-    light.position = Vector3(SUPPORT_POSITIONS.get(station_id, Vector3.ZERO))
+    light.position = _dictionary_vector(SUPPORT_POSITIONS, station_id)
     light.light_color = Color(0.54, 0.78, 0.64, 1.0)
     light.light_energy = 1.10
     light.omni_range = 5.6
@@ -329,7 +331,7 @@ func _spawn_station_reward(station_id: String) -> void:
     if coop_root == null or pickup_script == null:
         return
 
-    var reward_position: Vector3 = Vector3(SUPPORT_POSITIONS.get(station_id, Vector3.ZERO))
+    var reward_position: Vector3 = _dictionary_vector(SUPPORT_POSITIONS, station_id)
     reward_position.y = 0.05
     var item_id: String = "flashlight_battery"
     var display_name: String = "Flashlight Battery"
@@ -365,7 +367,7 @@ func _update_support_lights() -> void:
             var pulse: float = 0.92 + 0.08 * absf(sin(float(Time.get_ticks_msec()) / 220.0))
             light.light_energy = 1.10 * pulse
 
-func _apply_restored_state(state: Dictionary, include_progress: bool) -> void:
+func _apply_network_state(state: Dictionary) -> void:
     if state.is_empty():
         return
     var completed_value: Variant = state.get("completed_stations", {})
@@ -374,13 +376,36 @@ func _apply_restored_state(state: Dictionary, include_progress: bool) -> void:
     var support_value: Variant = state.get("support_remaining", {})
     if support_value is Dictionary:
         support_remaining = Dictionary(support_value).duplicate(true)
-    if include_progress:
-        var progress_value: Variant = state.get("station_progress", {})
-        if progress_value is Dictionary:
-            station_progress = Dictionary(progress_value).duplicate(true)
-    pending_restore_state = state.duplicate(true)
-    state_dirty = true
+    var progress_value: Variant = state.get("station_progress", {})
+    if progress_value is Dictionary:
+        station_progress = Dictionary(progress_value).duplicate(true)
+    if coop_root != null and is_instance_valid(coop_root):
+        for station_variant: Variant in completed_stations.keys():
+            var station_id: String = str(station_variant)
+            if bool(completed_stations.get(station_id, false)):
+                _spawn_station_reward(station_id)
     _update_support_lights()
+
+func _sync_completed_from_arc() -> void:
+    var arc: Node = get_node_or_null("/root/LabyrinthArc1System")
+    if arc == null:
+        return
+    var arc_completed: Dictionary = Dictionary(arc.get("completed"))
+    for station_variant: Variant in STATION_STAGE.keys():
+        var station_id: String = str(station_variant)
+        completed_stations[station_id] = bool(arc_completed.get(_station_save_key(station_id), false))
+
+func _persist_station_to_arc(station_id: String) -> void:
+    var arc: Node = get_node_or_null("/root/LabyrinthArc1System")
+    if arc == null:
+        return
+    var arc_completed: Dictionary = Dictionary(arc.get("completed"))
+    arc_completed[_station_save_key(station_id)] = true
+    arc.set("completed", arc_completed)
+    arc.set("state_dirty", true)
+
+func _station_save_key(station_id: String) -> String:
+    return "coop_sync_%s" % station_id
 
 func _has_active_support_light() -> bool:
     for remaining_variant: Variant in support_remaining.values():
@@ -434,6 +459,10 @@ func _requester_position(peer_id: int) -> Vector3:
         var survivor_transform: Transform3D = transform_value
         return survivor_transform.origin
     return Vector3.INF
+
+func _dictionary_vector(values: Dictionary, key: String) -> Vector3:
+    var value: Variant = values.get(key, Vector3.ZERO)
+    return value if value is Vector3 else Vector3.ZERO
 
 func _valid_panel(station_id: String, panel_id: String) -> bool:
     if not STATION_STAGE.has(station_id):
