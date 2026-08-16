@@ -1,234 +1,238 @@
-# DON'T LOOK BACK — Godot v0.20
+# DON'T LOOK BACK — Godot v0.21
 
-First-person survival horror for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror AI, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AStar navigation, adaptive encounter pacing, co-op interactions, and a 30+ minute Arc 1 Labyrinth.
+First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror AI, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AStar navigation, adaptive encounter pacing, dynamic Labyrinth routes, co-op interactions, and a full Arc 1 evacuation finale.
 
-## v0.20 — LABYRINTH MAJOR OVERHAUL
+## v0.21 — LABYRINTH EVACUATION & LIVING MAZE
 
-v0.20 turns the existing v0.19.x Labyrinth systems into one connected chapter loop instead of independent feature layers.
+v0.21 turns the end of Arc 1 into a reverse-route escape instead of ending directly beside the Lockdown Console.
 
-The established Arc 1 route remains:
+### Current Arc 1 route
 
 1. Opening Corridor + Apartment 03
 2. Original Labyrinth — restore 3 emergency relays
 3. M-01 Maintenance — restore Fuse A/B/C
-4. F-02 Flooded Service — turn both pressure valves
-5. A-03 Archive — complete breaker sequence `B → A → C`
-6. **NEW: Isolation Sweep — disable 3 sector Isolation Nodes**
+4. F-02 Flooded Service — turn Pressure Valve A/B
+5. A-03 Archive — breaker sequence `B → A → C`
+6. Isolation Sweep — disable the Maintenance, Flooded and Archive Isolation Nodes
 7. Return to L-04 Lockdown
-8. Survive the 2-minute multi-phase stabilization finale
-9. Follow the final beacon into the separate Forest map
+8. Survive the 120-second three-phase stabilization finale
+9. **NEW: Evacuation Protocol starts**
+10. Original L-04 Forest exit is removed
+11. Restore the A-03 Emergency Override while moving backward
+12. Restore the F-02 Extraction Override
+13. Return through Maintenance toward the Arc entrance
+14. Reach the new M-01 extraction beacon
+15. Transition to the separate Forest map
 
-The first blind-run target is now roughly **35–55 minutes**, depending on exploration, route variant, co-op coordination, shortcut use, failed breaker attempts, optional caches, SYNC stations, and encounter pressure. Experienced runs can be faster.
+A first blind Arc 1 run is now expected to land roughly around **40–60 minutes**, depending on exploration, co-op coordination, optional SYNC stations, shortcut use, route variant, enemy pressure, failed Archive attempts and evacuation speed. Experienced runs can be much faster.
 
-## Isolation Sweep
+## Reverse evacuation finale
 
-After Archive breaker power is restored, the Lockdown Console is physically sealed by an isolation interlock.
+Lockdown completion no longer creates an immediate usable Forest transition.
 
-Three new mandatory nodes become active:
+`LabyrinthEvacuationSystem` suppresses the old `OutsideTransitionArc1` and `Arc1FinalBeacon` after Lockdown and starts a reverse-route escape through previously visited sectors.
 
-- M-01 Maintenance Isolation Node
-- F-02 Flooded Service Isolation Node
-- A-03 Archive Isolation Node
+Base evacuation pressure time is **150 seconds**.
 
-The player must backtrack through the lower Labyrinth and shut down all three before Lockdown can begin.
+The timer is a pressure target, not an instant-death timer:
 
-This phase deliberately connects earlier systems:
+- above 0 seconds — standard evacuation pressure
+- at 0 seconds — state becomes `EVACUATION CRITICAL`
+- the run remains completable
+- The Warden becomes faster and detects survivors from farther away
+- horror-event cadence becomes more aggressive
 
-- v0.19.2 service shortcuts reduce backtracking
-- M/F/A/L signage helps mental navigation
-- optional caches become meaningful preparation
-- v0.19.3 SYNC support lights can provide temporary regroup zones
-- Encounter Director pressure continues during the sweep
-- The Warden becomes active while isolation is incomplete
+This avoids a hard softlock while still making slow evacuation dangerous.
 
-Isolation completion is stored inside the existing Arc `completed` state, so it uses the existing v0.14+ world-save pipeline without a new save format.
+## Emergency Overrides
 
-## Three route variants
+Two mandatory reverse-route controls are added:
 
-A new Arc 1 run receives one of three Isolation layouts.
+- **A-03 Emergency Override** near the deep Archive return route
+- **F-02 Extraction Override** in Flooded Service
 
-The saved route variant changes the authored location of the Maintenance, Flooded and Archive Isolation Nodes. The variant is stored in the Arc save and remains stable after Continue/reconnect.
+Each override:
 
-This is not procedural maze generation: the Labyrinth keeps authored geometry and navigation, while critical late-Arc targets move among vetted locations. The goal is replay variation without destroying level readability or multiplayer determinism.
+- uses normal E / USE interaction
+- is host-validated in co-op
+- adds **18 seconds** to remaining evacuation pressure time
+- produces a loud AI-noise event
+- autosaves progress
+- persists through Continue
 
-The HUD identifies the active route mutation as Variant 1/2/3 during the sweep.
+After both overrides are restored, the extraction beacon is armed near the M-01 / lower-Labyrinth entrance.
 
-## Temporary route shutters
+The old final exit at L-04 remains unavailable.
 
-Disabling an Isolation Node causes a short local systems failure:
+## Evacuation Warden
 
-- maintenance lighting faults
-- a loud AI noise event is emitted
-- Encounter Director pressure can accelerate
-- a temporary metal shutter closes a nearby route for about 7.5 seconds
-- the shutter always reopens automatically
+v0.21 adds a dedicated evacuation instance of **The Warden**.
 
-The shutters are intentionally temporary so they can create chase beats without permanently soft-locking a run.
+The old v0.20 Warden remains responsible for Isolation Sweep / Lockdown behavior. During reverse evacuation the original instance is suppressed and only `EvacuationWarden` runs, preventing double-Warden encounters.
 
-Host and clients receive the same shutter event in multiplayer.
+Evacuation Warden behavior:
 
-## The Warden
+- spawns from the Lockdown end of the map
+- uses the existing runtime AStar graph
+- follows survivors backward through the Arc
+- prioritizes separated survivors in online co-op
+- slows near genuine protective world lights
+- does not treat flashlight-only state as a full safe pocket
+- becomes faster in `EVACUATION CRITICAL`
+- movement, attack and transform replication remain host-authoritative
 
-v0.20 adds a new elite Arc 1 threat: **The Warden**.
+The dedicated evacuation Warden inherits the existing Warden attack, target selection, safe-light reaction and network interpolation behavior.
 
-Prototype behavior:
+## Living-maze pressure events
 
-- becomes active during the Isolation Sweep
-- returns during the later Lockdown phases
-- prioritizes survivors who are far from teammates in co-op
-- isolated targets make it move faster
-- normal personal flashlight does not fully neutralize it
-- strong world/safe-light pockets slow it significantly
-- uses the existing runtime AStar navigation helper
-- host owns movement and damage in multiplayer
-- position/active state is replicated to clients
-- deals non-instant-kill damage through the existing health/downed pipeline
+As evacuation time crosses pressure thresholds, the Labyrinth can create temporary emergency shutters.
 
-The Warden is an elite pressure layer, not another always-on standard enemy.
+Pressure thresholds are based around:
 
-When The Warden is active, `LabyrinthMajorGatekeeper` trims the simultaneous Mourner/Crawler set:
+- 120 seconds
+- 90 seconds
+- 60 seconds
+- 30 seconds
+- critical state
 
-- Isolation Sweep: maximum 1 Arc standard enemy alongside The Warden
-- Lockdown: maximum 2 Arc standard enemies alongside The Warden
+Shutters only remain for roughly **4.5 seconds** and remove themselves automatically. They are designed as route-pressure moments, not permanent gates, so missing a route window cannot permanently softlock the Arc.
 
-Tenant/Darkness pressure remains handled by the existing Encounter Director rules.
+Each structural shift also creates AI noise and can accelerate a nearby horror event.
 
-This prevents the major update from becoming an uncontrolled 6–7 enemy pile-up and keeps CPU/draw pressure more appropriate for mobile hardware.
+## Evacuation lighting
 
-## Multi-phase Lockdown finale
+Ten additional reverse-route emergency strobes are added from Lockdown back toward Maintenance.
 
-The original 120-second Lockdown remains, but v0.20 divides it into three pressure phases:
+They are deliberately kept below the normal protective-world-light threshold:
 
-### Phase 1 — 120–80 seconds
+- emergency orange/red color language
+- pulsing intensity
+- shadows disabled
+- mobile-conscious realtime-light budget
+- directional `EVAC` world labels
 
-- initial stabilization
-- maintenance fault pulse
-- Encounter Director begins tightening timing
-- The Warden remains absent for the first short preparation window
+The final M-01 extraction beacon is intentionally much stronger and visually distinct once both overrides are restored.
 
-### Phase 2 — 80–40 seconds
+## v0.20 systems retained
 
-- faster encounter rotation
-- stronger fault events
-- The Warden is active
-- standard Arc enemy count remains budget-limited
+### Isolation Sweep
 
-### Phase 3 — final 40 seconds
+After Archive power is restored, Lockdown remains sealed until three Isolation Nodes are disabled:
 
-- fastest horror-event pressure
-- emergency route lighting becomes the primary visual language
-- Warden aggression rises
-- player/team must keep moving until stabilization completes
+- M-01 Isolation Node
+- F-02 Isolation Node
+- A-03 Isolation Node
 
-The finale remains completable solo and in 2–4 player co-op.
+There are three saved route variants. The selected variant persists in the Arc save so Continue and reconnect do not move objectives.
 
-## Guidance lighting pass
+Isolation shutdowns trigger fault lighting, AI noise and short temporary shutters.
 
-v0.20 adds 12 low-cost floor/wall guidance points across Maintenance, Flooded, Archive and Lockdown.
+### Three-phase Lockdown
 
-These lights:
+The 120-second Lockdown finale remains split into three pressure phases:
 
-- use small emissive strips
-- use low-energy OmniLights with shadows disabled
-- remain below the protective-light threshold
-- improve floor-edge/navigation readability on desktop and low-brightness mobile displays
-- become warmer/redder toward Lockdown
+- Phase 1: 120–80 seconds
+- Phase 2: 80–40 seconds
+- Phase 3: final 40 seconds
 
-They are not safe zones. Existing safe/checkpoint/SYNC lights remain visibly and mechanically stronger.
+Warden and environmental pressure increase toward the end.
 
-## Existing Arc systems retained
+## v0.19.x systems retained
 
-### Encounter & pacing — v0.19.1
+### Encounter Director
 
-- CALM / UNEASY / DANGER / SEVERE / LOCKDOWN internal pressure states
-- limited active Mourner/Crawler subset
-- fake footsteps
-- distant metal slam
-- flicker
-- blackout
-- fake corridor shadow
-- steam hazards
-- electrified puddles
-- host-authoritative hazard damage
+Mourner/Crawler enemies use an adaptive threat budget rather than all remaining active continuously.
 
-### Readability & exploration — v0.19.2
+The Director considers:
 
-- yellow M-01 Maintenance identity
-- blue F-02 Flooded identity
-- green A-03 Archive identity
-- red L-04 Lockdown identity
-- route markers and landmark silhouettes
-- M-07 Storage optional cache
-- F-09 Pump Annex optional cache
-- A-12 Records Annex optional cache
-- two one-way service shortcuts
-- optional Journal finds
+- Arc stage
+- active Tenant / Darkness pressure
+- survivor health/downed state
+- time spent in the lower Labyrinth
+- team-separation pacing hooks
 
-### Co-op & team tension — v0.19.3
+Random horror events include fake footsteps, metal slams, flicker, blackout and fake shadows.
 
-- paired SYNC A/B stations in Maintenance/Flooded/Archive
-- 9-second online two-survivor synchronization window
-- 18-second solo fallback
-- 36-second temporary protective support light
-- shared Battery/Water/Medkit rewards
-- increased encounter pressure when survivors spread too far apart
-- temporary pacing respite while emergency support light is active
+### Environmental hazards
 
-## Enemy roster in Arc 1
+Arc 1 retains:
 
-Current gameplay threats:
+- Maintenance steam hazard
+- Flooded Service electrified puddles
+- Flooded Service steam hazard
+- Archive steam hazard
 
-- **The Tenant** — freeze-when-watched rule
-- **Darkness Creature** — darkness exposure / protective-light pressure
-- **The Mourner x2** — noise-oriented stalkers
-- **The Crawler x2** — fast low-profile pressure
-- **The Warden x1** — elite isolation/team-separation hunter
+Hazard damage remains host-authoritative online.
 
-Encounter systems limit simultaneous activation rather than running every enemy continuously.
+### Sector readability
 
-## Save / Continue
+Lower-Labyrinth navigation language:
 
-Persistent Arc state includes:
+- M-01 Maintenance — dirty yellow
+- F-02 Flooded Service — desaturated blue
+- A-03 Archive — industrial green
+- L-04 Lockdown — emergency red
 
-- survival/player inventory state
-- relay state
-- fuse progress
-- valve progress
-- breaker progress
-- Lockdown state/time
-- checkpoint stage
-- claimed finite pickups
-- v0.19.2 shortcut state
-- v0.19.3 SYNC completion state
-- **v0.20 Isolation Node completion**
-- **v0.20 route variant**
+Optional exploration bays:
 
-Old saves remain usable:
+- M-07 Storage
+- F-09 Pump Annex
+- A-12 Records Annex
 
-- an old save before Archive simply receives its route variant when the new system initializes
-- an old save already inside an active Lockdown can continue the existing holdout instead of being forced backward
-- an old completed Arc remains completed
+Two one-way service shortcuts reduce later backtracking after they are opened from the deeper side.
 
-`NEW GAME` clears Arc major-state data together with the existing Arc state.
+### Co-op SYNC stations
+
+Maintenance, Flooded and Archive contain optional paired SYNC A/B stations.
+
+Online:
+
+- different survivors must use paired terminals inside a 9-second window
+
+Solo:
+
+- the same player can complete both sides within an 18-second window
+
+Successful SYNC provides a temporary protective team-light pocket and finite shared reward.
 
 ## Multiplayer authority
 
-Host owns:
+LAN/IP multiplayer supports 2–4 survivors.
+
+Host owns authoritative state for:
 
 - Arc objectives
-- Isolation Node validation
-- saved route variant
-- temporary shutter events
-- Warden target/movement/damage
-- Encounter Director enemy selection
+- Isolation Nodes
+- evacuation overrides
+- evacuation completion
+- Warden / Arc enemy movement and attacks
 - hazards
-- SYNC station completion
-- shared pickups/checkpoints
-- Lockdown timer
+- shared finite pickups
+- shared checkpoints
+- map transition
 
-Clients receive reliable major-state snapshots and Warden transform updates.
+Evacuation state uses reliable RPC channel 16. Warden movement keeps its existing dedicated replication path.
 
-The Isolation Node interaction validates the requesting survivor's physical position before accepting a client request.
+Late joiners receive the current evacuation snapshot.
+
+## Save / Continue
+
+Arc persistence includes:
+
+- Fuse/Valve/Breaker state
+- Isolation Sweep state
+- saved route variant
+- Lockdown state/time
+- SYNC milestones
+- one-way shortcuts
+- finite claimed pickups
+- evacuation started/completed state
+- evacuation remaining pressure time
+- completed evacuation overrides
+
+The v0.21 evacuation data is stored inside the existing Arc `completed` state and does not require a new save-format migration.
+
+`NEW GAME` clears the Arc state normally.
 
 ## Controls
 
@@ -238,7 +242,7 @@ Desktop:
 - Mouse — look
 - Shift — sprint
 - Space — jump
-- E — interact / objective / Isolation / SYNC / shortcut / revive
+- E — interact / objective / override / shortcut / revive
 - F — flashlight
 - B or 4 — battery
 - 1 — food
@@ -251,11 +255,11 @@ Desktop:
 
 Mobile:
 
-- left joystick — movement/downed movement
+- left joystick — movement
 - right swipe — look
 - RUN
 - JUMP
-- USE — interaction/objective/Isolation/SYNC/shortcut/revive
+- USE — interact / objective / override / shortcut / revive
 - LIGHT
 - BATT
 - FOOD
@@ -264,78 +268,75 @@ Mobile:
 - JOURNAL
 - MENU
 
-## Recommended v0.20 solo test
+## Recommended v0.21 runtime test
 
-1. Use a clean Pull and run in a separate game window if the Godot embedded Game View still does not forward input on the development machine.
+Solo full route:
+
+1. Run with embedded Game View disabled if the editor still fails to forward input.
 2. NEW GAME.
-3. Complete Apartment 03 + the original 3 relays.
+3. Complete 3 relays.
 4. Complete Fuse A/B/C.
-5. Complete both pressure valves.
-6. Complete Archive breaker sequence `B → A → C`.
-7. Confirm the HUD changes to `ISOLATION SWEEP`.
-8. Approach Lockdown Console before completing Isolation; the red interlock cover must block direct interaction.
-9. Find the three M/F/A Isolation Nodes using route signs, saved route variant and shortcuts.
-10. Disable one node and confirm temporary blackout/fault + temporary shutter.
-11. Confirm the shutter automatically disappears after roughly 7.5 seconds.
-12. Confirm The Warden appears during the sweep.
-13. Enter a strong world safe-light pocket and confirm The Warden slows rather than being removed by a normal dim route lamp.
-14. Disable all 3 Isolation Nodes.
-15. Return to Lockdown and confirm the interlock cover is gone.
-16. Start Lockdown and verify Phase 1 → 2 → 3 messaging/pressure.
-17. Survive 120 seconds and confirm final Forest transition still appears.
-18. Save during Isolation Sweep, quit, Continue, and verify the same route variant + completed nodes are retained.
+5. Complete Valve A/B.
+6. Complete Archive sequence B → A → C.
+7. Verify Lockdown is blocked until all 3 Isolation Nodes are disabled.
+8. Complete Isolation Sweep.
+9. Start Lockdown and survive all three phases.
+10. Confirm the old L-04 Forest exit does **not** remain usable.
+11. Confirm evacuation HUD starts near 2:30.
+12. Move backward to A-03 Emergency Override and activate it.
+13. Confirm roughly +18 seconds and autosave feedback.
+14. Continue backward to F-02 Extraction Override and activate it.
+15. Confirm M-01 extraction is armed.
+16. Observe emergency strobes and temporary shutters while moving back.
+17. Let the timer reach zero once and verify the game becomes CRITICAL rather than instantly killing/restarting.
+18. Confirm Evacuation Warden continues pursuing in CRITICAL state.
+19. Reach M-01 extraction beacon.
+20. Confirm Forest transition occurs.
 
-## Recommended v0.20 co-op test
+Save regression:
 
-1. Host + client complete Archive.
-2. Confirm both peers receive the same Isolation Node layout.
-3. Let the client disable one Isolation Node; host must validate physical distance and both peers must receive the same progress.
-4. Confirm both peers see the temporary shutter event.
-5. Separate survivors and confirm The Warden favors/accelerates toward isolated targets.
-6. Regroup at a SYNC/world safe-light pocket and confirm Warden movement slows.
-7. Verify standard Mourner/Crawler pressure is reduced while Warden is active.
-8. Reconnect during Isolation Sweep and verify route variant + node completion sync.
-9. Complete all 3 nodes and confirm both peers lose the Lockdown interlock.
-10. Complete all three final Lockdown phases and transition to Forest.
+1. Save after the first evacuation override.
+2. Quit to desktop.
+3. CONTINUE.
+4. Confirm Lockdown remains complete, evacuation resumes, first override remains restored, remaining pressure time restores, and the old L-04 exit is still suppressed.
 
-## Mobile / desktop performance intent
+Co-op:
 
-v0.20 remains mobile-conscious:
+1. Host + client complete Lockdown.
+2. Confirm both receive evacuation state.
+3. Let client activate A-03 override; host must validate it.
+4. Verify both peers see the override complete.
+5. Split the team and confirm Warden target pressure remains host-authoritative.
+6. Reconnect a client during evacuation and verify state snapshot.
+7. Let a client enter the M-01 extraction after both overrides; host should validate extraction and transition the session.
 
-- no new volumetric effects
-- no NavigationMesh bake requirement
-- Warden uses one prototype mesh hierarchy
-- guidance lights have shadows disabled
-- route strips are cheap emissive geometry
-- temporary shutters exist only for short events
-- Warden activation reduces the standard Arc enemy set
-- multiplayer remains 2–4 survivors
-- UI/controls remain responsive through the existing mobile control layer
+## Performance intent
+
+v0.21 remains mobile-conscious:
+
+- emergency strobes use low-energy OmniLights with shadows disabled
+- route labels are lightweight Label3D nodes
+- evacuation uses one dedicated Warden rather than stacking another full encounter set
+- stage-6 Encounter Director budget already clears regular Mourner/Crawler pressure, leaving Warden as the main chase threat
+- temporary shutters use primitive geometry and self-delete
+- no volumetric evacuation effects are required for gameplay
 
 ## Git workflow note
 
-`project.godot` is intentionally **not modified for v0.20**.
+`project.godot` is intentionally not modified for v0.21.
 
-The already-autoloaded `Arc1NavigationBridge` now creates these runtime systems:
+New runtime systems are created through the existing `Arc1NavigationBridge`. The in-menu build badge reads:
 
-- `LabyrinthEncounterDirector`
-- `LabyrinthExplorationSystem`
-- `LabyrinthCoopSystem`
-- `LabyrinthMajorSystem`
-- `LabyrinthMajorGatekeeper`
+`v0.21 • LABYRINTH EVACUATION & LIVING MAZE`
 
-This keeps the major update out of `project.godot` and reduces the chance of repeating the earlier local Discard/Pull conflict.
-
-The visible menu badge is `v0.20 • LABYRINTH MAJOR OVERHAUL`.
+The development machine should keep using a clean/stashed working tree before Pull. Do not discard unknown local `project.godot` changes without backing them up first.
 
 ## Current limitations
 
-- Runtime F5 validation must still be performed on the development machine because the assistant environment does not contain the Godot executable.
-- The Warden is currently a procedural placeholder without final rig/animation/audio.
-- Isolation Nodes, interlock cover, shutters and guidance strips use prototype meshes/materials.
-- Temporary shutters use timed authored positions, not a fully procedural route-generation system.
-- AI navigation remains runtime AStar waypoint navigation rather than a baked NavigationMesh.
+- Godot runtime/F5 validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
+- Current environment geometry, override panels, evacuation shutters and Warden visuals remain procedural prototype art.
+- AI navigation is still a hand-authored runtime AStar waypoint graph rather than baked NavigationMesh.
 - Internet matchmaking/NAT traversal is not implemented; multiplayer remains LAN/IP based.
-- Production environment art, enemy models, animations, spatial audio and VFX are still required.
+- Production audio, animation, VFX and environment art are still required.
 
-See `ASSET_BACKLOG.md` for current production asset priorities.
+See `ASSET_BACKLOG.md` for the current production-asset requirements.
