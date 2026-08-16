@@ -23,7 +23,8 @@ func _process(delta: float) -> void:
                 if not target.is_empty():
                     var target_value: Variant = target.get("position", null)
                     if target_value is Vector3:
-                        _move_toward_goal(target_value, move_speed, delta)
+                        var target_position: Vector3 = target_value
+                        _move_toward_goal(target_position, move_speed, delta)
         _broadcast_state(delta)
     else:
         active = remote_active
