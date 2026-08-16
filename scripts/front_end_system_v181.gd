@@ -4,7 +4,7 @@ const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
 const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
 const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.24  •  DYNAMIC HORROR AUDIO"
+const VERSION_BADGE_TEXT: String = "v0.24.1  •  FLASHLIGHT MONSTER INTERFERENCE"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
