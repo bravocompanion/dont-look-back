@@ -6,6 +6,8 @@ var frontend_initialized: bool = false
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+    if not OS.has_feature("mobile") and not OS.has_feature("web_android") and not OS.has_feature("web_ios"):
+        Input.emulate_touch_from_mouse = false
 
 func _process(delta: float) -> void:
     var scene: Node = get_tree().current_scene
@@ -20,6 +22,16 @@ func _process(delta: float) -> void:
         gameplay_started = false
         menu_open = false
         current_mode = "title"
+
+        # Dedicated menu owns all pointer/touch input. Gameplay touch controls
+        # are an autoload and must stay blocked even when the desktop editor
+        # viewport is narrow enough to resemble a phone screen.
+        var mobile: Node = get_node_or_null("/root/MobileControls")
+        if mobile != null and mobile.has_method("set_external_blocked") and not bool(mobile.call("is_external_blocked")):
+            mobile.call("set_external_blocked", true)
+
+        if not OS.has_feature("mobile") and not OS.has_feature("web_android") and not OS.has_feature("web_ios"):
+            Input.emulate_touch_from_mouse = false
         if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
             Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
         return
