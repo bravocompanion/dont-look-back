@@ -1,478 +1,399 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.19.1 — LABYRINTH ENCOUNTER & PACING**.
+Updated for **v0.19.2 — LABYRINTH READABILITY & EXPLORATION**.
 
-The project is still code/procedural-first. v0.19.1 adds adaptive encounter pacing, horror-event presentation hooks, steam/electrical environmental hazards, and dynamic enemy budgeting on top of the v0.19 Arc 1 expansion. Production art/audio now needs to make those systems readable without making the Labyrinth feel gamey.
+The current prototype is still code/procedural-first. v0.19.2 adds sector identity, color-coded navigation language, optional exploration bays, one-way service shortcuts, and hidden cache/lore locations on top of the v0.19/v0.19.1 Arc 1 gameplay.
 
-## P0 — New needs from v0.19.1
+## P0 — New needs from v0.19.2
 
-### Environmental hazards
+### Sector readability kit
 
-Steam / pipe hazards:
-- damaged steam-pipe outlet model
-- valve/pipe pressure fixture variants
-- steam burst VFX with low-cost mobile version
-- condensation/drip decal set
-- warning paint / hot-pipe signage
-- steam hiss loop + burst transient
-- pressure build-up cue before each burst
+Need a reusable Labyrinth navigation kit that stays readable in dim lighting without making the level feel arcade-like:
+
+- `M-01 MAINTENANCE` wall sign
+- `F-02 FLOODED SERVICE` wall sign
+- `A-03 ARCHIVE` wall sign
+- `L-04 LOCKDOWN` wall sign
+- smaller room-number plates such as M-07 / F-09 / A-12
+- directional arrow decals
+- worn/stenciled number decals
+- hazard/warning stripe decals
+- wall-mounted route map / color legend
+
+Color language:
+
+- Maintenance — dirty yellow/amber
+- Flooded Service — desaturated blue
+- Archive — industrial green
+- Lockdown — emergency red
+
+The colors should remain readable on low-brightness mobile displays but must not resemble protective flashlight/safe-zone lighting.
+
+### Color-coded conduit / pipe kit
+
+Production replacement for the prototype emissive route bars:
+
+- horizontal conduit segments
+- vertical conduit segments
+- elbows / junctions / T-junctions
+- cable trays
+- pipe brackets
+- wall/ceiling mounts
+- damaged/broken variants
+- painted stripe versions in yellow/blue/green/red
+
+Recommended approach:
+
+- mostly opaque materials with subtle emission only where needed
+- atlas/shared materials to reduce mobile draw calls
+- simple collision or no collision for decorative conduit
+- reusable modular lengths rather than unique meshes per corridor
+
+### Shortcut door / service hatch
+
+Two one-way shortcuts now need final presentation:
+
+- industrial maintenance service door/hatch
+- wall frame matching concrete Labyrinth modules
+- mechanical latch/handle
+- LOCKED FROM OTHER SIDE state
+- UNLOCKED/OPEN state
+- optional small indicator light
+
+Animations/audio:
+
+- latch pull
+- heavy lock release
+- metal scrape/open
+- final stop/clunk
+- optional rattling interaction from wrong side
+
+The final art must preserve the current gameplay rule: the shortcut cannot visually imply it is usable from the early side.
+
+### Optional exploration bays
+
+M-07 Storage:
+
+- maintenance storage shelving
+- battery crate
+- medical supply box
+- tool cases
+- spare conduit/pipe props
+- small locker variants
+
+F-09 Pump Annex:
+
+- compact pump assembly
+- pipe manifolds
+- drainage grate
+- valve hardware
+- water-stained wall decals
+- emergency bottled-water storage
+
+A-12 Records Annex:
+
+- archive boxes
+- document shelves
+- loose folders/papers
+- damaged cabinet
+- handwritten inventory labels
+- small medkit/storage cabinet
+
+Cache dressing:
+
+- 3–5 crate variants
+- open/closed supply cases
+- cardboard archive boxes
+- plastic maintenance bins
+- straps/tape/labels
+
+### Landmark silhouettes
+
+Each sector needs one memorable landmark shape visible from several meters away:
+
+- Maintenance: tall conduit/fuse pillar
+- Flooded: pump/pipe tower
+- Archive: distinctive shelf/sign column
+- Lockdown: heavy red security structure
+
+These should be recognizable by silhouette even when color visibility is poor.
+
+### Exploration Journal props
+
+New v0.19.2 notes need physical paper variants:
+
+- Maintenance Color Code sheet
+- A-12 inventory sheet / margin note
+- wall-mounted route legend
+- stained maintenance clipboard
+- archive inventory form
+
+## P0 — v0.19.1 Encounter / hazard assets retained
+
+Steam hazards:
+
+- damaged steam outlet
+- pipe-pressure fixture
+- steam burst VFX
+- low-overdraw mobile steam variant
+- pressure build-up cue
+- burst hiss
 
 Electrical hazards:
+
 - electrified puddle material
-- exposed cable / broken junction-box prop
-- electrical arc / spark VFX
-- short floor-current pulse VFX
-- electric buzz idle cue
-- high-voltage crack / discharge cue
-- warning signage / hazard stripe decal
+- exposed cable / junction box
+- electrical arcs/sparks
+- floor-current pulse VFX
+- idle buzz
+- discharge crack
+- high-voltage signage
 
-Gameplay readability requirement:
-- hazard OFF/Safe and ACTIVE states must be readable from several meters away
-- effects must remain readable on low-brightness mobile displays
-- electrical puddle effects must not resemble protective safe-light visuals
-- steam/electric VFX need low-overdraw mobile variants
+Random horror events:
 
-### Encounter Director presentation
+- 4–6 distant metal-slam variants
+- fake concrete/metal footsteps
+- fluorescent ballast flicker
+- blackout power-down/recovery
+- shadow-crossing silhouette material
+- cloth/scrape movement cue
 
-Random horror events now need production presentation for:
-- distant metal slam
-- fake footsteps behind/around the survivor
-- maintenance-light flicker
-- short blackout event
-- fake shadow crossing a corridor
-
-Audio priority:
-- 4–6 metal impact/slam variants with distance filtering
-- 4+ concrete/metal fake-footstep variants
-- electrical flicker / ballast failure
-- blackout power-down + recovery transient
-- short shadow movement / cloth scrape cue
-
-Visual priority:
-- fast shadow silhouette material/mesh
-- light-flicker fixture response
-- blackout recovery sparks optional
-- subtle environmental movement props that can be triggered later
-
-Important horror rule:
-- not every horror event should spawn or reveal a real monster
-- fake events should share some audio language with real AI movement so players cannot instantly classify them
-
-### Threat-state support
-
-The encounter system now uses CALM / UNEASY / DANGER / SEVERE / LOCKDOWN pressure internally. Do not expose this as a large arcade HUD. Assets should communicate pressure through environment and audio instead:
-- ambience layers with low/high tension variants
-- heartbeat/breathing escalation options
-- lamp hum intensity variants
-- distant monster cue variants
-- Lockdown alarm escalation layers
-
-## P0 — New needs from v0.19 Arc 1
+## P0 — Arc 1 monster assets
 
 ### The Mourner
 
-Need a final monster distinct from The Tenant:
+Model:
+
 - tall narrow humanoid silhouette
-- rigged body
-- damaged/maintenance-worker visual language optional
-- strong readable head/shoulder silhouette in dim light
-- low-cost LOD for mobile
+- rigged production mesh
+- mobile LOD
+- readable head/shoulder shape in dim corridors
 
 Animations:
+
 - idle/listen
-- slow stalk
-- investigate noise
+- stalk
+- investigate
 - light-slow reaction
 - turn left/right
-- short attack
-- hit/contact follow-through
-- search idle
+- search
+- attack
 
 Audio:
-- distant dragging footstep
+
+- dragging footsteps
 - cloth/body creak
-- listen/investigate cue
-- close breathing/moan
+- breathing/moan
+- investigate cue
 - attack impact
-- light discomfort cue
 
 ### The Crawler
 
-Need a final low-profile creature clearly different from Tenant/Mourner/Darkness Creature:
-- quadruped or distorted crawling humanoid
-- low silhouette that remains visible near floor-level dim lamps
-- rig suitable for fast directional turns
+Model:
+
+- distorted low crawling silhouette
+- rig for rapid directional changes
 - mobile LOD
 
 Animations:
-- crawl idle
+
+- idle crawl
 - slow crawl
-- fast pursuit crawl
-- light retreat/hesitation
-- turn-in-place
+- pursuit crawl
+- light hesitation/retreat
+- turn
+- search/listen
 - attack lunge
-- search/sniff/listen
 
 Audio:
-- hand/claw contact on concrete
+
+- hand/claw concrete contacts
 - fast crawl loop
 - stop/listen cue
-- lunge/attack cue
+- lunge cue
 - light retreat hiss
 
-### Arc 1 environment kit
+## P0 — Arc 1 environment modules
 
-Maintenance Wing:
-- modular concrete wall segments
-- exposed conduit/cable trays
-- fuse-box variants A/B/C
-- maintenance signs/numbers
+Maintenance:
+
+- modular concrete walls
+- fuse boxes A/B/C
+- conduit/cable trays
+- utility doors
 - pipe clusters
-- rust/water stains
-- ceiling maintenance fixtures
-- damaged utility doors
+- grime/rust decals
 
 Flooded Service:
-- shallow-water floor material
-- wet concrete variants
+
+- wet concrete material
+- shallow-water floor
 - pipe network
-- pressure valve wheel + body
+- pressure valves
 - drainage grates
-- leaking-pipe VFX
-- puddle/water decals
-- warning signage
-- small debris props
+- water leak VFX
+- puddle decals
 
 Archive:
-- archive shelf modules with simple collision proxies
+
+- modular shelves with simple collision proxies
 - document boxes
-- broken cabinets
-- breaker panels A/B/C
-- maintenance tags showing B → A → C
-- papers/folders/debris
-- numbered aisle signs
+- cabinets
+- breaker A/B/C panels
+- aisle signs
+- paper/debris props
 
 Lockdown:
-- final control console
-- industrial pillars
-- heavy security bulkhead/gate
-- alarm light fixtures
-- emergency signs
-- final exit/security door
-- powered final-beacon fixture
-- cable/power-core props
 
-### Arc 1 lighting
+- final console
+- heavy gate/bulkhead
+- security pillars
+- emergency fixtures
+- powered final beacon
+- alarm signs
 
-Dim maintenance fixtures:
-- intact dim fixture
-- dirty/yellowed fixture
-- broken fixture
-- flickering fixture
-- cage light
-- wall-mounted emergency lamp
+## P0 — Lighting kit
 
-Material/emissive states:
+Need fixture states for:
+
 - OFF
 - DIM AMBIENT
-- FAULT/FLICKER
-- SAFE/POWERED
+- FAULT / FLICKER
+- SAFE / POWERED
 - LOCKDOWN PULSE
 
-Important gameplay rule:
-- normal Arc ambient lamps must visually remain weaker than flashlight, relay lights and safe checkpoint lamps
-- dim fixture art must not imply monster protection
-- safe lamps need a clearly stronger color/intensity language
+Fixture variants:
 
-### Arc 1 interaction props
+- fluorescent strip
+- cage light
+- dirty maintenance lamp
+- broken fixture
+- wall emergency light
+- safe/checkpoint lamp
 
-Need final models for:
-- Fuse Box A/B/C
-- Pressure Valve A/B
-- Archive Breaker A/B/C
-- Lockdown Console
-- checkpoint/safe-light pillar
-- gate/bulkhead modules
+Normal dim fixtures must remain visually distinct from genuinely protective safe light.
 
-Interaction animation/audio:
-- fuse insertion/switch clunk
-- valve wheel turn + pipe pressure
-- breaker toggle
-- wrong breaker electrical fault
-- blackout alarm
-- gate release/heavy metal movement
-- Lockdown console startup
-- 2-minute stabilization alarm loop with intensity variants
-- stabilization complete cue
+## P0 — Core survivor / horror assets retained
 
-### Arc 1 ambience
+Survivor:
 
-Need layered loops/stingers:
-- lower-labyrinth room tone
-- Maintenance electrical hum
-- Flooded Service drip/pipe ambience
-- distant water movement
-- Archive low ventilation/hum
-- paper/shelf settling noises
-- Lockdown machinery loop
-- emergency alarm pulse
-- blackout electrical failure
-- final gate release
-- transition sting into The Outside
-
-## P0 — Core character assets retained
-
-### Survivor
-- 1 rigged survivor base mesh
-- 3–4 outfit/material variants for 2–4 players
-- first-person hands/arms
+- rigged base survivor
+- 3–4 outfit/material variants
+- first-person hands
 - world flashlight attachment
-- backpack/utility attachment points
+- idle/walk/run/jump/landing
+- downed crawl
+- revive / being revived
+- hit/death poses
 
-Animations:
-- idle
-- walk/run
-- jump takeoff
-- airborne/fall
-- landing
-- strafe/turn
-- downed idle/crawl
-- revive teammate
-- being revived
-- hit reaction
-- death/team-wipe pose
+The Tenant:
 
-### The Tenant
-- rigged humanoid horror model
-- freeze pose + transition
+- final rigged model
+- freeze pose/transition
 - unseen walk
-- panic chase
-- search/listen
-- investigate
-- attack
-- turn support
-
-### Darkness Creature
-- unique non-humanoid/non-Tenant silhouette
-- idle/crawl
+- chase
 - investigate/search
 - attack
+
+Darkness Creature:
+
+- unique non-Tenant silhouette
+- crawl/search
+- attack
 - light recoil
-- retreat
-- disappear/dissolve
+- retreat/dissolve
 
-## P0 — Movement / horror audio retained
+## P0 — Audio ambience
 
-Footsteps:
-- concrete walk + sprint
-- wet concrete
-- metal
-- wood
-- dirt/grass
-- landing variants
-- jump exertion
-- downed crawl
+Labyrinth layers:
+
+- Maintenance electrical hum
+- Flooded pipe/drip ambience
+- Archive ventilation/paper settling
+- Lockdown machinery/alarm layers
+- distant door slams
+- fake and real footsteps that intentionally share some sonic language
 
 Player:
-- breathing
-- sprint breathing
+
+- walk/sprint footsteps by surface
+- jump/landing
+- breathing/sprint breathing
 - heartbeat/panic
 - damage/bleeding
-- revive/downed
+- downed/revive
 
-Core interactions:
-- normal door
-- locked door rattle
-- heavy exit door
-- pickup
-- crafting
-- generator
-- workbench
-- water pump
-- campfire
-
-## P0 — Environment materials
-
-Reusable sets:
-- clean concrete
-- dirty concrete
-- wet concrete
-- painted plaster
-- tile
-- rusty metal
-- dark structural metal
-- aged wood
-- asphalt
-- dirt/grass
-- grime/blood/water-stain decals
-- warning paint/stripe decals
-
-Recommended Labyrinth texture strategy:
-- use reusable tileable materials rather than unique textures per wall
-- 1K/2K sources with mobile-scalable imports
-- normal + roughness maps where they materially improve readability
-- decals for variation instead of many unique materials
-
-## P0 — Forest / celestial presentation retained
+## P1 — Forest / exterior retained
 
 - visible sun disc
 - visible moon disc
-- dawn/day/dusk/night sky gradients or lightweight procedural sky
-- stars optional
-- 2–4 cloud variants / low-cost cloud layer
-- day/night cloud tint
-- mobile-safe sky material
-- subtle moon halo
-- tree silhouettes readable at night
-- fog that does not crush mobile visibility
+- dawn/day/dusk/night sky
+- lightweight cloud layer
+- mobile-safe fog
+- cabin production kit
+- gas station props
+- warehouse props
+- abandoned-house props
+- generator/workbench/storage/campfire
 
-## P0 — Front-end / loading retained
+All navigation-sensitive exterior props need simple collision proxies.
+
+## P1 — Front-end / multiplayer UI
 
 - final DON'T LOOK BACK logo
-- 16:9 title key art
-- mobile/portrait crop
+- title key art 16:9 + mobile crop
 - menu background
-- button states
-- Continue/New Game/Host/Join/Settings icons
-- save/checkpoint icon
-- loading spinner
-- warning icon
-- MENU icon
-- app icon/splash
-- THE OUTSIDE loading plate
-
-Audio:
-- focus/select/back
-- warning
-- save/autosave
-- connection success/failure
-- Ready/Start/Reconnect
-- map transition sting
-
-## P1 — Survival props
-
-- flashlight FP/world model
-- battery
-- canned food
-- bottled water / dirty water
-- medkit
-- bandage
-- cloth
-- fuel can
-- wood
-- scrap
-- generator
-- campfire
-- boiling pot
-- workbench
-- storage chest
-- bed/table/chairs
-- hand water pump
-
-## P1 — Exterior landmark props
-
-Cabin:
-- porch/entry step
-- threshold
-- exterior light fixture
-- interior furniture
-- generator/shelter props
-
-Gas Station:
-- pumps
-- canopy/sign
-- counter/shelving
-- broken fridge
-- signs/debris
-
-Warehouse:
-- pallets
-- shelves
-- crates/barrels
-- lamps
-- warning signs
-
-Abandoned House:
-- damaged furniture
-- cabinets
-- broken doors/windows
-- curtains/debris
-
-All navigation-sensitive props need simple collision proxies.
-
-## P1 — Journal / multiplayer UI
-
-Journal paper variants:
-- maintenance route sheet
-- breaker tag
-- lockdown procedure
-- handwritten note
-- receipt
-- ledger
-- warning sheet
-- diary page
-- torn/damaged variants
-
-Multiplayer UI:
-- Ready/Host/Ping icons
-- teammate HP/downed/revive icons
-- revive progress treatment
+- button states/icons
+- save/checkpoint/loading assets
+- Ready/Host/Ping/Downed/Revive icons
 - reconnect icon
-- player color swatches
-- compact mobile layouts
+- compact mobile variants
 
 ## P2 — VFX / polish
 
-Arc 1:
-- electrical fault sparks
-- blackout flicker
-- pipe steam/leak
-- shallow-water ripple
-- wet-footstep splash
-- lockdown alarm pulse
-- final gate dust/debris
-- Mourner subtle shadow distortion
-- Crawler floor dust/scrape
-
-Global:
 - flashlight dust
-- fog volumes
-- cold breath
-- blood/bleeding decals
-- infection feedback
-- campfire sparks/smoke
-- generator exhaust
-- Darkness dissolve/light recoil
+- shallow-water ripples
+- wet footsteps
+- pipe leaks
+- electrical sparks
+- blackout recovery sparks
+- Lockdown pulses
+- final-gate debris/dust
+- Mourner shadow distortion
+- Crawler scrape/floor dust
+- Darkness dissolve
 - Tenant shadow distortion
-- wind-driven leaves
-- loading fade/grain
+- cold breath
+- campfire smoke/sparks
+- generator exhaust
 
 ## Mobile + desktop constraints
 
-- Arc 1 lamps should use low-cost OmniLights; most dim lamps should keep shadows off
-- limit overlapping realtime lights on mobile
-- enemy final meshes need LODs
-- prefer one skeleton/skin material budget per monster where possible
-- use simple collision proxies for shelves, pipes and gates
-- minimize transparent flooded-water/steam overdraw
-- keep dim-lamp and hazard readability on low-brightness phone displays
-- keep objective controls large/readable enough for first-person mobile interaction
-- keep co-op remote survivor + encounter-selected enemies within mobile draw-call budget
+- prefer shared materials/atlases for signs and route markers
+- keep decorative conduit collision-free where possible
+- avoid many overlapping realtime lights
+- most dim Labyrinth lamps should keep shadows disabled
+- route colors must remain readable without high emission
+- use simple collision proxies for doors, shelves, pumps, pipes and crates
+- avoid transparent overdraw-heavy water/steam effects on mobile
+- enemy meshes require LODs
 - avoid 4K textures except hero/menu art
+- world-space signage must remain legible at phone resolution
 
-## Recommended production order after v0.19.1
+## Recommended production order after v0.19.2
 
-1. Hazard readability pass: steam pipe + electric puddle + sparks/audio
-2. Horror-event audio pass: fake footsteps, metal slam, flicker, blackout
-3. Arc 1 dim fixture + concrete/metal material kit
-4. Mourner model + core stalk/listen/attack animations
-5. Crawler model + crawl/light-retreat/attack animations
-6. Arc objective props: fuse/valve/breaker/console
-7. Arc ambience + Lockdown audio layers
-8. Survivor final model + movement/downed/revive animations
-9. Tenant final model + animation pass
-10. Darkness Creature final model + animation pass
-11. Archive/Flooded/Lockdown environment props
-12. Forest sky/sun/moon art pass
-13. Cabin/exterior landmark production props
-14. Front-end branding + multiplayer UI polish
+1. Sector signage + yellow/blue/green/red conduit kit
+2. Shortcut service door/hatch + latch animation/audio
+3. M-07 / F-09 / A-12 optional-room dressing
+4. Hazard readability pass: steam/electric assets + audio
+5. Horror-event spatial audio: fake footsteps/slams/flicker/blackout
+6. Arc dim-light fixture kit
+7. Mourner production model/animation/audio
+8. Crawler production model/animation/audio
+9. Fuse/valve/breaker/Lockdown objective props
+10. Arc ambience + Lockdown audio layers
+11. Survivor production model + co-op animations
+12. Tenant final model/animation
+13. Darkness Creature final model/animation
+14. Forest sky/sun/moon art pass
+15. Front-end branding + multiplayer UI polish
