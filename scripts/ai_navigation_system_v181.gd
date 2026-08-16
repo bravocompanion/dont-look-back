@@ -92,3 +92,69 @@ func _clamp_monster_position(position: Vector3) -> Vector3:
             clampf(position.z, -139.5, -52.0)
         )
     return super._clamp_monster_position(position)
+
+func _drive_online_host_ai(delta: float) -> void:
+    var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
+    if coop == null:
+        return
+
+    var current_dark_speed: float = float(coop.get("dark_move_speed"))
+    if current_dark_speed > 0.05:
+        dark_speed_hint = current_dark_speed
+    coop.set("dark_move_speed", 0.0)
+
+    if bool(coop.get("tenant_active")):
+        var tenant: Node3D = _get_tenant()
+        if tenant != null:
+            var watched: bool = false
+            if coop.has_method("_tenant_is_watched"):
+                watched = bool(coop.call("_tenant_is_watched", tenant.global_position + Vector3(0.0, 1.35, 0.0)))
+            if not watched and bool(tenant.get("can_move")):
+                tenant_memory = _drive_monster_memory(tenant, tenant_memory, delta, false)
+                var speed: float = 1.65
+                if tenant.has_method("get_current_move_speed"):
+                    speed = float(tenant.call("get_current_move_speed"))
+                elif coop.has_method("get_tenant_move_speed"):
+                    speed = float(coop.call("get_tenant_move_speed"))
+                _move_monster_to_memory_goal(tenant, tenant_memory, speed, delta, 1.25)
+
+    if bool(coop.get("dark_active")):
+        var dark_value: Variant = coop.get("dark_node")
+        var dark_node: Node3D = dark_value as Node3D
+        if dark_node != null and is_instance_valid(dark_node):
+            _repair_dark_spawn_if_needed(dark_node)
+            var lit_peer: int = 0
+            if coop.has_method("_nearest_lit_survivor"):
+                lit_peer = int(coop.call("_nearest_lit_survivor", dark_node.global_position, 6.5))
+            if lit_peer <= 0:
+                dark_memory = _drive_monster_memory(dark_node, dark_memory, delta, true)
+                _move_monster_to_memory_goal(dark_node, dark_memory, dark_speed_hint, delta, 1.15)
+
+func _drive_solo_ai(delta: float) -> void:
+    var tenant: Node3D = _get_tenant()
+    if tenant != null and bool(tenant.get("active")) and tenant.visible:
+        var watched: bool = _survivor_watches_position(tenant.global_position + Vector3(0.0, 1.35, 0.0))
+        if not watched and bool(tenant.get("can_move")):
+            tenant_memory = _drive_monster_memory(tenant, tenant_memory, delta, false)
+            var speed: float = 1.65
+            if tenant.has_method("get_current_move_speed"):
+                speed = float(tenant.call("get_current_move_speed"))
+            _move_monster_to_memory_goal(tenant, tenant_memory, speed, delta, 1.25)
+
+    var dark: Node3D = get_tree().get_first_node_in_group("darkness_creature") as Node3D
+    if dark == null or not is_instance_valid(dark):
+        return
+
+    _repair_dark_spawn_if_needed(dark)
+    var dark_id: int = int(dark.get_instance_id())
+    var move_speed: float = float(dark.get("move_speed"))
+    if move_speed > 0.05:
+        solo_dark_speed_hints[dark_id] = move_speed
+    var speed_hint: float = float(solo_dark_speed_hints.get(dark_id, dark_speed_hint))
+    dark.set("move_speed", 0.0)
+
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    var player_in_light: bool = player != null and player.has_method("is_in_light") and bool(player.call("is_in_light"))
+    if not player_in_light:
+        dark_memory = _drive_monster_memory(dark, dark_memory, delta, true)
+        _move_monster_to_memory_goal(dark, dark_memory, speed_hint, delta, 1.15)
