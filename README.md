@@ -1,6 +1,32 @@
-# DON'T LOOK BACK — Godot v0.18.4
+# DON'T LOOK BACK — Godot v0.18.4.1
 
 First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror encounters, survival systems, persistent saves, Journal discoveries, separate Labyrinth/Forest maps, runtime AI navigation/perception, and a dynamic Forest day/night lighting cycle.
+
+## v0.18.4.1 — New Game Startup Hotfix
+
+NEW GAME no longer assumes that the Labyrinth and Player are ready after a fixed six-frame delay.
+
+The front end now:
+- resets persistent/runtime world state before starting
+- switches explicitly to `res://scenes/main.tscn`
+- waits until the new scene is current
+- waits until a Player exists
+- waits until `LabyrinthExpansion` has actually been created by the runtime director
+- only then closes the loading overlay and enables gameplay
+- resets MovementSystem tracking/jump buffers for the new Player
+- keeps mobile input blocked while startup is incomplete
+- returns to the title with an explicit error message if the Labyrinth does not become ready within the startup timeout
+
+Regression test:
+1. Launch with F5 and wait for the title buttons to enable.
+2. Press NEW GAME.
+3. If a save exists, confirm DELETE SAVE & START.
+4. The `Starting a new nightmare...` state should transition into the opening corridor automatically.
+5. Confirm WASD/mouse or touch movement, Space/JUMP, interaction and flashlight work.
+6. Return to title and start another NEW GAME to verify repeated resets.
+7. Also test NEW GAME after a Forest save; the run must return to the Labyrinth opening scene.
+
+No new production assets are required for this hotfix; `ASSET_BACKLOG.md` remains current from v0.18.4.
 
 ## v0.18.4 — Dynamic Sun + Moon Lighting
 
