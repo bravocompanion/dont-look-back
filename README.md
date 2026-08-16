@@ -1,10 +1,10 @@
-# DON'T LOOK BACK — Godot v0.24
+# DON'T LOOK BACK — Godot v0.24.1
 
 First-person survival horror prototype for Godot 4.x with responsive desktop/mobile controls, 2–4 player LAN co-op, persistent saves, bilingual Indonesian/English UI, dynamic flashlight handling, survival systems, adaptive horror AI, Labyrinth Arc 1 progression, reverse evacuation finale, Forest transition, and dynamic horror audio.
 
-## Current build — v0.24 DYNAMIC HORROR AUDIO
+## Current build — v0.24.1 FLASHLIGHT MONSTER INTERFERENCE
 
-v0.24 adds a runtime `DynamicAudioSystem` without adding a new autoload entry to `project.godot`. It is bootstrapped by the existing `FrontEndSystem` together with the flashlight and language systems.
+v0.24.1 keeps the runtime `DynamicAudioSystem` from v0.24 and changes `battery` audio into a flashlight-versus-monster interference cue.
 
 The system auto-discovers `.wav`, `.ogg`, or `.mp3` audio under common project folders such as `res://assets`, `res://audio`, `res://sounds`, `res://sfx`, and `res://music`.
 
@@ -13,9 +13,9 @@ Recognized keywords:
 - `music` — gameplay background music
 - `hurt` — player hit/damage reaction
 - `monster` — monster proximity/threat layer
-- `battery` — low flashlight battery warning
+- `battery` — flashlight/monster electrical interference
 
-Exact filenames like `assets/music.ogg` are preferred, but names such as `background_music.mp3` or `low_battery.wav` are also accepted.
+Exact filenames like `assets/music.ogg` and `assets/battery.mp3` are preferred, but partial keyword names are also accepted.
 
 ### Dynamic audio behavior
 
@@ -25,11 +25,33 @@ Exact filenames like `assets/music.ogg` are preferred, but names such as `backgr
 - BGM is automatically ducked by up to roughly 5.5 dB during close monster pressure.
 - Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden are included in proximity checks.
 - `hurt` triggers on significant HP loss, avoiding repeated SFX from tiny starvation/bleeding/infection ticks.
-- Low-battery warning begins at the player's current 22% threshold.
-- Low-battery reminders are spaced roughly 9 seconds apart; below 10% they become more urgent at roughly 4.8-second intervals.
+- `battery.mp3` is no longer a low-battery warning. It plays only while the flashlight beam is contacting a visible monster through a clear line of sight.
+- `battery.mp3` volume and pitch rise slightly as continuous monster exposure approaches 3 seconds.
 - All channels use the existing Master bus and therefore follow the Settings MASTER VOLUME slider.
 
-At the time v0.24 code was committed, GitHub `main` did not contain an `assets/` directory. Local audio files will work if they are already inside the Godot project, but they must also be committed if the audio should be present after clone/pull or in builds created from repository-only sources.
+### Flashlight monster interference
+
+When the flashlight is ON, the game tests the actual moved SpotLight beam against active monsters using beam direction, cone angle, current range, and world line-of-sight.
+
+The check does not depend on production monster collision. This is important because current procedural Mourner/Crawler visuals are Node3D-based prototype meshes.
+
+Continuous monster exposure is capped at 3 seconds for battery-cost scaling:
+
+- initial contact — approximately `1.0x` normal flashlight drain
+- 0.75 s — approximately `1.25x`
+- 1.5 s — approximately `1.5x`
+- 2.25 s — approximately `1.75x`
+- 3.0 s and longer — maximum `2.0x`
+
+Current base battery drain is `1.15/s`, so maximum sustained interference drain is approximately `2.30/s`.
+
+The flashlight also flickers while a monster remains inside the beam. Flicker becomes faster/deeper as exposure approaches 3 seconds. A short `0.16 s` contact grace prevents normal procedural flashlight sway from constantly resetting the effect.
+
+Leaving the monster, turning the flashlight off, losing line-of-sight, or running out of battery resets interference and returns drain to `1.0x`.
+
+Low battery still has its existing visual weakness/flicker behavior, but it no longer plays `battery.mp3`.
+
+At the time the audio system was introduced, GitHub `main` did not contain an `assets/` directory. Local audio files work if already inside the Godot project, but they must also be committed if audio should be present after clone/pull or in repository-only builds.
 
 See `ASSET_DELTA_V024.md` for exact audio requirements and testing.
 
@@ -178,29 +200,30 @@ Mobile:
 
 UI and button layout scale from viewport short-side values for phone/tablet/desktop responsiveness.
 
-## Recommended v0.24 test
+## Recommended v0.24.1 test
 
-Audio quick pass:
+Audio + flashlight interference quick pass:
 
-1. Place/confirm `music`, `hurt`, `monster`, and `battery` files under the local project `assets` folder.
-2. Let Godot finish importing them.
-3. NEW GAME: BGM should begin.
-4. Change MASTER VOLUME: BGM/SFX should follow it.
-5. Take a normal monster hit: `hurt` should play once.
-6. Approach an active monster from more than 22 m: proximity audio should fade in and become stronger when close.
-7. Move away: monster layer should fade and stop.
-8. Drain flashlight to 22%: battery warning should play.
-9. Stay below 22% with flashlight on: warning repeats without frame-by-frame spam.
-10. Replace battery: warning cycle resets.
-11. Return to title: gameplay audio stops.
+1. Place/confirm `music`, `hurt`, `monster`, and `battery` files under the local project assets/audio folders and let Godot finish importing them.
+2. NEW GAME: BGM should begin.
+3. Change MASTER VOLUME: BGM/SFX should follow it.
+4. Take a normal monster hit: `hurt` should play once.
+5. Approach an active monster from more than 22 m without aiming the flashlight at it: `monster` proximity should fade in; `battery.mp3` should remain silent.
+6. Drain flashlight below 22% while not aiming at a monster: `battery.mp3` should remain silent.
+7. Aim the flashlight directly at a visible monster: `battery.mp3` should start and the flashlight should flicker.
+8. Hold beam for about 1.5 seconds: total battery drain should be around `1.5x` normal.
+9. Hold beam for 3 seconds or more: drain should cap at `2.0x` and must not continue increasing.
+10. Aim away or put a wall between player and monster: interference audio/flicker should stop and drain should return to `1.0x`.
+11. Repeat against Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden.
+12. Return to title: gameplay audio stops.
 
 Regression pass:
 
 - flashlight remains energy 6.7 at full battery
 - idle/walk/sprint flashlight sway remains functional
+- low-battery visual behavior still functions without `battery.mp3`
 - Indonesian/English switching still persists
 - Labyrinth objective route remains unchanged
-- Forest transition remains available only through normal progression flow
 - desktop and mobile controls remain responsive
 
 ## Current technical priorities
@@ -217,11 +240,11 @@ Before treating the project as a public demo/release candidate, priority stabili
 
 ## Git workflow note
 
-`project.godot` is intentionally not modified by v0.22–v0.24 runtime feature additions. Flashlight, Language, and DynamicAudio systems are bootstrapped through existing runtime/autoload systems to reduce conflict risk with local project settings.
+`project.godot` is intentionally not modified by v0.22–v0.24.1 runtime feature additions. Flashlight, Language, and DynamicAudio systems are bootstrapped through existing runtime/autoload systems to reduce conflict risk with local project settings.
 
 The visible in-menu build badge for current `main` is:
 
-`v0.24 • DYNAMIC HORROR AUDIO`
+`v0.24.1 • FLASHLIGHT MONSTER INTERFERENCE`
 
 When local `project.godot` differs from remote, back it up or stash changes before Pull instead of blindly discarding local settings.
 
