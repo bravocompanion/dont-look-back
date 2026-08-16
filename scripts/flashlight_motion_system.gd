@@ -11,6 +11,9 @@ const FULL_BATTERY_ENERGY: float = 6.7
 @export var sprint_pitch_degrees: float = 2.85
 @export var sprint_yaw_degrees: float = 2.10
 @export var max_look_lag_degrees: float = 4.6
+@export var monster_interference_max_seconds: float = 3.0
+@export var monster_interference_max_drain_multiplier: float = 2.0
+@export var monster_contact_grace_seconds: float = 0.16
 
 var tracked_player_id: int = 0
 var player: CharacterBody3D
@@ -34,6 +37,12 @@ var last_view_yaw: float = 0.0
 var last_view_pitch: float = 0.0
 var view_initialized: bool = false
 
+var monster_interference_active: bool = false
+var monster_exposure_seconds: float = 0.0
+var monster_interference_strength: float = 0.0
+var monster_contact_grace: float = 0.0
+var battery_drain_multiplier: float = 1.0
+
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -50,6 +59,19 @@ func _process(delta: float) -> void:
     _update_look_inertia(delta)
     _update_flashlight_motion(delta)
     _update_flashlight_beam()
+    _update_monster_interference(delta)
+
+func is_monster_interference_active() -> bool:
+    return monster_interference_active
+
+func get_monster_interference_strength() -> float:
+    return monster_interference_strength
+
+func get_battery_drain_multiplier() -> float:
+    return battery_drain_multiplier
+
+func get_monster_exposure_seconds() -> float:
+    return monster_exposure_seconds
 
 func _ensure_player() -> bool:
     var found: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -90,6 +112,7 @@ func _ensure_player() -> bool:
     last_view_yaw = player.rotation.y
     last_view_pitch = camera.rotation.x
     view_initialized = true
+    _reset_monster_interference()
     return true
 
 func _release_player() -> void:
@@ -103,6 +126,7 @@ func _release_player() -> void:
     camera = null
     flashlight = null
     view_initialized = false
+    _reset_monster_interference()
 
 func _update_flashlight_motion(delta: float) -> void:
     if player == null or flashlight == null:
@@ -238,6 +262,166 @@ func _update_flashlight_beam() -> void:
     var sprinting: bool = bool(player.get("is_sprinting")) and horizontal_speed > 0.35
     var angle_bonus: float = 1.35 if sprinting else 0.0
     flashlight.spot_angle = base_spot_angle + angle_bonus
+
+func _update_monster_interference(delta: float) -> void:
+    if player == null or flashlight == null:
+        _reset_monster_interference()
+        return
+
+    var battery: float = float(player.get("flashlight_battery"))
+    var can_interfere: bool = flashlight.visible and battery > 0.0 and not bool(player.get("is_dead"))
+    var touching_monster: bool = can_interfere and _flashlight_hits_any_monster()
+
+    if touching_monster:
+        monster_contact_grace = monster_contact_grace_seconds
+        monster_exposure_seconds = minf(monster_interference_max_seconds, monster_exposure_seconds + delta)
+    elif monster_contact_grace > 0.0 and can_interfere:
+        monster_contact_grace = maxf(0.0, monster_contact_grace - delta)
+    else:
+        _reset_monster_interference()
+        return
+
+    monster_interference_active = true
+    var safe_max_seconds: float = maxf(0.05, monster_interference_max_seconds)
+    monster_interference_strength = clampf(monster_exposure_seconds / safe_max_seconds, 0.0, 1.0)
+    battery_drain_multiplier = lerpf(1.0, maxf(1.0, monster_interference_max_drain_multiplier), monster_interference_strength)
+
+    if touching_monster:
+        var base_drain: float = maxf(0.0, float(player.get("flashlight_drain_per_second")))
+        var extra_drain: float = base_drain * maxf(0.0, battery_drain_multiplier - 1.0) * delta
+        var remaining_battery: float = maxf(0.0, float(player.get("flashlight_battery")) - extra_drain)
+        player.set("flashlight_battery", remaining_battery)
+
+    _apply_monster_interference_flicker()
+
+func _apply_monster_interference_flicker() -> void:
+    if flashlight == null or not flashlight.visible:
+        return
+
+    var strength: float = clampf(monster_interference_strength, 0.0, 1.0)
+    var period_ms: float = lerpf(128.0, 54.0, strength)
+    var phase: float = float(Time.get_ticks_msec()) / period_ms
+    var flicker_floor: float = lerpf(0.70, 0.34, strength)
+    var pulse: float = flicker_floor + (1.0 - flicker_floor) * absf(sin(phase))
+    var effect_weight: float = lerpf(0.28, 0.92, strength)
+    var energy_multiplier: float = lerpf(1.0, pulse, effect_weight)
+    flashlight.light_energy *= energy_multiplier
+
+func _flashlight_hits_any_monster() -> bool:
+    if player == null or flashlight == null:
+        return false
+
+    var origin: Vector3 = flashlight.global_position
+    var forward: Vector3 = -flashlight.global_transform.basis.z.normalized()
+    var max_distance: float = flashlight.spot_range + 0.65
+    var beam_half_angle: float = clampf(flashlight.spot_angle * 0.64, 10.0, 22.0)
+    var minimum_dot: float = cos(deg_to_rad(beam_half_angle))
+
+    for monster: Node3D in _monster_candidates():
+        if monster == null or not is_instance_valid(monster) or not monster.visible:
+            continue
+        var focus: Vector3 = _monster_focus_position(monster)
+        var to_monster: Vector3 = focus - origin
+        var distance: float = to_monster.length()
+        if distance <= 0.05 or distance > max_distance:
+            continue
+        var direction: Vector3 = to_monster / distance
+        if forward.dot(direction) < minimum_dot:
+            continue
+        if _has_clear_beam_line(origin, focus, monster):
+            return true
+    return false
+
+func _monster_candidates() -> Array[Node3D]:
+    var result: Array[Node3D] = []
+    var seen_ids: Dictionary = {}
+    var groups: Array[StringName] = [StringName("arc1_enemy"), StringName("arc1_warden"), StringName("darkness_creature")]
+
+    for group_name: StringName in groups:
+        for candidate: Node in get_tree().get_nodes_in_group(group_name):
+            if not (candidate is Node3D):
+                continue
+            var monster: Node3D = candidate as Node3D
+            var instance_id: int = int(monster.get_instance_id())
+            if seen_ids.has(instance_id):
+                continue
+            seen_ids[instance_id] = true
+            result.append(monster)
+
+    var scene: Node = get_tree().current_scene
+    if scene != null:
+        var tenant: Node3D = scene.get_node_or_null("Monster") as Node3D
+        if tenant != null and is_instance_valid(tenant):
+            var tenant_id: int = int(tenant.get_instance_id())
+            if not seen_ids.has(tenant_id):
+                seen_ids[tenant_id] = true
+                result.append(tenant)
+
+    var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
+    if coop != null:
+        var dark_value: Variant = coop.get("dark_node")
+        if dark_value is Node3D:
+            var shared_darkness: Node3D = dark_value
+            if is_instance_valid(shared_darkness):
+                var dark_id: int = int(shared_darkness.get_instance_id())
+                if not seen_ids.has(dark_id):
+                    result.append(shared_darkness)
+
+    return result
+
+func _monster_focus_position(monster: Node3D) -> Vector3:
+    var height: float = 1.20
+    if monster.is_in_group("arc1_warden"):
+        height = 1.35
+    elif monster.is_in_group("darkness_creature"):
+        height = 1.25
+    elif monster.is_in_group("arc1_enemy"):
+        var enemy_kind: String = str(monster.get("enemy_kind"))
+        height = 0.52 if enemy_kind == "crawler" else 1.30
+    return monster.global_position + Vector3(0.0, height, 0.0)
+
+func _has_clear_beam_line(origin: Vector3, target: Vector3, monster: Node3D) -> bool:
+    if player == null:
+        return true
+    var world: World3D = player.get_world_3d()
+    if world == null:
+        return true
+
+    var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, target)
+    var excludes: Array[RID] = [player.get_rid()]
+    query.exclude = excludes
+    query.collide_with_areas = false
+    query.collide_with_bodies = true
+    var hit: Dictionary = world.direct_space_state.intersect_ray(query)
+    if hit.is_empty():
+        return true
+
+    var collider_value: Variant = hit.get("collider", null)
+    if collider_value is Node and _collider_belongs_to_monster(collider_value as Node, monster):
+        return true
+
+    var hit_position_value: Variant = hit.get("position", null)
+    if not (hit_position_value is Vector3):
+        return false
+    var hit_position: Vector3 = hit_position_value
+    var target_distance: float = origin.distance_to(target)
+    var hit_distance: float = origin.distance_to(hit_position)
+    return hit_distance >= target_distance - 0.40
+
+func _collider_belongs_to_monster(collider: Node, monster: Node3D) -> bool:
+    var current: Node = collider
+    while current != null:
+        if current == monster:
+            return true
+        current = current.get_parent()
+    return false
+
+func _reset_monster_interference() -> void:
+    monster_interference_active = false
+    monster_exposure_seconds = 0.0
+    monster_interference_strength = 0.0
+    monster_contact_grace = 0.0
+    battery_drain_multiplier = 1.0
 
 func _mobile_active() -> bool:
     var mobile: Node = get_node_or_null("/root/MobileControls")
