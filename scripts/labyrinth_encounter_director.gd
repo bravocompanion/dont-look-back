@@ -86,7 +86,10 @@ func _process(delta: float) -> void:
         sync_timer -= delta
         if sync_timer <= 0.0:
             sync_timer = 0.45
-            _receive_director_state.rpc(active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
+            if _network_online():
+                _receive_director_state.rpc(active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
+    else:
+        shared_time += delta
 
     local_flicker_timer = maxf(0.0, local_flicker_timer - delta)
     _apply_local_light_event()
@@ -158,7 +161,8 @@ func _select_enemy_set(stage: int, budget: int) -> void:
     selected.sort()
     if selected != active_enemy_ids:
         active_enemy_ids = selected
-        _receive_director_snapshot.rpc(active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
+        if _network_online():
+            _receive_director_snapshot.rpc(active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
 
 func _next_encounter_interval(stage: int, holdout: bool) -> float:
     if holdout:
@@ -189,7 +193,8 @@ func _trigger_horror_event(stage: int, holdout: bool) -> void:
     var event_type: String = type_pool[rng.randi_range(0, type_pool.size() - 1)]
     var event_position: Vector3 = HORROR_EVENT_POSITIONS[rng.randi_range(0, HORROR_EVENT_POSITIONS.size() - 1)]
     _apply_horror_event(event_type, event_position)
-    _receive_horror_event.rpc(event_type, event_position)
+    if _network_online():
+        _receive_horror_event.rpc(event_type, event_position)
 
 func _apply_horror_event(event_type: String, event_position: Vector3) -> void:
     match event_type:
@@ -326,7 +331,7 @@ func _external_monster_pressure_cost() -> int:
 
     var scene: Node = get_tree().current_scene
     if scene != null:
-        var tenant: Node = scene.get_node_or_null("Monster")
+        var tenant: Node3D = scene.get_node_or_null("Monster") as Node3D
         if tenant != null and bool(tenant.get("active")) and tenant.visible:
             cost += 2
     var dark: Node3D = get_tree().get_first_node_in_group("darkness_creature") as Node3D
@@ -340,6 +345,10 @@ func _report_noise(position: Vector3, strength: float, label: String) -> void:
     var noise: Node = get_node_or_null("/root/AINoiseRelaySystem")
     if noise != null and noise.has_method("report_noise"):
         noise.call("report_noise", position, strength, label)
+
+func _network_online() -> bool:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    return network != null and network.has_method("is_online") and bool(network.call("is_online"))
 
 func _is_authoritative() -> bool:
     var network: Node = get_node_or_null("/root/NetworkManager")
@@ -382,4 +391,5 @@ func _on_peer_connected(peer_id: int) -> void:
 
 func _send_snapshot_to_peer(peer_id: int) -> void:
     await get_tree().process_frame
-    _receive_director_snapshot.rpc_id(peer_id, active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
+    if _network_online():
+        _receive_director_snapshot.rpc_id(peer_id, active_enemy_ids.duplicate(), threat_state, threat_budget, shared_time)
