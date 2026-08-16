@@ -37,9 +37,18 @@ func _process(delta: float) -> void:
         return
 
     var should_be_active: bool = bool(system.call("should_enemy_be_active", enemy_id, activation_stage)) if system.has_method("should_enemy_be_active") else false
+    var director: Node = get_node_or_null("/root/LabyrinthEncounterDirector")
+    if should_be_active and director != null and director.has_method("is_enemy_enabled"):
+        should_be_active = bool(director.call("is_enemy_enabled", enemy_id, activation_stage))
+
     var authoritative: bool = _is_authoritative_simulation()
 
     if authoritative:
+        var became_active: bool = should_be_active and not active
+        if became_active:
+            global_position = home_position
+            remote_target_position = home_position
+            attack_timer = maxf(attack_timer, 0.75)
         active = should_be_active
         visible = active
         if active:
