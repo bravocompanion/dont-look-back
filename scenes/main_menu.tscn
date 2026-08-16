@@ -1,0 +1,244 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://scripts/main_menu.gd" type="Script" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.004, 0.006, 0.009, 1)
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(440, 530)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/MainPanel"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="Title" type="Label" parent="Center/MainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "DON'T LOOK BACK"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Version" type="Label" parent="Center/MainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "v0.18.4.4  •  SURVIVAL HORROR"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="SaveSummary" type="Label" parent="Center/MainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "NO SAVE DATA"
+horizontal_alignment = 1
+autowrap_mode = 2
+mouse_filter = 2
+
+[node name="ContinueButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "CONTINUE"
+
+[node name="NewGameButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "NEW GAME"
+
+[node name="HostButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "HOST CO-OP"
+
+[node name="JoinButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "JOIN CO-OP"
+
+[node name="SettingsButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "SETTINGS"
+
+[node name="QuitButton" type="Button" parent="Center/MainPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "QUIT"
+
+[node name="JoinPanel" type="PanelContainer" parent="Center"]
+visible = false
+custom_minimum_size = Vector2(420, 280)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/JoinPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Center/JoinPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "JOIN CO-OP"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Help" type="Label" parent="Center/JoinPanel/VBox"]
+layout_mode = 2
+text = "Same Wi-Fi/LAN • host port 24877"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Address" type="LineEdit" parent="Center/JoinPanel/VBox"]
+layout_mode = 2
+placeholder_text = "Host IPv4 • 192.168.x.x"
+text = "127.0.0.1"
+
+[node name="ConnectButton" type="Button" parent="Center/JoinPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "CONNECT"
+
+[node name="BackButton" type="Button" parent="Center/JoinPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "BACK"
+
+[node name="SettingsPanel" type="PanelContainer" parent="Center"]
+visible = false
+custom_minimum_size = Vector2(440, 450)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="VolumeLabel" type="Label" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+text = "MASTER VOLUME"
+mouse_filter = 2
+
+[node name="VolumeSlider" type="HSlider" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.85
+
+[node name="SensitivityLabel" type="Label" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+text = "LOOK SENSITIVITY"
+mouse_filter = 2
+
+[node name="SensitivitySlider" type="HSlider" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+min_value = 0.5
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="FpsLabel" type="Label" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+text = "PERFORMANCE / FPS LIMIT"
+mouse_filter = 2
+
+[node name="FpsOption" type="OptionButton" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "BATTERY SAVER • 30 FPS"
+popup/item_0/id = 0
+popup/item_1/text = "BALANCED • 60 FPS"
+popup/item_1/id = 1
+popup/item_2/text = "HIGH • 120 FPS"
+popup/item_2/id = 2
+
+[node name="FullscreenCheck" type="CheckButton" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+text = "FULLSCREEN"
+
+[node name="SettingsValue" type="Label" parent="Center/SettingsPanel/VBox"]
+layout_mode = 2
+text = "Volume 85%  •  Look 1.00x  •  60 FPS"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="BackButton" type="Button" parent="Center/SettingsPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "BACK"
+
+[node name="ConfirmPanel" type="PanelContainer" parent="Center"]
+visible = false
+custom_minimum_size = Vector2(440, 310)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/ConfirmPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/ConfirmPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "START A NEW GAME?"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Text" type="Label" parent="Center/ConfirmPanel/VBox"]
+layout_mode = 2
+text = "The current persistent world save will be deleted.\nJournal discoveries, finite loot state, and world progress will reset."
+horizontal_alignment = 1
+autowrap_mode = 2
+mouse_filter = 2
+
+[node name="ConfirmButton" type="Button" parent="Center/ConfirmPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "DELETE SAVE & START"
+
+[node name="CancelButton" type="Button" parent="Center/ConfirmPanel/VBox"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "CANCEL"
+
+[node name="Status" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -52.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Choose how you want to enter the dark."
+horizontal_alignment = 1
+autowrap_mode = 2
+mouse_filter = 2
