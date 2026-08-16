@@ -4,7 +4,9 @@ const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
 const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
 const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.24.1  •  FLASHLIGHT MONSTER INTERFERENCE"
+const PANIC_TENANT_SYSTEM_SCRIPT: String = "res://scripts/panic_tenant_system.gd"
+const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_network_bridge.gd"
+const VERSION_BADGE_TEXT: String = "v0.24.2  •  PANIC-DRIVEN TENANT"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -104,9 +106,11 @@ func _initialize_gameplay_frontend() -> void:
         Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _ensure_runtime_support_systems() -> void:
+    _ensure_root_system("PanicTenantSystem", PANIC_TENANT_SYSTEM_SCRIPT)
     _ensure_root_system("FlashlightMotionSystem", FLASHLIGHT_MOTION_SYSTEM_SCRIPT)
     _ensure_root_system("LanguageSystem", LANGUAGE_SYSTEM_SCRIPT)
     _ensure_root_system("DynamicAudioSystem", DYNAMIC_AUDIO_SYSTEM_SCRIPT)
+    _ensure_root_system("TenantPanicNetworkBridge", TENANT_PANIC_NETWORK_BRIDGE_SCRIPT)
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
