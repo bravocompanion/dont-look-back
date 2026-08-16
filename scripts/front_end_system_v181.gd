@@ -7,10 +7,12 @@ var new_game_transition_serial: int = 0
 func _ready() -> void:
     super._ready()
     process_mode = Node.PROCESS_MODE_ALWAYS
+    if layer != null:
+        layer.layer = 200
     if title_box != null and title_box.get_child_count() > 1:
         var subtitle: Label = title_box.get_child(1) as Label
         if subtitle != null:
-            subtitle.text = "v0.18.4.2  •  SURVIVAL HORROR"
+            subtitle.text = "v0.18.4.3  •  SURVIVAL HORROR"
     _force_menu_input_ready()
     _force_menu_cursor_visible()
 
@@ -29,12 +31,72 @@ func _process(delta: float) -> void:
 
     if menu_open:
         _force_menu_input_ready()
+    elif layer != null and layer.layer != 100:
+        # Let the map-loading layer (120) sit above normal gameplay UI.
+        layer.layer = 100
+
+func _input(event: InputEvent) -> void:
+    super._input(event)
+    if not menu_open or layer == null:
+        return
+
+    var pointer_position: Vector2 = Vector2.ZERO
+    var pointer_pressed: bool = false
+
+    if event is InputEventMouseButton:
+        var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+        if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+            pointer_position = mouse_event.position
+            pointer_pressed = true
+    elif event is InputEventScreenTouch:
+        var touch_event: InputEventScreenTouch = event as InputEventScreenTouch
+        if touch_event.pressed:
+            pointer_position = touch_event.position
+            pointer_pressed = true
+
+    if not pointer_pressed:
+        return
+
+    # Fallback router: _input runs before GUI picking. If another transparent
+    # Control ever overlaps the front end, directly dispatch the visible button
+    # under the pointer instead of relying exclusively on _gui_input().
+    var target: BaseButton = _find_frontend_button(layer, pointer_position)
+    if target == null or target.disabled:
+        return
+
+    if target is CheckButton:
+        var check: CheckButton = target as CheckButton
+        check.button_pressed = not check.button_pressed
+    target.pressed.emit()
+    get_viewport().set_input_as_handled()
+
+func _find_frontend_button(root: Node, point: Vector2) -> BaseButton:
+    var children: Array[Node] = root.get_children()
+    for index: int in range(children.size() - 1, -1, -1):
+        var child: Node = children[index]
+        if child is CanvasItem:
+            var canvas_item: CanvasItem = child as CanvasItem
+            if not canvas_item.is_visible_in_tree():
+                continue
+        var nested: BaseButton = _find_frontend_button(child, point)
+        if nested != null:
+            return nested
+
+    if root is BaseButton:
+        var button: BaseButton = root as BaseButton
+        if button.is_visible_in_tree() and not button.disabled and button.get_global_rect().has_point(point):
+            return button
+    return null
 
 func _force_menu_cursor_visible() -> void:
     if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func _force_menu_input_ready() -> void:
+    # Keep the front end above every gameplay/loading layer while a menu is open.
+    if layer != null:
+        layer.layer = 200
+
     # Decorative fullscreen controls must not consume pointer/touch input.
     if overlay != null:
         overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -172,6 +234,8 @@ func _finish_new_game_when_ready(transition_serial: int) -> void:
     _set_all_panels_hidden()
     if overlay != null:
         overlay.visible = false
+    if layer != null:
+        layer.layer = 100
     _unlock_local_player_if_safe()
 
     var movement: Node = get_node_or_null("/root/MovementSystem")
