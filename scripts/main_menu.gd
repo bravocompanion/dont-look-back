@@ -3,11 +3,12 @@ extends Node
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const SAVE_PATH: String = "user://dont_look_back_save_v1.json"
 const SETTINGS_PATH: String = "user://dont_look_back_settings.cfg"
-const VERSION_TEXT: String = "v0.18.4.5"
+const VERSION_TEXT: String = "v0.18.4.7"
 
 @onready var menu_root: Control = $MenuLayer/Root
 @onready var main_panel: PanelContainer = $MenuLayer/Root/Center/MainPanel
 @onready var save_summary: Label = $MenuLayer/Root/Center/MainPanel/VBox/SaveSummary
+@onready var version_label: Label = $MenuLayer/Root/Center/MainPanel/VBox/Version
 @onready var continue_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/ContinueButton
 @onready var new_game_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/NewGameButton
 @onready var host_button: Button = $MenuLayer/Root/Center/MainPanel/VBox/HostButton
@@ -33,110 +34,108 @@ const VERSION_TEXT: String = "v0.18.4.5"
 @onready var confirm_button: Button = $MenuLayer/Root/Center/ConfirmPanel/VBox/ConfirmButton
 @onready var cancel_button: Button = $MenuLayer/Root/Center/ConfirmPanel/VBox/CancelButton
 
+var probe_label: Label
+var probe_timer: float = 0.0
+var mouse_was_down: bool = false
+var join_waiting: bool = false
+var join_elapsed: float = 0.0
 var master_volume: float = 0.85
 var look_multiplier: float = 1.0
 var fps_limit: int = 60
 var fullscreen_enabled: bool = false
-var join_waiting: bool = false
-var join_elapsed: float = 0.0
-var mouse_was_down: bool = false
-var last_pointer_dispatch_frame: int = -1
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     get_tree().paused = false
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+    if not _mobile_platform():
+        Input.emulate_touch_from_mouse = false
+    Input.emulate_mouse_from_touch = true
 
-    $MenuLayer/Root/Center/MainPanel/VBox/Version.text = "%s  •  SURVIVAL HORROR" % VERSION_TEXT
-
-    continue_button.pressed.connect(_continue_game)
-    new_game_button.pressed.connect(_new_game_pressed)
-    host_button.pressed.connect(_host_game)
-    join_button.pressed.connect(_show_join)
-    settings_button.pressed.connect(_show_settings)
-    quit_button.pressed.connect(_quit_game)
-
-    join_back_button.pressed.connect(_show_main)
-    join_connect_button.pressed.connect(_connect_join)
-
-    settings_back_button.pressed.connect(_close_settings)
-    volume_slider.value_changed.connect(_on_volume_changed)
-    sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
-    fps_option.item_selected.connect(_on_fps_selected)
-    fullscreen_check.toggled.connect(_on_fullscreen_toggled)
-
-    confirm_button.pressed.connect(_start_new_game)
-    cancel_button.pressed.connect(_show_main)
-
+    version_label.text = "%s  •  INPUT CORE ONLINE" % VERSION_TEXT
+    _build_input_probe()
+    _connect_buttons()
     _load_settings()
     _apply_runtime_settings()
     _sync_settings_controls()
-    _refresh_save_summary()
     _show_main()
 
 func _process(delta: float) -> void:
     if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-    _poll_mouse_fallback()
+    _poll_mouse_click()
+    probe_timer -= delta
+    if probe_timer <= 0.0:
+        probe_timer = 0.10
+        _update_input_probe()
 
-    if not join_waiting:
-        return
-
-    join_elapsed += delta
-    var network: Node = get_node_or_null("/root/NetworkManager")
-    if network == null:
-        join_waiting = false
-        join_connect_button.disabled = false
-        _set_status("NetworkManager tidak tersedia.")
-        return
-
-    var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
-    var connecting: bool = bool(network.get("connecting"))
-    if online:
-        _set_status("Terhubung. Menyamakan map dengan HOST...")
-        if join_elapsed >= 1.5 and get_tree().current_scene == self:
-            join_waiting = false
-            get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
-        return
-
-    if not connecting and join_elapsed > 0.35:
-        join_waiting = false
-        join_connect_button.disabled = false
-        _set_status("Gagal terhubung. Periksa IP HOST dan LAN/Wi-Fi.")
+    if join_waiting:
+        _process_join(delta)
 
 func _input(event: InputEvent) -> void:
-    var point: Vector2 = Vector2.ZERO
-    var pressed: bool = false
-
     if event is InputEventMouseButton:
         var mouse_event: InputEventMouseButton = event as InputEventMouseButton
         if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-            point = mouse_event.position
-            pressed = true
+            if _dispatch_navigation_click(mouse_event.position):
+                get_viewport().set_input_as_handled()
     elif event is InputEventScreenTouch:
         var touch_event: InputEventScreenTouch = event as InputEventScreenTouch
         if touch_event.pressed:
-            point = touch_event.position
-            pressed = true
+            if _dispatch_navigation_click(touch_event.position):
+                get_viewport().set_input_as_handled()
 
-    if not pressed:
+func _unhandled_key_input(event: InputEvent) -> void:
+    if not (event is InputEventKey):
+        return
+    var key_event: InputEventKey = event as InputEventKey
+    if not key_event.pressed or key_event.echo:
         return
 
-    if _dispatch_pointer_to_navigation_button(point):
-        get_viewport().set_input_as_handled()
+    match key_event.physical_keycode:
+        KEY_N:
+            _new_game_pressed()
+        KEY_H:
+            _host_game()
+        KEY_J:
+            _show_join()
+        KEY_S:
+            _show_settings()
+        KEY_ESCAPE:
+            _show_main()
+        KEY_Q:
+            _quit_game()
+        _:
+            return
+    get_viewport().set_input_as_handled()
 
-func _poll_mouse_fallback() -> void:
+func _build_input_probe() -> void:
+    probe_label = Label.new()
+    probe_label.name = "InputProbe"
+    probe_label.position = Vector2(12.0, 10.0)
+    probe_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    probe_label.add_theme_font_size_override("font_size", 12)
+    menu_root.add_child(probe_label)
+    _update_input_probe()
+
+func _update_input_probe() -> void:
+    if probe_label == null:
+        return
+    var point: Vector2 = get_viewport().get_mouse_position()
+    var left_down: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+    probe_label.text = "INPUT PROBE  mouse %d,%d  LMB:%s  |  N=NEW GAME" % [
+        int(round(point.x)),
+        int(round(point.y)),
+        "DOWN" if left_down else "UP"
+    ]
+
+func _poll_mouse_click() -> void:
     var mouse_down: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
     if mouse_down and not mouse_was_down:
-        _dispatch_pointer_to_navigation_button(get_viewport().get_mouse_position())
+        _dispatch_navigation_click(get_viewport().get_mouse_position())
     mouse_was_down = mouse_down
 
-func _dispatch_pointer_to_navigation_button(point: Vector2) -> bool:
-    var frame: int = int(Engine.get_process_frames())
-    if frame == last_pointer_dispatch_frame:
-        return false
-
+func _dispatch_navigation_click(point: Vector2) -> bool:
     var buttons: Array[Button] = [
         continue_button,
         new_game_button,
@@ -150,21 +149,35 @@ func _dispatch_pointer_to_navigation_button(point: Vector2) -> bool:
         confirm_button,
         cancel_button
     ]
-
     for button: Button in buttons:
-        if button == null or not button.is_visible_in_tree() or button.disabled:
+        if button == null or button.disabled or not button.is_visible_in_tree():
             continue
         if button.get_global_rect().has_point(point):
-            last_pointer_dispatch_frame = frame
             button.pressed.emit()
             return true
     return false
+
+func _connect_buttons() -> void:
+    continue_button.pressed.connect(_continue_game)
+    new_game_button.pressed.connect(_new_game_pressed)
+    host_button.pressed.connect(_host_game)
+    join_button.pressed.connect(_show_join)
+    settings_button.pressed.connect(_show_settings)
+    quit_button.pressed.connect(_quit_game)
+    join_connect_button.pressed.connect(_connect_join)
+    join_back_button.pressed.connect(_show_main)
+    settings_back_button.pressed.connect(_close_settings)
+    confirm_button.pressed.connect(_start_new_game)
+    cancel_button.pressed.connect(_show_main)
+    volume_slider.value_changed.connect(_on_volume_changed)
+    sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
+    fps_option.item_selected.connect(_on_fps_selected)
+    fullscreen_check.toggled.connect(_on_fullscreen_toggled)
 
 func _continue_game() -> void:
     if not FileAccess.file_exists(SAVE_PATH):
         _set_status("Belum ada save. Pilih NEW GAME.")
         return
-
     _set_menu_buttons_enabled(false)
     _set_status("Memuat save...")
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -172,7 +185,6 @@ func _continue_game() -> void:
         _set_menu_buttons_enabled(true)
         _set_status("SaveSystem tidak tersedia.")
         return
-
     if not bool(save_system.call("load_game")):
         _set_menu_buttons_enabled(true)
         _set_status("Save tidak dapat dimuat.")
@@ -206,11 +218,11 @@ func _start_new_game() -> void:
         movement.set("coyote_timer", 0.0)
         movement.set("jump_buffer_timer", 0.0)
 
-    var error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
-    if error != OK:
+    var change_error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
+    if change_error != OK:
         _set_menu_buttons_enabled(true)
         _show_main()
-        _set_status("Labyrinth gagal dibuka.")
+        _set_status("Labyrinth gagal dibuka: %s" % error_string(change_error))
 
 func _host_game() -> void:
     _disconnect_network()
@@ -218,28 +230,19 @@ func _host_game() -> void:
     if network == null or not network.has_method("host_game"):
         _set_status("NetworkManager tidak tersedia.")
         return
-
     network.call("host_game")
     if not (network.has_method("is_online") and bool(network.call("is_online"))):
-        _set_status("HOST gagal dibuat. Periksa status network.")
+        _set_status("HOST gagal dibuat.")
         return
-
-    _set_menu_buttons_enabled(false)
     _set_status("HOST aktif. Membuka Labyrinth...")
-    var error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
-    if error != OK:
-        _set_menu_buttons_enabled(true)
-        _set_status("Labyrinth gagal dibuka.")
+    var change_error: Error = get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
+    if change_error != OK:
+        _set_status("Labyrinth gagal dibuka: %s" % error_string(change_error))
 
 func _show_join() -> void:
     _hide_all_panels()
     join_panel.visible = true
     join_connect_button.disabled = false
-    var polish: Node = get_node_or_null("/root/MultiplayerPolishSystem")
-    if polish != null:
-        var saved_address: String = str(polish.get("last_host_address"))
-        if not saved_address.is_empty():
-            join_address.text = saved_address
     _set_status("Masukkan IPv4 HOST pada LAN/Wi-Fi yang sama.")
 
 func _connect_join() -> void:
@@ -247,18 +250,39 @@ func _connect_join() -> void:
     if address.is_empty():
         _set_status("Masukkan IP, contoh 192.168.1.10")
         return
-
     _disconnect_network()
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null or not network.has_method("join_game"):
         _set_status("NetworkManager tidak tersedia.")
         return
-
     join_waiting = true
     join_elapsed = 0.0
     join_connect_button.disabled = true
     network.call("join_game", address)
     _set_status("Menghubungkan ke %s..." % address)
+
+func _process_join(delta: float) -> void:
+    join_elapsed += delta
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    if network == null:
+        join_waiting = false
+        join_connect_button.disabled = false
+        _set_status("NetworkManager tidak tersedia.")
+        return
+
+    var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
+    var connecting: bool = bool(network.get("connecting"))
+    if online:
+        _set_status("Terhubung ke HOST...")
+        if join_elapsed >= 1.0:
+            join_waiting = false
+            get_tree().change_scene_to_file(LABYRINTH_SCENE_PATH)
+        return
+
+    if not connecting and join_elapsed > 0.35:
+        join_waiting = false
+        join_connect_button.disabled = false
+        _set_status("Gagal terhubung. Periksa IP HOST.")
 
 func _show_settings() -> void:
     _hide_all_panels()
@@ -274,8 +298,9 @@ func _close_settings() -> void:
 func _show_main() -> void:
     _hide_all_panels()
     main_panel.visible = true
+    _set_menu_buttons_enabled(true)
     _refresh_save_summary()
-    _set_status("Choose how you want to enter the dark.")
+    _set_status("INPUT CORE ONLINE — click a button or press N for New Game.")
 
 func _hide_all_panels() -> void:
     main_panel.visible = false
@@ -286,10 +311,7 @@ func _hide_all_panels() -> void:
 func _refresh_save_summary() -> void:
     var has_save: bool = FileAccess.file_exists(SAVE_PATH)
     continue_button.disabled = not has_save
-    if has_save:
-        save_summary.text = "CONTINUE AVAILABLE\nPersistent world save detected."
-    else:
-        save_summary.text = "NO SAVE DATA\nA new run will create autosaves at major checkpoints."
+    save_summary.text = "CONTINUE AVAILABLE\nPersistent world save detected." if has_save else "NO SAVE DATA\nA new run will create autosaves at major checkpoints."
 
 func _set_menu_buttons_enabled(enabled: bool) -> void:
     new_game_button.disabled = not enabled
@@ -310,13 +332,13 @@ func _disconnect_network() -> void:
 
 func _load_settings() -> void:
     var config: ConfigFile = ConfigFile.new()
-    var error: Error = config.load(SETTINGS_PATH)
-    if error != OK:
+    var load_error: Error = config.load(SETTINGS_PATH)
+    if load_error != OK:
         return
     master_volume = clampf(float(config.get_value("audio", "master_volume", 0.85)), 0.0, 1.0)
     look_multiplier = clampf(float(config.get_value("controls", "look_multiplier", 1.0)), 0.5, 2.0)
     fps_limit = int(config.get_value("performance", "fps_limit", 60))
-    if fps_limit not in [30, 60, 120]:
+    if fps_limit != 30 and fps_limit != 60 and fps_limit != 120:
         fps_limit = 60
     fullscreen_enabled = bool(config.get_value("display", "fullscreen", false))
 
@@ -333,19 +355,17 @@ func _apply_runtime_settings() -> void:
     AudioServer.set_bus_volume_db(0, volume_db)
     Engine.max_fps = fps_limit
     if not _mobile_platform() and not OS.has_feature("web"):
-        var desired_mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen_enabled else DisplayServer.WINDOW_MODE_WINDOWED
-        if DisplayServer.window_get_mode() != desired_mode:
-            DisplayServer.window_set_mode(desired_mode)
+        DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen_enabled else DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _sync_settings_controls() -> void:
     volume_slider.value = master_volume
     sensitivity_slider.value = look_multiplier
-    var selected: int = 1
     if fps_limit == 30:
-        selected = 0
+        fps_option.select(0)
     elif fps_limit == 120:
-        selected = 2
-    fps_option.select(selected)
+        fps_option.select(2)
+    else:
+        fps_option.select(1)
     fullscreen_check.button_pressed = fullscreen_enabled
     fullscreen_check.visible = not _mobile_platform() and not OS.has_feature("web")
     _update_settings_value()
@@ -360,13 +380,7 @@ func _on_sensitivity_changed(value: float) -> void:
     _update_settings_value()
 
 func _on_fps_selected(index: int) -> void:
-    match index:
-        0:
-            fps_limit = 30
-        2:
-            fps_limit = 120
-        _:
-            fps_limit = 60
+    fps_limit = 30 if index == 0 else 120 if index == 2 else 60
     _apply_runtime_settings()
     _update_settings_value()
 
@@ -377,11 +391,11 @@ func _on_fullscreen_toggled(value: bool) -> void:
 func _update_settings_value() -> void:
     settings_value.text = "Volume %d%%  •  Look %.2fx  •  %d FPS" % [int(round(master_volume * 100.0)), look_multiplier, fps_limit]
 
-func _quit_game() -> void:
-    get_tree().quit()
-
 func _set_status(text: String) -> void:
     status_label.text = text
+
+func _quit_game() -> void:
+    get_tree().quit()
 
 func _mobile_platform() -> bool:
     return OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
