@@ -124,7 +124,8 @@ func _load_audio_assets() -> void:
             monster_player.stream = monster_stream
 
     if battery_stream == null:
-        var found_battery: AudioStream = _find_audio_stream("battery")
+        var battery_aliases: Array[String] = ["baterai", "battery"]
+        var found_battery: AudioStream = _find_audio_stream_aliases(battery_aliases)
         if found_battery != null:
             battery_stream = found_battery
             battery_player.stream = battery_stream
@@ -138,7 +139,14 @@ func _load_audio_assets() -> void:
     loaded_assets = music_stream != null and hurt_stream != null and monster_stream != null and battery_stream != null and tenant_death_stream != null
     if not loaded_assets and not reported_missing_assets:
         reported_missing_assets = true
-        print("DynamicAudioSystem: waiting for music/hurt/monster/battery/tenant death audio under res://assets (wav/ogg/mp3).")
+        print("DynamicAudioSystem: waiting for music/hurt/monster/baterai/tenant death audio under res://assets (wav/ogg/mp3).")
+
+func _find_audio_stream_aliases(keywords: Array[String]) -> AudioStream:
+    for keyword: String in keywords:
+        var stream: AudioStream = _find_audio_stream(keyword)
+        if stream != null:
+            return stream
+    return null
 
 func _find_audio_stream(keyword: String) -> AudioStream:
     var candidates: Array[String] = []
