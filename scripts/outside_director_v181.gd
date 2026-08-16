@@ -106,7 +106,9 @@ func _apply_v184_celestial_lighting() -> void:
     var moon_strength: float = clampf((moon_elevation + 0.05) / 0.70, 0.0, 1.0)
     var daylight: float = _get_daylight_factor()
 
-    var sun_yaw: float = lerpf(-100.0, 100.0, clock_progress)
+    # Full 360-degree daily orbit. -90 and 270 are equivalent, so the
+    # midnight wrap is visually continuous instead of snapping direction.
+    var sun_yaw: float = -90.0 + clock_progress * 360.0
     var sun_altitude: float = 3.0 + maxf(0.0, sun_elevation) * 72.0
     if sun != null and is_instance_valid(sun):
         sun.rotation_degrees = Vector3(-sun_altitude, sun_yaw, 0.0)
@@ -124,8 +126,6 @@ func _apply_v184_celestial_lighting() -> void:
 
     if moon_fill != null and is_instance_valid(moon_fill):
         var moon_yaw: float = sun_yaw + 180.0
-        if moon_yaw > 180.0:
-            moon_yaw -= 360.0
         var moon_altitude: float = 3.0 + maxf(0.0, moon_elevation) * 58.0
         var night_weight: float = clampf(1.0 - daylight, 0.0, 1.0)
         moon_fill.rotation_degrees = Vector3(-moon_altitude, moon_yaw, 0.0)
