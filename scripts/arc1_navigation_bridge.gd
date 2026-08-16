@@ -2,15 +2,16 @@ extends Node
 
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const ENCOUNTER_DIRECTOR_SCRIPT: String = "res://scripts/labyrinth_encounter_director.gd"
+const EXPLORATION_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_exploration_system.gd"
 
 var last_stage: int = -1
 var pending_rebuild_frames: int = 0
 
 func _ready() -> void:
-    call_deferred("_ensure_encounter_director")
+    call_deferred("_ensure_runtime_systems")
 
 func _process(_delta: float) -> void:
-    _ensure_encounter_director()
+    _ensure_runtime_systems()
 
     var scene: Node = get_tree().current_scene
     if scene == null or scene.scene_file_path != LABYRINTH_SCENE_PATH:
@@ -36,6 +37,24 @@ func _process(_delta: float) -> void:
     if pending_rebuild_frames > 0:
         return
 
+    _request_navigation_rebuild()
+
+func _ensure_runtime_systems() -> void:
+    _ensure_root_system("LabyrinthEncounterDirector", ENCOUNTER_DIRECTOR_SCRIPT)
+    _ensure_root_system("LabyrinthExplorationSystem", EXPLORATION_SYSTEM_SCRIPT)
+
+func _ensure_root_system(node_name: String, script_path: String) -> void:
+    if get_node_or_null("/root/%s" % node_name) != null:
+        return
+    var runtime_script: Script = load(script_path) as Script
+    if runtime_script == null:
+        return
+    var runtime_node: Node = Node.new()
+    runtime_node.name = node_name
+    runtime_node.set_script(runtime_script)
+    get_tree().root.add_child(runtime_node)
+
+func _request_navigation_rebuild() -> void:
     var navigation: Node = get_node_or_null("/root/AINavigationSystem")
     if navigation == null:
         return
@@ -46,14 +65,3 @@ func _process(_delta: float) -> void:
     if graph_value is AStar3D:
         var graph: AStar3D = graph_value
         graph.clear()
-
-func _ensure_encounter_director() -> void:
-    if get_node_or_null("/root/LabyrinthEncounterDirector") != null:
-        return
-    var director_script: Script = load(ENCOUNTER_DIRECTOR_SCRIPT) as Script
-    if director_script == null:
-        return
-    var director: Node = Node.new()
-    director.name = "LabyrinthEncounterDirector"
-    director.set_script(director_script)
-    get_tree().root.add_child(director)
