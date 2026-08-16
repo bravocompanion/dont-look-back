@@ -2,19 +2,20 @@ extends "res://scripts/front_end_system.gd"
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.22  •  FLASHLIGHT & LIGHTING FEEL"
+const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
+const VERSION_BADGE_TEXT: String = "v0.23  •  INDONESIAN / ENGLISH LANGUAGE"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
-    _ensure_flashlight_motion_system()
+    _ensure_runtime_support_systems()
     Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
     if not OS.has_feature("mobile") and not OS.has_feature("web_android") and not OS.has_feature("web_ios"):
         Input.emulate_touch_from_mouse = false
     Input.emulate_mouse_from_touch = true
 
 func _process(delta: float) -> void:
-    _ensure_flashlight_motion_system()
+    _ensure_runtime_support_systems()
     var scene: Node = get_tree().current_scene
     if scene == null:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -101,14 +102,18 @@ func _initialize_gameplay_frontend() -> void:
     if not _mobile_active():
         Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
-func _ensure_flashlight_motion_system() -> void:
-    if get_node_or_null("/root/FlashlightMotionSystem") != null:
+func _ensure_runtime_support_systems() -> void:
+    _ensure_root_system("FlashlightMotionSystem", FLASHLIGHT_MOTION_SYSTEM_SCRIPT)
+    _ensure_root_system("LanguageSystem", LANGUAGE_SYSTEM_SCRIPT)
+
+func _ensure_root_system(node_name: String, script_path: String) -> void:
+    if get_node_or_null("/root/%s" % node_name) != null:
         return
-    var runtime_script: Script = load(FLASHLIGHT_MOTION_SYSTEM_SCRIPT) as Script
+    var runtime_script: Script = load(script_path) as Script
     if runtime_script == null:
         return
     var runtime_node: Node = Node.new()
-    runtime_node.name = "FlashlightMotionSystem"
+    runtime_node.name = node_name
     runtime_node.set_script(runtime_script)
     get_tree().root.add_child(runtime_node)
 
