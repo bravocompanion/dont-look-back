@@ -1,6 +1,103 @@
-# DON'T LOOK BACK — Godot v0.19.2
+# DON'T LOOK BACK — Godot v0.19.3
 
-First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror AI, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AI navigation, and dynamic Forest sun/moon lighting.
+First-person survival horror prototype for Godot 4.x with desktop + responsive mobile controls, LAN co-op, host-authoritative horror AI, persistent saves, survival systems, Journal progression, separate Labyrinth/Forest maps, runtime AI navigation, dynamic encounter pacing, and cooperative Labyrinth interactions.
+
+## v0.19.3 — LABYRINTH CO-OP & TEAM TENSION
+
+v0.19.3 makes multiplayer coordination affect the Labyrinth directly while keeping every Arc 1 objective fully completable offline/solo.
+
+### Emergency sync stations
+
+Three optional paired sync stations are now built into Arc 1:
+
+- **M-01 Maintenance SYNC A/B**
+- **F-02 Flooded Service SYNC A/B**
+- **A-03 Archive SYNC A/B**
+
+Online behavior:
+
+- one survivor arms SYNC A or B
+- a different survivor must reach the paired panel within 9 seconds
+- the host validates that each survivor is physically close enough to the correct panel
+- the same online survivor cannot satisfy both sides
+
+Solo behavior:
+
+- the same player may use both panels
+- the solo window is 18 seconds to allow traversal between the separated panels
+- these stations are optional and never block Fuse/Valve/Breaker/Lockdown progression
+
+Successful synchronization provides:
+
+- a **36-second emergency protective light pocket**
+- temporary breathing room from encounter/horror-event rotations
+- one finite team reward: Battery in Maintenance, Water in Flooded Service, Medkit in Archive
+- an autosave of the completed sync milestone
+
+The support light is intentionally stronger than normal dim Labyrinth lamps and acts as a real regroup/safe-light pocket. It expires automatically.
+
+### Team tension
+
+Co-op separation now feeds back into horror pacing.
+
+When active survivors spread roughly 18 meters or more apart, the Labyrinth runtime shortens the next encounter/horror-event timers. Staying coordinated does not remove horror, but splitting the team for too long can make the maze respond faster.
+
+While an emergency sync light is active, encounter/horror timers receive a short respite instead. This creates a simple risk/reward loop:
+
+- split up to reach objectives or loot faster
+- accept higher encounter pressure while separated
+- coordinate a sync station to create a short regroup window
+
+The existing v0.19.1 threat budget still controls which Mourner/Crawler subset is active, so team tension accelerates pacing without forcing every monster active simultaneously.
+
+### Multiplayer authority
+
+The host owns:
+
+- sync-panel validation
+- paired-panel timing window
+- station completion
+- support-light remaining time
+- team reward creation
+- team-separation pressure timing
+
+Clients receive station progress and support-light state through reliable channel 13. Late joiners receive a state snapshot.
+
+Sync station completion is stored inside the existing Arc 1 `completed` dictionary using dedicated `coop_sync_*` keys. Therefore existing v0.19 save persistence handles these milestones without adding another save-format migration. NEW GAME clears them together with the Arc.
+
+### Performance
+
+The co-op pass remains mobile-conscious:
+
+- six small panel props use primitive geometry
+- panel indicator OmniLights remain below protective-light intensity
+- only the three temporary support lights become strong protective lights
+- support lights have shadows disabled
+- no extra navigation mesh or physics simulation is added
+- the system is bootstrapped through the existing Arc1 runtime bridge, so `project.godot` is not modified
+
+### Testing v0.19.3
+
+Solo:
+
+1. Reach Maintenance and find M-01 SYNC A/B.
+2. Activate one panel and reach the paired panel within 18 seconds.
+3. Confirm the support light appears and the Battery reward becomes available.
+4. Confirm missing the window resets the pair without blocking the normal Fuse route.
+5. Repeat in Flooded Service and Archive.
+6. Save after completing a sync station, quit, CONTINUE, and confirm the station remains completed.
+7. Confirm the temporary support light itself is not treated as a permanent save reward.
+
+Co-op:
+
+1. Host + client reach M-01.
+2. Host arms A; client activates B within 9 seconds.
+3. Verify both peers see the same completed panel state and support light.
+4. Verify one player cannot activate both sides while online.
+5. Move the team more than roughly 18 meters apart and observe faster encounter/horror pressure over time.
+6. Regroup inside the emergency support-light pocket and verify a short pacing respite.
+7. Complete a station as client and confirm host validation, autosave, and shared finite reward.
+8. Late join/reconnect after completion and confirm the completed station state is retained.
 
 ## v0.19.2 — LABYRINTH READABILITY & EXPLORATION
 
@@ -49,42 +146,7 @@ The shortcut replaces a small section of an existing zig-zag wall with a locked 
 
 This preserves the first traversal and objective pacing while reducing repetitive backtracking later in the Arc.
 
-Shortcut state is:
-
-- validated by the host in co-op
-- synchronized to clients
-- persisted in the world save
-- reset by NEW GAME
-- followed by an AI-navigation graph rebuild after the collision disappears
-
-### v0.19.1 Encounter Director retained
-
-Arc enemies are controlled by an adaptive threat budget rather than remaining active all at once.
-
-Internal pacing states:
-
-- CALM
-- UNEASY
-- DANGER
-- SEVERE
-- LOCKDOWN
-
-The budget considers Arc stage, The Tenant/Darkness pressure, survivor health/downed state, and time spent in the lower Labyrinth.
-
-Random horror events remain active:
-
-- distant metal slam
-- fake footsteps/noise
-- light flicker
-- brief blackout
-- fake shadow crossing
-
-Timed hazards remain active:
-
-- Maintenance steam burst
-- Flooded Service electrified puddles
-- Flooded Service steam burst
-- Archive steam burst
+Shortcut state is validated by the host in co-op, synchronized to clients, persisted in the world save, reset by NEW GAME, and followed by an AI-navigation graph rebuild after the collision disappears.
 
 ### Arc 1 route
 
@@ -100,57 +162,26 @@ Timed hazards remain active:
 
 The first blind-run target remains roughly **30–45 minutes**, depending on exploration, resource detours, co-op coordination, failed breaker attempts, and enemy pressure. There is no artificial 30-minute timer wall.
 
-## Enemies
+## Retained Labyrinth systems
 
-Arc 1 currently combines:
+v0.19.3 retains:
 
-- **The Tenant** — freezes while watched and moves when unseen
-- **Darkness Creature** — darkness/light pressure
-- **The Mourner x2** — noise-oriented stalkers slowed by protective light
-- **The Crawler x2** — faster low-profile pressure that avoids strongly protected survivors
-
-Mourner/Crawler movement and damage are host-authoritative during multiplayer. The Encounter Director chooses the active subset.
-
-## Lighting
-
-The Labyrinth remains intentionally dark but readable:
-
-- original maze has additional dim maintenance fixtures
-- lower Labyrinth has 19 dim maintenance lights
-- normal ambient lamps remain below the protective-light threshold
-- two stronger safe/checkpoint lamps provide intentional regroup pockets
-- v0.19.2 route colors are emissive navigation geometry, not protective lights
-- breaker faults and horror events can still reduce/flicker maintenance lighting
-
-## Save / Continue
-
-Persistent state now includes:
-
-- player survival/inventory state
-- Arc objective progress
-- Lockdown state/time
-- Arc checkpoints
-- claimed finite pickups
-- **v0.19.2 shortcut unlock state**
-
-`NEW GAME` clears Arc and exploration shortcut progress.
-
-## Multiplayer
-
-LAN/IP multiplayer retains:
-
-- 2–4 survivors
-- Host/Join + Ready/Start
-- host-authoritative monsters and Arc objectives
-- shared pickups
-- shared checkpoints
-- downed/crawl/revive
-- teammate HUD and ping
-- reconnect foundation
-- synchronized Arc encounter pacing
-- synchronized shortcut state
-
-Shortcut interaction from a client is sent to the host. The host validates that the survivor has actually reached the correct side before unlocking it.
+- The Tenant freeze-when-watched rule
+- Darkness Creature light retreat
+- two Mourner + two Crawler Arc enemy instances
+- adaptive Encounter Director
+- fake footsteps, metal slam, shadow, flicker, and blackout horror events
+- steam hazards and electrified puddles
+- 19+ lower-Labyrinth dim lights plus older-maze maintenance lights
+- M/F/A/L sector readability language
+- M-07 / F-09 / A-12 optional exploration bays
+- two one-way service shortcuts
+- persistent finite loot
+- Journal mission tracking and secret notes
+- Fuse → Valve → Breaker → Lockdown objective chain
+- 2-minute final stabilization holdout
+- separate Forest map transition
+- host-authoritative multiplayer, downed/revive/crawl, and shared checkpoints
 
 ## Controls
 
@@ -160,7 +191,7 @@ Desktop:
 - Mouse — look
 - Shift — sprint
 - Space — jump
-- E — interact / objective / shortcut / revive
+- E — interact / objective / shortcut / SYNC panel / revive
 - F — flashlight
 - B or 4 — battery
 - 1 — food
@@ -177,7 +208,7 @@ Mobile:
 - right swipe — look
 - RUN
 - JUMP
-- USE — interaction/objective/shortcut/revive
+- USE — interaction / objective / shortcut / SYNC panel / revive
 - LIGHT
 - BATT
 - FOOD
@@ -186,42 +217,17 @@ Mobile:
 - JOURNAL
 - MENU
 
-## Testing v0.19.2
-
-Recommended solo regression route:
-
-1. Run with Godot embedded-game mode disabled if the editor Game View still fails to forward input on the development PC.
-2. NEW GAME and reach Lower Labyrinth.
-3. Verify the entrance legend and M/F/A/L sector signage are visible but do not illuminate the corridor like a safe light.
-4. Follow yellow Maintenance markers and enter M-07 Storage; collect one cache item.
-5. Reach the far side of the Maintenance shortcut. From the early side it must say locked from the other side; from the deep side E/USE should open it.
-6. Return through the opened shortcut and confirm movement + AI navigation do not collide with an invisible door.
-7. Repeat with the Flooded Service shortcut.
-8. Find F-09 and A-12 optional cache areas.
-9. Read both optional Journal entries.
-10. Save after unlocking a shortcut, quit, CONTINUE, and confirm the shortcut remains open and collected cache items do not respawn.
-11. Confirm the normal Fuse → Valve → Breaker → Lockdown route still works.
-
-Recommended co-op checks:
-
-1. Host + client reach Maintenance.
-2. Client attempts the shortcut from the wrong side; it must remain locked.
-3. Client reaches the deeper side and unlocks it; host and client should both see the door disappear.
-4. Reconnect a client and confirm shortcut state is restored from host.
-5. Verify optional supply pickup is still claimed only once for the shared world.
-6. Confirm Encounter Director enemy activation remains synchronized while using shortcut routes.
-
 ## Current limitations
 
 - Runtime F5 validation must still be performed on the development machine; the assistant environment does not contain the Godot executable.
-- Sector signage, colored conduit, optional bays, shortcut doors, and cache dressing are prototype procedural/primitive art.
-- World-space signs may require final placement/orientation tuning after visual testing with production wall assets.
+- Sync panels and emergency-light fixtures are prototype primitive art.
+- Final co-op panel audio, panel animations, cables, warning decals, and support-light fixtures are not yet production assets.
+- World-space signage and panel placement may need small tuning after production wall/prop assets replace procedural geometry.
 - AI navigation remains a runtime AStar waypoint graph rather than a baked NavigationMesh.
 - Internet matchmaking/NAT traversal is not implemented; multiplayer remains LAN/IP based.
-- Production models, animation, spatial audio, environment modules, VFX, and final UI art are still required.
 
 ## Git workflow note
 
-`project.godot` is intentionally **not modified for v0.19.2**. `Arc1NavigationBridge`, already autoloaded from v0.19, now creates both `LabyrinthEncounterDirector` and `LabyrinthExplorationSystem` at runtime. This reduces the chance of another local `project.godot` Pull conflict.
+`project.godot` is intentionally **not modified for v0.19.3**. `Arc1NavigationBridge`, already autoloaded from v0.19, creates the Encounter Director, Exploration System, and new Labyrinth Co-op System at runtime. This reduces the chance of another local `project.godot` Pull conflict.
 
-See `ASSET_BACKLOG.md` for the current production-asset requirements.
+See `ASSET_BACKLOG.md` for current production-asset requirements.
