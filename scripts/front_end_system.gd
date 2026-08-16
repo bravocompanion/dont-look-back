@@ -580,37 +580,44 @@ func _build_ui() -> void:
     overlay = ColorRect.new()
     overlay.name = "FrontEndOverlay"
     overlay.color = Color(0.004, 0.006, 0.009, 0.965)
-    overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    # Visual background only. It must never steal pointer/touch events from
+    # the actual menu controls layered above it.
+    overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(overlay)
     overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
     status_label = Label.new()
     status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     status_label.add_theme_font_size_override("font_size", 14)
     layer.add_child(status_label)
 
     title_panel = _make_panel()
     layer.add_child(title_panel)
     title_box = VBoxContainer.new()
+    title_box.mouse_filter = Control.MOUSE_FILTER_PASS
     title_box.add_theme_constant_override("separation", 9)
     title_panel.add_child(title_box)
 
     var title: Label = Label.new()
     title.text = "DON'T LOOK BACK"
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     title.add_theme_font_size_override("font_size", 38)
     title_box.add_child(title)
 
     var subtitle: Label = Label.new()
     subtitle.text = "%s  •  SURVIVAL HORROR" % VERSION_TEXT
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
     subtitle.add_theme_font_size_override("font_size", 14)
     title_box.add_child(subtitle)
 
     save_summary_label = Label.new()
     save_summary_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     save_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    save_summary_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     save_summary_label.add_theme_font_size_override("font_size", 14)
     title_box.add_child(save_summary_label)
 
@@ -630,12 +637,14 @@ func _build_ui() -> void:
     pause_panel = _make_panel()
     layer.add_child(pause_panel)
     pause_box = VBoxContainer.new()
+    pause_box.mouse_filter = Control.MOUSE_FILTER_PASS
     pause_box.add_theme_constant_override("separation", 10)
     pause_panel.add_child(pause_box)
 
     var pause_title: Label = Label.new()
     pause_title.text = "MENU"
     pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    pause_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     pause_title.add_theme_font_size_override("font_size", 30)
     pause_box.add_child(pause_title)
     pause_box.add_child(_menu_button("RESUME", _resume_game))
@@ -649,16 +658,19 @@ func _build_ui() -> void:
     join_panel = _make_panel()
     layer.add_child(join_panel)
     var join_box: VBoxContainer = VBoxContainer.new()
+    join_box.mouse_filter = Control.MOUSE_FILTER_PASS
     join_box.add_theme_constant_override("separation", 10)
     join_panel.add_child(join_box)
     var join_title: Label = Label.new()
     join_title.text = "JOIN CO-OP"
     join_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    join_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     join_title.add_theme_font_size_override("font_size", 28)
     join_box.add_child(join_title)
     var join_help: Label = Label.new()
     join_help.text = "Same Wi-Fi/LAN • host port 24877"
     join_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    join_help.mouse_filter = Control.MOUSE_FILTER_IGNORE
     join_box.add_child(join_help)
     join_address = LineEdit.new()
     join_address.placeholder_text = "Host IPv4 • 192.168.x.x"
@@ -671,16 +683,19 @@ func _build_ui() -> void:
     settings_panel = _make_panel()
     layer.add_child(settings_panel)
     var settings_box: VBoxContainer = VBoxContainer.new()
+    settings_box.mouse_filter = Control.MOUSE_FILTER_PASS
     settings_box.add_theme_constant_override("separation", 8)
     settings_panel.add_child(settings_box)
     var settings_title: Label = Label.new()
     settings_title.text = "SETTINGS"
     settings_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    settings_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     settings_title.add_theme_font_size_override("font_size", 28)
     settings_box.add_child(settings_title)
 
     var volume_label: Label = Label.new()
     volume_label.text = "MASTER VOLUME"
+    volume_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     settings_box.add_child(volume_label)
     volume_slider = HSlider.new()
     volume_slider.min_value = 0.0
@@ -691,6 +706,7 @@ func _build_ui() -> void:
 
     var sensitivity_label: Label = Label.new()
     sensitivity_label.text = "LOOK SENSITIVITY"
+    sensitivity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     settings_box.add_child(sensitivity_label)
     sensitivity_slider = HSlider.new()
     sensitivity_slider.min_value = 0.5
@@ -701,6 +717,7 @@ func _build_ui() -> void:
 
     var fps_label: Label = Label.new()
     fps_label.text = "PERFORMANCE / FPS LIMIT"
+    fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     settings_box.add_child(fps_label)
     fps_option = OptionButton.new()
     fps_option.add_item("BATTERY SAVER • 30 FPS")
@@ -717,23 +734,27 @@ func _build_ui() -> void:
 
     settings_value_label = Label.new()
     settings_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    settings_value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     settings_box.add_child(settings_value_label)
     settings_box.add_child(_menu_button("BACK", _close_settings))
 
     confirm_panel = _make_panel()
     layer.add_child(confirm_panel)
     var confirm_box: VBoxContainer = VBoxContainer.new()
+    confirm_box.mouse_filter = Control.MOUSE_FILTER_PASS
     confirm_box.add_theme_constant_override("separation", 12)
     confirm_panel.add_child(confirm_box)
     var confirm_title: Label = Label.new()
     confirm_title.text = "START A NEW GAME?"
     confirm_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    confirm_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     confirm_title.add_theme_font_size_override("font_size", 26)
     confirm_box.add_child(confirm_title)
     var confirm_text: Label = Label.new()
     confirm_text.text = "The current persistent world save will be deleted.\nJournal discoveries, finite loot state, and world progress will reset."
     confirm_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     confirm_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    confirm_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
     confirm_box.add_child(confirm_text)
     confirm_box.add_child(_menu_button("DELETE SAVE & START", _start_new_game_confirmed))
     confirm_box.add_child(_menu_button("CANCEL", _cancel_confirmation))
@@ -754,6 +775,7 @@ func _make_panel() -> PanelContainer:
     panel.anchor_top = 0.5
     panel.anchor_right = 0.5
     panel.anchor_bottom = 0.5
+    panel.mouse_filter = Control.MOUSE_FILTER_PASS
     var style: StyleBoxFlat = StyleBoxFlat.new()
     style.bg_color = Color(0.035, 0.041, 0.048, 0.98)
     style.border_color = Color(0.42, 0.46, 0.48, 0.32)
@@ -777,6 +799,7 @@ func _menu_button(text: String, callback: Callable) -> Button:
     button.text = text
     button.custom_minimum_size = Vector2(260.0, 44.0)
     button.focus_mode = Control.FOCUS_NONE
+    button.mouse_filter = Control.MOUSE_FILTER_STOP
     button.pressed.connect(callback)
     return button
 
