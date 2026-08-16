@@ -9,7 +9,7 @@ func _ready() -> void:
     if title_box != null and title_box.get_child_count() > 1:
         var subtitle: Label = title_box.get_child(1) as Label
         if subtitle != null:
-            subtitle.text = "v0.18.3  •  SURVIVAL HORROR"
+            subtitle.text = "v0.18.4  •  SURVIVAL HORROR"
     _force_menu_cursor_visible()
 
 func _process(delta: float) -> void:
