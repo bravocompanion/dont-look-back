@@ -1,24 +1,8 @@
 extends "res://scripts/mobile_controls.gd"
 
-const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
-
 var jump_button: Button
-var menu_forced_block: bool = false
 
 func _process(delta: float) -> void:
-    var scene: Node = get_tree().current_scene
-    var on_main_menu: bool = scene != null and scene.scene_file_path == MAIN_MENU_SCENE_PATH
-    if on_main_menu:
-        if not menu_forced_block:
-            menu_forced_block = true
-            set_external_blocked(true)
-        if root != null:
-            root.visible = false
-        return
-
-    if menu_forced_block:
-        menu_forced_block = false
-        set_external_blocked(false)
     super._process(delta)
 
 func _build_ui() -> void:
@@ -44,9 +28,9 @@ func _layout_ui(viewport_size: Vector2) -> void:
 func _update_action_visibility() -> void:
     super._update_action_visibility()
     if jump_button != null:
-        jump_button.visible = mobile_active and not dead_mode and not external_blocked
+        jump_button.visible = mobile_active and not dead_mode and not external_blocked and not scene_blocked
 
 func _is_over_action_button(point: Vector2) -> bool:
-    if jump_button != null and jump_button.visible and jump_button.get_global_rect().has_point(point):
+    if jump_button != null and jump_button.is_visible_in_tree() and jump_button.get_global_rect().has_point(point):
         return true
     return super._is_over_action_button(point)
