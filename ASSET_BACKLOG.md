@@ -1,537 +1,298 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.21 — LABYRINTH EVACUATION & LIVING MAZE**.
+Updated for **v0.24 — DYNAMIC HORROR AUDIO**.
 
-The prototype is still code/procedural-first. v0.21 adds the reverse evacuation finale, two emergency override stations, a dedicated Evacuation Warden, ten reverse-route emergency strobes, temporary structural shutters and a new extraction point near the M-01 entrance.
+The project is still code/procedural-first. Gameplay systems are ahead of final art/audio production, so the highest-value work now is replacing prototype presentation while keeping mobile/desktop performance targets.
 
-## P0 — New needs from v0.21
+## P0 — v0.24 audio integration
 
-### Evacuation override kit
+### Required existing audio files
 
-Need production art for the two mandatory reverse-route controls:
+The new runtime audio system expects these four keyword assets inside the Godot project, preferably under `res://assets/`:
 
-- A-03 Emergency Override
-- F-02 Extraction Override
-- industrial wall-mount body
-- heavy manual switch / breaker handle
-- emergency-red waiting state
-- restored green state
-- cable/conduit connections
-- sector-specific wear / labels
+- `music` — background music
+- `hurt` — player hit reaction
+- `monster` — proximity threat cue/layer
+- `battery` — low flashlight battery warning
+
+Accepted runtime resolver formats:
+
+- `.ogg`
+- `.wav`
+- `.mp3`
+
+Recommended naming:
+
+- `assets/music.ogg`
+- `assets/hurt.wav`
+- `assets/monster.ogg`
+- `assets/battery.wav`
+
+Partial names such as `background_music`, `player_hurt`, `monster_near`, and `low_battery` are also recognized.
+
+### Repository requirement
+
+At implementation time GitHub `main` did not contain an `assets/` directory. If these files currently exist only on the development PC, they need to be committed so clones, collaborators, and repository-based Android/desktop builds include them.
+
+### Audio production recommendations
+
+Music:
+
+- seamless or near-seamless horror ambience loop
+- avoid constant loud melody
+- leave headroom for monster cue and environmental SFX
+- `.ogg` preferred for longer files
+
+Hurt:
+
+- short player vocal/body impact
+- ideally 3–5 variants later
+- no long reverb tail that masks nearby horror audio
+
+Monster proximity:
+
+- designed to tolerate repeated playback while danger remains close
+- dark pulse/drone/breath/heartbeat style works better than a single loud jumpscare hit
+- should remain readable on phone speakers
+
+Battery:
+
+- short electrical chirp/click/weak-beep warning
+- must remain recognizable at low phone volume
+- avoid a long alarm because warning can repeat at low battery
+
+## P0 — Flashlight / lighting production
+
+First-person flashlight:
+
+- production flashlight model
+- first-person hand/forearm rig
+- world/remote-player version
+- switch animation
+- battery replacement animation
+- idle breathing pose
+- walk movement
+- sprint movement
+- jump/landing response
+- optional flashlight beam cookie/dust
+
+Lighting fixtures:
+
+- dirty fluorescent fixture
+- caged industrial lamp
+- dim/off/flicker/fault states
+- genuine protective safe-light visual language
+- evacuation red/orange fixture
+- low-overdraw emissive LODs
+
+Audio still needed beyond v0.24 four-file integration:
+
+- flashlight switch on/off
+- battery insert/remove
+- electrical buzz/flicker
+- bulb relay clicks
+- failing fluorescent hum
+
+## P0 — The Warden
+
+Production model:
+
+- broad/heavy industrial humanoid silhouette
+- distinct from Tenant/Mourner/Crawler/Darkness
+- readable chest/core feature
+- mobile LOD
 - simple collision proxy
 
 Animations:
 
-- cover/open action optional
-- handle pull / breaker throw
-- relay lock-in
-- successful circuit restore
-
-Audio:
-
-- heavy switch pull
-- relay clack
-- electrical reconnect surge
-- short success confirmation
-- loud environmental power thump used as AI-noise language
-
-Gameplay readability:
-
-- override must be recognizable from 4–6 meters
-- must not visually resemble a normal Archive breaker
-- green restored state must not look like a permanent safe light
-- mobile version needs readable state at low screen brightness
-
-### Evacuation emergency-light kit
-
-Need final replacement for the ten procedural reverse-route strobes:
-
-- red/orange industrial strobe fixture
-- ceiling version
-- wall version
-- arrow/chevron version
-- damaged/flickering variant
-- EXIT / EVAC / M-01 directional signage
-- low-cost emissive-only LOD variant
-
-Required states:
-
-- OFF
-- evacuation pulse
-- unstable rapid pulse
-- critical-state pulse
-
-Important gameplay rule:
-
-- evacuation strobes are **not protective lights**
-- final M-01 extraction beacon must be visually much stronger and clearly safe/usable
-- most strobe lights should keep realtime shadows disabled
-
-Audio:
-
-- evacuation pulse hum
-- intermittent electrical buzz
-- relay ticking
-- distant alarm layer
-- critical-state faster alarm layer
-
-### M-01 extraction beacon
-
-Need a final extraction fixture near the lower-Labyrinth entrance:
-
-- strong industrial emergency beacon
-- green/white extraction lens
-- wall or ceiling route marker
-- extraction floor marking
-- EXIT / SURFACE / EVAC text treatment
-- powered/armed state
-
-Audio:
-
-- extraction armed confirmation
-- stable powered beacon hum
-- final transition sting into Forest
-
-### Evacuation shutter / route-collapse kit
-
-Temporary v0.21 shutters need production replacements:
-
-- fast emergency blast shutter
-- damaged rolling gate variant
-- segmented industrial bulkhead
-- track/frame modules
-- warning light strip
-- floor stop / guide rail
-
-Animation:
-
-- rapid close
-- impact/clunk
-- vibration/hold
-- automatic reopen after several seconds
-
-Audio:
-
-- motor wind-up
-- metal slam
-- stressed metal vibration
-- reopen motor
-- final stop clunk
-
-VFX:
-
-- dust kick on close
-- small debris
-- optional sparks
-
-Gameplay constraint:
-
-- shutters must communicate that they are temporary
-- geometry must never look like a permanent dead end
-- mobile collision should remain one simple proxy
-
-### Evacuation Warden presentation
-
-The v0.21 dedicated evacuation instance uses the same Warden creature but needs a stronger escape-state presentation rather than a second model.
-
-Additional animation needs:
-
-- evacuation re-entry / wake pose
-- faster pursuit locomotion
-- critical-state pursuit variant
-- aggressive corner turn
-- heavy corridor stop/listen
-- extraction-denial attack optional
-
-Additional audio:
-
-- evacuation spawn/re-entry sting
-- heavy pursuit loop
-- increasing footstep cadence
-- distant core pulse
-- critical-state roar / mechanical strain
-- near-extraction pressure cue
-
-VFX:
-
-- stronger chest/core pulse
-- subtle red reflection response under evacuation lights
-- short appearance distortion
-- critical-state core intensity variant
-
-### Reverse-route ambience
-
-Need layered finale audio that changes as the player moves backward through the Arc:
-
-- Lockdown evacuation siren
-- Archive alarm bed
-- Flooded Service pressure alarms
-- Maintenance emergency relay hum
-- distant structural impacts
-- intermittent shutter movement
-- electrical failure pops
-- Warden heavy footsteps that can travel between sectors
-
-Critical-state layer:
-
-- faster alarm rhythm
-- heavier building groans
-- stronger electrical instability
-- reduced quiet gaps
-
-Avoid a constant loud action-game mix. There should still be brief gaps where the Warden is heard more clearly than the alarm.
-
-## P0 — Retained v0.20 assets
-
-### The Warden
-
-Model direction:
-
-- broad-shouldered industrial/humanoid horror silhouette
-- heavier upper body than The Mourner
-- narrow/masked head shape
-- readable chest/core feature
-- mobile LODs
-- simple collision proxy
-
-Core animations:
-
-- heavy idle
-- deliberate pursuit walk
+- idle/listen
+- heavy patrol
+- pursuit
 - isolated-target acceleration
 - safe-light hesitation
-- turn left/right
-- search/listen
-- heavy attack
-- attack recovery
-- Lockdown aggressive variant
-
-Core audio:
-
-- heavy footsteps
-- body/mechanical creaks
-- chest/core pulse
-- close breathing/growl
-- attack impact
-- safe-light discomfort cue
-
-### Isolation Node kit
-
-Need three themed production nodes:
-
-- M-01 Maintenance Isolation Node
-- F-02 Flooded Isolation Node
-- A-03 Archive Isolation Node
-
-Shared states:
-
-- sealed/no power
-- active
-- shutdown
-- fault surge
-
-Need:
-
-- industrial housings
-- switches / handles
-- cables
-- sector labels
-- electrical fault VFX
-- shutdown animation
-- shutdown SFX
-
-### Lockdown interlock
-
-Need final physical cover around the Lockdown Console:
-
-- heavy isolation cover
-- locking bars
-- status indicator
-- 0/3 → 3/3 state language
-- unlock/retract animation
-- heavy mechanical unlock audio
-
-### Isolation route shutters
-
-Retain:
-
-- temporary industrial shutters
-- fault warning light
-- close/open animation
-- short metal slam SFX
-- dust/sparks optional
-
-### Major guidance-light kit
-
-Need production replacement for v0.20 floor/wall guide strips:
-
-- low-energy amber route strip
-- emergency red Lockdown strip
-- damaged strip variants
-- modular straight/corner pieces
-- low-cost emissive material
-
-These lights are navigation aids, not safe lights.
-
-## P0 — Retained v0.19.3 co-op assets
-
-### SYNC panel kit
-
-- industrial SYNC A/B panel body
-- Maintenance/Flooded/Archive variants
-- no-power state
-- armed state
-- timeout state
-- paired-success state
-- physical switch/button
-- relay animation
+- attack/recovery
+- evacuation faster pursuit
+- aggressive turn/corner response
 
 Audio:
 
-- button clack
-- relay click
-- armed pulse
-- timeout buzz
-- paired success tone
+- heavy footsteps
+- body/mechanical creak
+- breathing/growl
+- chest/core pulse
+- attack impact
+- safe-light discomfort
+- evacuation re-entry cue
 
-### Temporary team safe-light
+## P0 — Isolation / Lockdown / Evacuation kit
 
-- strong emergency fixture
-- startup flicker
-- powered state
-- shutdown state
-- clear protective-light visual language
+Isolation Nodes:
 
-### Team-tension audio
+- Maintenance/Flooded/Archive variants
+- sealed/active/shutdown/fault states
+- industrial housing
+- lever/rotary handle
+- breaker/core bank
+- conduit + warning labels
+- shutdown animation/audio
 
-- subtle radio/static increase when survivors separate
-- teammate interference
-- distant activity escalation
-- regroup relief cue
+Lockdown interlock:
 
-## P0 — Retained v0.19.2 exploration assets
+- physical cover larger than final console
+- 0/3 → 3/3 state display
+- mechanical lock bars
+- release animation
+- mechanical release SFX
 
-### Sector navigation kit
+Temporary shutters:
+
+- industrial drop/sliding shutter
+- rails/frame
+- actuator
+- simple collision proxy
+- close/open animation
+- slam/motor/rattle/open SFX
+- optional low-cost dust/sparks
+
+Evacuation Override A/F:
+
+- distinct wall-mount control body
+- heavy switch/handle
+- waiting/red state
+- restored/green state
+- sector labels
+- reconnect surge + relay audio
+
+M-01 extraction beacon:
+
+- strong green/white emergency fixture
+- extraction floor marking
+- EXIT/SURFACE/EVAC signage
+- armed state
+- stable powered hum
+- transition sting into Forest
+
+## P0 — Labyrinth environment/readability
+
+Sector kit:
 
 - M-01 Maintenance signage
 - F-02 Flooded Service signage
 - A-03 Archive signage
 - L-04 Lockdown signage
-- M-07 / F-09 / A-12 room plates
+- M-07/F-09/A-12 optional room plates
 - directional arrows
-- worn stencils
-- warning decals
-- route legend
+- worn stencils/decals
 
-Color language:
+Conduit navigation:
 
-- Maintenance — dirty yellow
-- Flooded — desaturated blue
-- Archive — industrial green
-- Lockdown — emergency red
-
-### Conduit / pipe navigation kit
-
-- straight pipe/conduit modules
-- vertical modules
-- elbows
-- T-junctions
-- brackets
-- cable trays
+- straight/elbow/T modules
+- cable trays/brackets
 - damaged variants
-- yellow/blue/green/red painted variants
+- yellow/blue/green/red route variants
 
-### Service shortcut doors
+Environment modules:
 
-- industrial service hatch
-- latch/handle
-- locked-from-other-side state
-- open state
-- latch release animation
-- metal scrape/clunk audio
+- concrete/plaster/tile wall/floor/ceiling textures
+- normal + roughness maps
+- pipes
+- utility doors
+- fuse/valve/breaker props
+- archive shelves/boxes
+- wet concrete/shallow water materials
+- drainage grates
+- debris/clutter
 
-### Optional room dressing
+Service shortcut doors:
 
-M-07 Storage:
+- hatch/industrial service door
+- latch
+- locked/open state
+- latch release + scrape/clunk audio
 
-- tool cases
-- shelves
-- battery crate
-- medical box
-- maintenance bins
+## P0 — Core monsters
 
-F-09 Pump Annex:
+The Tenant:
 
-- compact pumps
-- pipe manifolds
-- drainage props
-- water storage
+- final rigged humanoid horror model
+- freeze/unseen movement/chase/search/attack
+- turn animation support
+- distortion/shadow treatment
+- movement/breath/proximity/attack SFX
 
-A-12 Records Annex:
+Darkness Creature:
 
-- archive boxes
-- document shelves
-- folders/papers
-- damaged cabinet
-- med storage
+- unique silhouette
+- crawl/search/attack
+- light recoil/retreat
+- dissolve/disappear
+- darkness forming/retreat SFX
 
-## P0 — Retained v0.19.1 hazard / event assets
+The Mourner:
+
+- tall narrow production model
+- mobile LOD
+- listen/stalk/investigate/light-slow/attack
+- dragging footsteps/breathing/attack audio
+
+The Crawler:
+
+- low distorted rig
+- crawl/fast pursuit/light hesitation/search/lunge
+- crawl/contact/lunge audio
+
+## P0 — Survivor/co-op presentation
+
+One production survivor base with 3–4 visual variants.
+
+Need:
+
+- rigged survivor
+- outfit/material variants
+- first-person arms
+- world flashlight attachment
+- backpack/utility points
+- idle/walk/run/strafe
+- jump/fall/landing
+- hit reaction
+- downed idle/crawl
+- revive teammate/being revived
+- death/team-wipe pose
+
+Co-op UI/audio:
+
+- Ready/Host/Ping icons
+- teammate/downed/revive indicators
+- reconnect icon
+- SYNC panel state icons
+- subtle team-separation/static cue
+- regroup relief cue
+
+## P0 — Hazards and horror-event assets
 
 Steam:
 
-- damaged steam outlet
-- pressure-pipe fixture
-- low-overdraw steam VFX
-- buildup cue
-- burst hiss
+- damaged vent/pipe fixture
+- mobile-safe steam VFX
+- buildup cue + burst hiss
 
 Electrical:
 
 - electrified puddle material
 - exposed cable/junction box
-- electrical arcs/sparks
-- floor-current pulse
+- arc/spark VFX
 - buzz/discharge audio
 
-Random horror events:
+Horror event audio/visuals:
 
-- 4–6 distant metal-slam variants
-- fake concrete/metal footsteps
-- fluorescent flicker audio
-- blackout power-down/recovery
+- 4–6 metal slam variants
+- fake footsteps by surface
+- fluorescent flicker
+- blackout down/recovery
 - fake shadow silhouette
-- movement scrape/cloth cue
+- scrape/cloth/movement cues
 
-## P0 — Core monster assets
-
-### The Tenant
-
-- final rigged humanoid horror model
-- freeze pose / transition
-- unseen walk
-- chase
-- investigate/search
-- turn support
-- attack
-- shadow distortion
-
-### Darkness Creature
-
-- unique non-Tenant silhouette
-- crawl/search
-- attack
-- light recoil
-- retreat
-- dissolve/disappear
-
-### The Mourner
-
-- tall narrow rigged monster
-- mobile LOD
-- idle/listen
-- stalk
-- investigate
-- light-slow reaction
-- turn
-- attack
-- dragging footsteps / breathing / attack audio
-
-### The Crawler
-
-- low distorted crawler rig
-- mobile LOD
-- slow crawl
-- fast pursuit
-- light hesitation
-- turn
-- search/listen
-- lunge attack
-- crawl/contact audio
-
-## P0 — Survivor assets
-
-Need one production survivor base with 3–4 multiplayer variants.
-
-Model:
-
-- rigged survivor
-- outfit/material variants
-- first-person arms/hands
-- world flashlight attachment
-- backpack/utility points
-
-Animations:
-
-- idle
-- walk/run
-- strafe
-- jump takeoff
-- fall
-- landing
-- turn
-- downed idle
-- downed crawl
-- revive teammate
-- being revived
-- hit reaction
-- death/team-wipe pose
-
-## P0 — Arc 1 environment modules
-
-Maintenance:
-
-- modular concrete walls
-- fuse boxes A/B/C
-- cable trays/conduit
-- utility doors
-- pipes
-- grime/rust decals
-
-Flooded Service:
-
-- wet concrete
-- shallow-water material
-- pipe network
-- pressure valves
-- drainage grates
-- leak VFX
-- water decals
-
-Archive:
-
-- shelf modules
-- document boxes
-- cabinets
-- breaker A/B/C panels
-- aisle signs
-- paper/debris props
-
-Lockdown:
-
-- final console
-- heavy bulkhead
-- pillars
-- alarm lights
-- industrial cables
-- emergency signs
-
-All navigation-sensitive props need simple collision proxies.
-
-## P0 — Lighting states
-
-Production fixtures need:
-
-- OFF
-- DIM AMBIENT
-- FAULT / FLICKER
-- SAFE / POWERED
-- LOCKDOWN PULSE
-- EVACUATION PULSE
-- EVACUATION CRITICAL
-
-Normal ambient and evacuation-route lights must remain distinct from genuinely protective safe lights.
-
-## P0 — Core audio
+## P0 — General player/audio
 
 Footsteps:
 
@@ -548,12 +309,12 @@ Player:
 - breathing
 - sprint breathing
 - heartbeat/panic
-- hurt/bleeding
-- downed/revive
+- multiple hurt variants
+- bleeding/downed/revive
 
-Interactions:
+Interaction:
 
-- normal door
+- doors
 - locked door
 - heavy gate
 - fuse
@@ -561,89 +322,81 @@ Interactions:
 - breaker
 - isolation node
 - evacuation override
-- SYNC panel
+- SYNC
 - pickup
 - generator/workbench/water pump
 
-## P1 — Forest / exterior retained
+## P1 — Forest / exterior
 
-- visible sun disc
-- visible moon disc
-- day/dawn/dusk/night sky
-- lightweight cloud layer
+- visible sun/moon discs
+- dawn/day/dusk/night sky
 - stars optional
-- mobile-safe fog
+- lightweight clouds/fog
 - cabin production kit
 - gas station kit
 - warehouse props
-- abandoned-house props
+- abandoned house props
 - generator/workbench/storage/campfire
+- forest ambience layers
+- dirt/grass foliage modules with mobile LOD
 
-## P1 — Front-end / multiplayer UI
+## P1 — Front-end / localization
 
 - final DON'T LOOK BACK logo
-- 16:9 title art
-- mobile crop
+- title art + mobile crop
 - menu background
-- button states/icons
-- loading spinner
-- warning/save/checkpoint icons
-- Ready/Host/Ping icons
-- teammate/downed/revive icons
-- reconnect icon
-- compact mobile layouts
-
-Evacuation UI should remain primarily environmental/HUD text rather than adding a large arcade timer panel.
+- final buttons/icons
+- loading/save/checkpoint indicators
+- Indonesian/English typography QA
+- terminology sheet for co-op callouts
+- curated Indonesian translation for long Journal lore
 
 ## P2 — VFX polish
 
-- evacuation dust/debris
-- shutter sparks
-- Warden core pulse
-- Warden appearance distortion
 - flashlight dust
-- shallow-water ripple
-- wet-footstep splash
-- pipe leaks
-- electrical sparks
-- blackout recovery sparks
-- Lockdown pulse
-- final extraction light bloom
+- Warden core pulse/distortion
 - Darkness dissolve
 - Tenant distortion
+- evacuation dust/debris
+- shutter sparks
+- shallow-water ripple/splash
+- pipe leaks
+- blackout recovery sparks
+- Lockdown pulse
+- extraction bloom
 - cold breath
 - campfire smoke/sparks
 
 ## Mobile + desktop constraints
 
-- all new evacuation strobes should keep shadows disabled unless proven affordable
-- use shared materials/atlases for signage and emergency-light variants
-- avoid volumetric evacuation fog as a required gameplay effect
-- use low-overdraw particles for dust/sparks
-- Warden, Mourner, Crawler and survivor meshes require mobile LODs
-- keep decorative conduit collision-free where possible
-- use simple collision proxies for shutters/panels/doors/shelves
+- prioritize `.ogg` compression for long BGM/ambience
+- verify SFX remain audible on phone speakers without clipping
+- keep most decorative realtime lights shadowless
+- use shared materials/atlases
+- avoid volumetric fog as a required gameplay effect
+- low-overdraw particles
+- simple collision proxies
+- monster/survivor mobile LODs
 - avoid 4K textures except hero/menu art
-- test all red/orange/green state colors at low phone brightness
-- temporary shutters must remain readable without creating visual confusion about permanent routes
+- test red/orange/green state readability at low phone brightness
+- profile runtime CSG and OmniLights on actual Android hardware
 
-## Recommended production order after v0.21
+## Recommended production order after v0.24
 
-1. Evacuation Override A/F production panels + interaction audio
-2. Evacuation strobe + directional signage kit
-3. M-01 extraction beacon + final transition audio
-4. Temporary evacuation shutter + animation/audio
-5. Warden production model + evacuation pursuit animation/audio
-6. Isolation Node + Lockdown interlock kit
-7. Sector signage + colored conduit kit
-8. Hazard VFX/audio pass
-9. Mourner production model/animation/audio
-10. Crawler production model/animation/audio
-11. Survivor production model + co-op animations
-12. SYNC panel + temporary safe-light kit
-13. Arc ambience layers including evacuation mix
-14. Tenant final model/animation
-15. Darkness Creature final model/animation
-16. Forest sky/sun/moon art pass
-17. Exterior production props
-18. Front-end branding/UI polish
+1. Commit/verify the four v0.24 audio files (`music`, `hurt`, `monster`, `battery`)
+2. First-person flashlight + hand rig + battery animation/SFX
+3. Warden production model/animations/audio
+4. Isolation Node + Lockdown interlock production kit
+5. Evacuation Override + extraction beacon + shutter kit
+6. Sector signage/conduit/environment materials
+7. Mourner production pass
+8. Crawler production pass
+9. Survivor model + co-op animations
+10. Hazard VFX/audio
+11. Tenant production pass
+12. Darkness Creature production pass
+13. Full spatial ambience/footstep mix
+14. Forest/exterior production art
+15. Front-end branding + localization polish
+
+See `ASSET_DELTA_V024.md` for the exact v0.24 audio integration contract.
