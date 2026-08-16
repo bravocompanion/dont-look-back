@@ -23,6 +23,7 @@ var can_move: bool = false
 var attack_timer: float = 0.0
 
 func _ready() -> void:
+    _ensure_prototype_visual()
     visible = false
 
 func appear() -> void:
@@ -141,7 +142,10 @@ func _is_being_watched(camera: Camera3D, player: CharacterBody3D) -> bool:
     var excludes: Array[RID] = [player.get_rid()]
     query.exclude = excludes
     var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
-    return hit.is_empty()
+    if hit.is_empty():
+        return true
+    var collider_value: Variant = hit.get("collider", null)
+    return collider_value is Node and _collider_belongs_to_tenant(collider_value as Node)
 
 func _find_near_spawn(player: CharacterBody3D) -> Vector3:
     var backward: Vector3 = player.global_transform.basis.z
@@ -186,6 +190,56 @@ func _clamp_tenant_position(position: Vector3) -> Vector3:
         if clamped_value is Vector3:
             return clamped_value
     return position
+
+func _collider_belongs_to_tenant(collider: Node) -> bool:
+    var current: Node = collider
+    while current != null:
+        if current == self:
+            return true
+        current = current.get_parent()
+    return false
+
+func _ensure_prototype_visual() -> void:
+    if get_node_or_null("Body") != null:
+        return
+
+    var body_material: StandardMaterial3D = StandardMaterial3D.new()
+    body_material.albedo_color = Color(0.002, 0.002, 0.002, 1.0)
+    body_material.roughness = 1.0
+
+    var body_mesh: CapsuleMesh = CapsuleMesh.new()
+    body_mesh.radius = 0.32
+    body_mesh.height = 2.5
+    body_mesh.radial_segments = 12
+    body_mesh.rings = 6
+
+    var body: MeshInstance3D = MeshInstance3D.new()
+    body.name = "Body"
+    body.position = Vector3(0.0, 1.35, 0.0)
+    body.mesh = body_mesh
+    body.material_override = body_material
+    add_child(body)
+
+    var eye_material: StandardMaterial3D = StandardMaterial3D.new()
+    eye_material.albedo_color = Color(0.85, 0.85, 0.75, 1.0)
+    eye_material.emission_enabled = true
+    eye_material.emission = Color(0.8, 0.8, 0.68, 1.0)
+    eye_material.emission_energy_multiplier = 4.0
+
+    var eye_mesh: SphereMesh = SphereMesh.new()
+    eye_mesh.radius = 0.045
+    eye_mesh.height = 0.09
+    eye_mesh.radial_segments = 8
+    eye_mesh.rings = 4
+
+    var eye_positions: Array[float] = [-0.105, 0.105]
+    for eye_index: int in range(eye_positions.size()):
+        var eye: MeshInstance3D = MeshInstance3D.new()
+        eye.name = "EyeLeft" if eye_index == 0 else "EyeRight"
+        eye.position = Vector3(eye_positions[eye_index], 2.15, 0.29)
+        eye.mesh = eye_mesh
+        eye.material_override = eye_material
+        add_child(eye)
 
 func _update_hud() -> void:
     var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
