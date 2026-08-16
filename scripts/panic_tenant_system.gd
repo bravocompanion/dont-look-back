@@ -1,6 +1,7 @@
 extends Node
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+const TENANT_SCRIPT_PATH: String = "res://scripts/monster.gd"
 
 @export var movement_panic_threshold: float = 4.75
 @export var movement_full_panic_speed: float = 6.75
@@ -20,6 +21,7 @@ const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 var tracked_player_id: int = 0
 var player: CharacterBody3D
 var camera: Camera3D
+var tenant_script: Script
 var last_yaw: float = 0.0
 var last_pitch: float = 0.0
 var view_initialized: bool = false
@@ -35,6 +37,7 @@ var tenant_flashlight_grace: float = 0.0
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     process_priority = -20
+    tenant_script = load(TENANT_SCRIPT_PATH) as Script
 
 func _process(delta: float) -> void:
     request_cooldown = maxf(0.0, request_cooldown - delta)
@@ -46,6 +49,8 @@ func _process(delta: float) -> void:
 
     if not _ensure_player():
         return
+
+    _ensure_tenant_node()
 
     if not _gameplay_allowed():
         idle_timer = 0.0
@@ -273,6 +278,30 @@ func _collider_belongs_to_tenant(collider: Node, tenant: Node3D) -> bool:
         current = current.get_parent()
     return false
 
+func _ensure_tenant_node() -> Node3D:
+    var scene: Node = get_tree().current_scene
+    if scene == null or scene.scene_file_path == MAIN_MENU_SCENE_PATH:
+        return null
+
+    var existing: Node3D = scene.get_node_or_null("Monster") as Node3D
+    if existing != null:
+        return existing
+    if tenant_script == null:
+        tenant_script = load(TENANT_SCRIPT_PATH) as Script
+    if tenant_script == null:
+        return null
+
+    var tenant: Node3D = Node3D.new()
+    tenant.name = "Monster"
+    tenant.set_script(tenant_script)
+    tenant.set("player_path", NodePath("../Player"))
+    tenant.set("objective_label_path", NodePath("../Player/HUD/Objective"))
+    tenant.set("panic_label_path", NodePath("../Player/HUD/PanicLabel"))
+    tenant.set("panic_overlay_path", NodePath("../Player/HUD/PanicOverlay"))
+    tenant.set("caught_panel_path", NodePath("../Player/HUD/CaughtPanel"))
+    scene.add_child(tenant)
+    return tenant
+
 func _apply_panic_to_player() -> void:
     if player == null:
         return
@@ -298,7 +327,10 @@ func _tenant_node() -> Node3D:
     var scene: Node = get_tree().current_scene
     if scene == null:
         return null
-    return scene.get_node_or_null("Monster") as Node3D
+    var tenant: Node3D = scene.get_node_or_null("Monster") as Node3D
+    if tenant != null:
+        return tenant
+    return _ensure_tenant_node()
 
 func _tenant_active() -> bool:
     if _network_online():
