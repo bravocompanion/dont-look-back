@@ -1,8 +1,45 @@
-# DON'T LOOK BACK — Godot v0.24.2
+# DON'T LOOK BACK — Godot v0.24.3
 
 First-person survival horror prototype for Godot 4.x with responsive desktop/mobile controls, 2–4 player LAN co-op, persistent saves, bilingual Indonesian/English UI, dynamic flashlight handling, survival systems, adaptive horror AI, Labyrinth Arc 1 progression, reverse evacuation finale, Forest transition, and dynamic horror audio.
 
-## Current build — v0.24.2 PANIC-DRIVEN TENANT
+## Current build — v0.24.3 TENANT FLASHLIGHT KILL FEEDBACK
+
+v0.24.3 adds stronger feedback when the flashlight is held on The Tenant and adds a dedicated Tenant death/banish audio cue.
+
+### Tenant flashlight feedback
+
+While The Tenant is inside the real flashlight beam:
+
+- existing `battery.mp3` interference continues to play
+- generic flashlight-monster battery drain still ramps from `1.0x` toward `2.0x` across the 3-second exposure window
+- Tenant receives an additional rapid flashlight modulation layer after the normal flashlight energy/interference calculation
+- rapid flicker begins around `8 Hz` and can rise toward roughly `12 Hz` as the 3-second hold approaches completion
+- brightness is not forced completely black; the effect uses a minimum energy factor around `0.22` at high strength
+
+The generic v0.24.1 `battery.mp3` interference remains available for other monsters. Tenant simply receives stronger visual feedback on top of it.
+
+### Tenant death audio
+
+When the 3-second flashlight hold completes and The Tenant changes from active to inactive because of the flashlight kill/banish, the runtime audio system plays a dedicated `tenant death` one-shot.
+
+The resolver accepts `.wav`, `.ogg`, or `.mp3` and normalizes spaces, underscores, and dashes. Examples:
+
+- `tenant death.mp3`
+- `tenant_death.mp3`
+- `tenant-death.ogg`
+- `tenantdeath.wav`
+
+The death cue stops `battery.mp3` first, then plays the Tenant death one-shot at its own mix level.
+
+A dedicated `TenantDeathFeedbackSystem` guards against false triggers: scene changes reset the kill state, and if the flashlight hold falls below the near-complete threshold while Tenant is still active, the death-armed flag is cleared.
+
+### Co-op death feedback
+
+In online play, the host watches the existing per-peer flashlight hold state. When a flashlight kill is confirmed, the host plays the local death cue and sends a reliable Tenant-death feedback RPC on channel 18 so each client plays the same local asset once.
+
+See `ASSET_DELTA_V0243.md` for the new audio requirement and test checklist.
+
+## v0.24.2 PANIC-DRIVEN TENANT
 
 v0.24.2 changes PANIC from a monster-proximity meter into a player-motion meter and rebuilds The Tenant around that rule.
 
@@ -25,7 +62,7 @@ When a player remains effectively still for `2.0 seconds` — horizontal speed <
 
 The old corridor HorrorTrigger no longer spawns Tenant directly. Pause, menu, Journal, transition, death, and downed state do not count toward the stillness timer.
 
-Tenant spawn now tries to appear around `4.2 m` behind/near the player and uses the current navigation clamp, so lower-Labyrinth placement is not restricted to the old opening corridor coordinates.
+Tenant spawn tries to appear around `4.2 m` behind/near the player and uses the current navigation clamp, so lower-Labyrinth placement is not restricted to the old opening corridor coordinates. Gameplay maps without a pre-authored `Monster` node receive the runtime Tenant prototype automatically.
 
 ### Panic-scaled Tenant
 
@@ -51,9 +88,9 @@ At panic 100%, movement is roughly `1.82x` the zero-panic speed and attack attem
 
 The existing watched/freeze rule remains: keeping The Tenant clearly in sight stops its movement. Looking at it alone does not remove it.
 
-### 3-second flashlight banish
+### 3-second flashlight kill / banish
 
-The Tenant now disappears only after a continuous `3.0-second` flashlight hold.
+The Tenant disappears only after a continuous `3.0-second` flashlight hold.
 
 Requirements:
 
@@ -63,11 +100,9 @@ Requirements:
 - clear world line-of-sight
 - continuous beam contact for 3 seconds
 
-Breaking beam contact resets the Tenant-specific banish hold.
+Breaking beam contact resets the Tenant-specific hold. A short contact grace protects the hold from tiny procedural flashlight sway.
 
 The old SafeZone story trigger no longer deletes Tenant automatically.
-
-This works together with v0.24.1 monster interference: while the flashlight is held on Tenant, `battery.mp3` plays, the flashlight flickers, and battery drain ramps from `1.0x` toward a maximum `2.0x` over the same 3-second window.
 
 ### Co-op behavior
 
@@ -112,6 +147,7 @@ Recognized keywords:
 - `hurt` — player damage reaction
 - `monster` — proximity threat layer
 - `battery` — flashlight/monster interference
+- `tenant death` — Tenant flashlight-kill confirmation added in v0.24.3
 
 BGM follows Master Volume and ducks during close monster pressure. Monster proximity begins around 22 m and includes Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden.
 
@@ -205,23 +241,21 @@ Mobile:
 - JOURNAL
 - MENU
 
-## Recommended v0.24.2 test
+## Recommended v0.24.3 test
 
-1. Walk normally and look slowly: PANIC should remain stable or fall.
-2. Sprint: PANIC should rise.
-3. Stand in place and flick mouse/touch rapidly: PANIC should rise.
-4. Sprint + fast look: PANIC should rise fastest, capped around 32/s.
-5. Stay completely still for 2 seconds: Tenant should appear close to the player.
-6. Move/look before 2 seconds: stillness timer should reset.
-7. Compare Tenant at PANIC 0/25/50/75/100 and verify continuous speed scaling.
-8. Verify each Tenant hit remains 28 HP while attack cooldown becomes shorter at high panic.
-9. Watch Tenant without flashlight: it should freeze but remain present.
-10. Flash Tenant for less than 3 seconds then look away: banish hold should reset.
-11. Hold flashlight on Tenant for 3 seconds: Tenant should disappear.
-12. Put a wall between flashlight and Tenant: banish must not progress.
-13. Verify `battery.mp3`, flicker, and increased battery drain occur during the flashlight hold.
-14. Verify PANIC does not reset to zero when Tenant disappears.
-15. Co-op: each player should have local panic; host Tenant should scale from the survivor it is currently hunting.
+1. Let Tenant appear after the existing stillness rule.
+2. Aim flashlight at Tenant: `battery.mp3` should begin.
+3. Verify Tenant flicker is visibly faster than generic flashlight-monster interference.
+4. Release the beam before 3 seconds: Tenant remains and `tenant death` must stay silent.
+5. Reacquire Tenant and hold the beam continuously for 3 seconds: Tenant disappears.
+6. On successful disappearance, `battery.mp3` stops and `tenant death` plays once.
+7. Verify another monster still triggers the original `battery.mp3` interference behavior.
+8. Put a wall between flashlight and Tenant: kill hold must not advance.
+9. Move to another map with Tenant active: death cue must not fire only because the scene changed.
+10. Co-op host/client: successful flashlight kill should produce one death cue on every peer.
+11. Verify flashlight full-battery baseline remains energy `6.7`.
+12. Verify PANIC speed/attack scaling remains unchanged from v0.24.2.
+13. Test rapid flicker at both 30 FPS mobile target and 60 FPS desktop target.
 
 ## Current technical priorities
 
@@ -232,16 +266,17 @@ Before public demo/release-candidate status:
 - block MovementSystem while Journal is open
 - simplify Evacuation Warden state ownership
 - rebalance flashlight battery/darkness economy after runtime playtesting
+- add a Reduce Flashing accessibility option before public release
 - profile CSG/lights/navigation on real Android hardware
 - replace procedural prototype presentation with production assets
 
 ## Git workflow note
 
-`project.godot` remains intentionally untouched by v0.22–v0.24.2 runtime feature additions. Flashlight, Language, DynamicAudio, PanicTenant, and TenantPanicNetworkBridge systems are bootstrapped through existing runtime/autoload infrastructure to reduce conflicts with local project settings.
+`project.godot` remains intentionally untouched by v0.22–v0.24.3 runtime feature additions. Flashlight, Language, DynamicAudio, PanicTenant, TenantPanicNetworkBridge, TenantFlashlightFX, and TenantDeathFeedback systems are bootstrapped through existing runtime/autoload infrastructure to reduce conflicts with local project settings.
 
 Current visible menu badge:
 
-`v0.24.2 • PANIC-DRIVEN TENANT`
+`v0.24.3 • TENANT FLASHLIGHT KILL FEEDBACK`
 
 If local `project.godot` differs from remote, back it up or stash changes before Pull instead of blindly discarding local settings.
 
