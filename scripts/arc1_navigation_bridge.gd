@@ -4,6 +4,8 @@ const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const ENCOUNTER_DIRECTOR_SCRIPT: String = "res://scripts/labyrinth_encounter_director.gd"
 const EXPLORATION_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_exploration_system.gd"
 const COOP_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_coop_system.gd"
+const MAJOR_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_major_system.gd"
+const MAJOR_GATEKEEPER_SCRIPT: String = "res://scripts/labyrinth_major_gatekeeper.gd"
 
 var last_stage: int = -1
 var pending_rebuild_frames: int = 0
@@ -44,6 +46,8 @@ func _ensure_runtime_systems() -> void:
     _ensure_root_system("LabyrinthEncounterDirector", ENCOUNTER_DIRECTOR_SCRIPT)
     _ensure_root_system("LabyrinthExplorationSystem", EXPLORATION_SYSTEM_SCRIPT)
     _ensure_root_system("LabyrinthCoopSystem", COOP_SYSTEM_SCRIPT)
+    _ensure_root_system("LabyrinthMajorSystem", MAJOR_SYSTEM_SCRIPT)
+    _ensure_root_system("LabyrinthMajorGatekeeper", MAJOR_GATEKEEPER_SCRIPT)
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
