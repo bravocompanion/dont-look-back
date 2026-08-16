@@ -1,7 +1,31 @@
 extends "res://scripts/save_system.gd"
 
+const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const LABYRINTH_SCENE_PATH: String = "res://scenes/main.tscn"
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
+
+var save_ui_initialized: bool = false
+
+func _ready() -> void:
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    save_exists = FileAccess.file_exists(SAVE_PATH)
+
+func _process(delta: float) -> void:
+    var scene: Node = get_tree().current_scene
+    if scene == null:
+        return
+
+    if scene.scene_file_path == MAIN_MENU_SCENE_PATH:
+        if layer != null:
+            layer.visible = false
+        return
+
+    if not save_ui_initialized:
+        _build_ui()
+        save_ui_initialized = true
+    if layer != null:
+        layer.visible = true
+    super._process(delta)
 
 func _collect_state(player: CharacterBody3D) -> Dictionary:
     var state: Dictionary = super._collect_state(player)
@@ -50,7 +74,7 @@ func _load_scene_and_restore(state: Dictionary, automatic: bool) -> void:
         return
 
     var ready: bool = false
-    for _frame_index: int in range(48):
+    for _frame_index: int in range(120):
         await get_tree().process_frame
         var scene: Node = get_tree().current_scene
         var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -142,7 +166,6 @@ func _target_scene_for_state(state: Dictionary) -> String:
     if saved_scene == LABYRINTH_SCENE_PATH:
         return LABYRINTH_SCENE_PATH
 
-    # Migration for v0.14-v0.18 saves created before maps were split.
     var player_state: Dictionary = Dictionary(state.get("player", {}))
     var position_variant: Variant = player_state.get("position", [])
     if position_variant is Array:
