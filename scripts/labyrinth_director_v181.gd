@@ -8,7 +8,18 @@ func _process(delta: float) -> void:
     if scene == null or scene.scene_file_path != LABYRINTH_SCENE_PATH:
         return
     super._process(delta)
+    _open_arc1_threshold(scene)
     _ensure_v181_labyrinth_lighting(scene)
+
+func _open_arc1_threshold(scene: Node) -> void:
+    if scene.get_node_or_null("Arc1Expansion") == null:
+        return
+    var old_back_wall: Node = scene.get_node_or_null("LabyrinthExpansion/PerimeterBack")
+    if old_back_wall != null:
+        old_back_wall.queue_free()
+    var old_transition: Node = scene.get_node_or_null("LabyrinthExpansion/OutsideTransition")
+    if old_transition != null:
+        old_transition.queue_free()
 
 func _ensure_v181_labyrinth_lighting(scene: Node) -> void:
     if expansion_root == null or not is_instance_valid(expansion_root):
