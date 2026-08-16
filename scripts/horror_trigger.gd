@@ -28,16 +28,8 @@ func _on_body_entered(body: Node3D) -> void:
 
     await get_tree().create_timer(0.25).timeout
 
-    var network: Node = get_node_or_null("/root/NetworkManager")
-    var shared_system: Node = get_node_or_null("/root/CoopHorrorSystem")
-    var online: bool = network != null and network.has_method("is_online") and bool(network.call("is_online"))
-
-    if online and shared_system != null and shared_system.has_method("request_tenant_encounter"):
-        shared_system.call("request_tenant_encounter")
-    else:
-        var monster: Node = get_node_or_null(monster_path)
-        if monster != null and monster.has_method("appear"):
-            monster.call("appear")
-
+    # v0.24.2: this trigger is environmental only. The Tenant is no longer
+    # spawned by corridor proximity; staying completely still for 2 seconds
+    # is the encounter trigger handled by PanicTenantSystem.
     if objective != null:
-        objective.text = "KEEP IT IN SIGHT. Open the door and reach the end."
+        objective.text = "Move calmly. Sudden speed feeds PANIC. Do not stay still too long."
