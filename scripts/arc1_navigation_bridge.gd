@@ -6,6 +6,7 @@ const EXPLORATION_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_exploration_s
 const COOP_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_coop_system.gd"
 const MAJOR_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_major_system.gd"
 const MAJOR_GATEKEEPER_SCRIPT: String = "res://scripts/labyrinth_major_gatekeeper.gd"
+const EVACUATION_SYSTEM_SCRIPT: String = "res://scripts/labyrinth_evacuation_system.gd"
 
 var last_stage: int = -1
 var pending_rebuild_frames: int = 0
@@ -48,6 +49,7 @@ func _ensure_runtime_systems() -> void:
     _ensure_root_system("LabyrinthCoopSystem", COOP_SYSTEM_SCRIPT)
     _ensure_root_system("LabyrinthMajorSystem", MAJOR_SYSTEM_SCRIPT)
     _ensure_root_system("LabyrinthMajorGatekeeper", MAJOR_GATEKEEPER_SCRIPT)
+    _ensure_root_system("LabyrinthEvacuationSystem", EVACUATION_SYSTEM_SCRIPT)
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
