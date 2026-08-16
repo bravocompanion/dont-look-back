@@ -99,15 +99,29 @@ func _build_players() -> void:
     add_child(battery_player)
 
 func _load_audio_assets() -> void:
-    music_stream = _find_audio_stream("music")
-    hurt_stream = _find_audio_stream("hurt")
-    monster_stream = _find_audio_stream("monster")
-    battery_stream = _find_audio_stream("battery")
+    if music_stream == null:
+        var found_music: AudioStream = _find_audio_stream("music")
+        if found_music != null:
+            music_stream = found_music
+            music_player.stream = music_stream
 
-    music_player.stream = music_stream
-    hurt_player.stream = hurt_stream
-    monster_player.stream = monster_stream
-    battery_player.stream = battery_stream
+    if hurt_stream == null:
+        var found_hurt: AudioStream = _find_audio_stream("hurt")
+        if found_hurt != null:
+            hurt_stream = found_hurt
+            hurt_player.stream = hurt_stream
+
+    if monster_stream == null:
+        var found_monster: AudioStream = _find_audio_stream("monster")
+        if found_monster != null:
+            monster_stream = found_monster
+            monster_player.stream = monster_stream
+
+    if battery_stream == null:
+        var found_battery: AudioStream = _find_audio_stream("battery")
+        if found_battery != null:
+            battery_stream = found_battery
+            battery_player.stream = battery_stream
 
     loaded_assets = music_stream != null and hurt_stream != null and monster_stream != null and battery_stream != null
     if not loaded_assets and not reported_missing_assets:
