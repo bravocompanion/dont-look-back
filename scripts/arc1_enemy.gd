@@ -100,7 +100,7 @@ func _drive_authoritative(delta: float, system: Node) -> void:
     if target_peer > 0 and attack_timer <= 0.0:
         var target_position: Vector3 = goal
         target_position.y = global_position.y
-        if global_position.distance_to(target_position) <= attack_distance:
+        if global_position.distance_to(target_position) <= attack_distance and _line_clear_to(target_position):
             _attack_target(target_peer)
 
 func _select_target() -> Dictionary:
@@ -170,6 +170,12 @@ func _next_navigation_point(goal: Vector3) -> Vector3:
         if point_value is Vector3:
             return point_value
     return goal
+
+func _line_clear_to(target_position: Vector3) -> bool:
+    var navigation: Node = get_node_or_null("/root/AINavigationSystem")
+    if navigation != null and navigation.has_method("_segment_clear"):
+        return bool(navigation.call("_segment_clear", global_position, target_position, 0.0))
+    return true
 
 func _attack_target(peer_id: int) -> void:
     attack_timer = attack_cooldown_seconds
@@ -242,7 +248,8 @@ func _build_visual() -> void:
         body.position.y = 1.18
         add_child(body)
 
-        for eye_x: float in [-0.10, 0.10]:
+        var eye_positions: Array[float] = [-0.10, 0.10]
+        for eye_x: float in eye_positions:
             var eye_mesh: SphereMesh = SphereMesh.new()
             eye_mesh.radius = 0.045
             eye_mesh.height = 0.09
