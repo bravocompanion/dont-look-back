@@ -3,8 +3,8 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.18.4.1"
-run/main_scene="res://scenes/main.tscn"
+config/name="Don't Look Back v0.18.4.4"
+run/main_scene="res://scenes/main_menu.tscn"
 
 [autoload]
 SurvivalSystem="*res://scripts/survival_system.gd"
