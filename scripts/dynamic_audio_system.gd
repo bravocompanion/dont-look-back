@@ -22,8 +22,8 @@ const SEARCH_ROOTS: Array[String] = [
 @export var monster_start_distance: float = 22.0
 @export var monster_near_distance: float = 3.0
 @export var music_monster_duck_db: float = 5.5
-@export var low_battery_repeat_seconds: float = 9.0
-@export var critical_battery_repeat_seconds: float = 4.8
+@export var interference_battery_far_volume_db: float = -9.0
+@export var interference_battery_near_volume_db: float = -2.5
 
 var music_player: AudioStreamPlayer
 var hurt_player: AudioStreamPlayer
@@ -37,8 +37,6 @@ var battery_stream: AudioStream
 
 var tracked_player_id: int = 0
 var last_health: float = 100.0
-var last_battery: float = 100.0
-var battery_warning_timer: float = 0.0
 var player_grace_timer: float = 0.0
 var asset_retry_timer: float = 0.0
 var loaded_assets: bool = false
@@ -67,14 +65,14 @@ func _process(delta: float) -> void:
     if player == null:
         _release_player()
         _fade_monster_audio(delta, INF)
+        _update_interference_battery_audio()
         return
 
     _track_player(player)
     player_grace_timer = maxf(0.0, player_grace_timer - delta)
-    battery_warning_timer = maxf(0.0, battery_warning_timer - delta)
 
     _update_hurt_audio(player)
-    _update_battery_audio(player)
+    _update_interference_battery_audio()
     _update_monster_audio(player, delta)
 
 func _build_players() -> void:
@@ -94,8 +92,8 @@ func _build_players() -> void:
     add_child(monster_player)
 
     battery_player = AudioStreamPlayer.new()
-    battery_player.name = "LowBattery"
-    battery_player.volume_db = -5.0
+    battery_player.name = "FlashlightMonsterInterference"
+    battery_player.volume_db = interference_battery_far_volume_db
     add_child(battery_player)
 
 func _load_audio_assets() -> void:
@@ -177,8 +175,6 @@ func _track_player(player: CharacterBody3D) -> void:
         return
     tracked_player_id = player_id
     last_health = float(player.get("health"))
-    last_battery = float(player.get("flashlight_battery"))
-    battery_warning_timer = 0.0
     player_grace_timer = 1.25
 
 func _release_player() -> void:
@@ -203,24 +199,26 @@ func _update_hurt_audio(player: CharacterBody3D) -> void:
         hurt_player.play()
     last_health = health
 
-func _update_battery_audio(player: CharacterBody3D) -> void:
-    var battery: float = float(player.get("flashlight_battery"))
-    var max_battery: float = maxf(1.0, float(player.get("max_flashlight_battery")))
-    var threshold: float = maxf(1.0, float(player.get("low_battery_threshold")))
-    var flashlight: SpotLight3D = player.get_node_or_null("Camera3D/Flashlight") as SpotLight3D
-    var flashlight_on: bool = flashlight != null and flashlight.visible
+func _update_interference_battery_audio() -> void:
+    if battery_player == null:
+        return
 
-    var crossed_low_threshold: bool = last_battery > threshold and battery <= threshold and battery > 0.0
-    var low_and_due: bool = battery > 0.0 and battery <= threshold and flashlight_on and battery_warning_timer <= 0.0
-    if player_grace_timer <= 0.0 and battery_stream != null and (crossed_low_threshold or low_and_due):
-        battery_player.stop()
-        battery_player.pitch_scale = 1.0 if battery > max_battery * 0.10 else 1.08
+    var flashlight_system: Node = get_node_or_null("/root/FlashlightMotionSystem")
+    var active: bool = flashlight_system != null and flashlight_system.has_method("is_monster_interference_active") and bool(flashlight_system.call("is_monster_interference_active"))
+    if not active or battery_stream == null:
+        if battery_player.playing:
+            battery_player.stop()
+        return
+
+    var strength: float = 0.0
+    if flashlight_system.has_method("get_monster_interference_strength"):
+        strength = clampf(float(flashlight_system.call("get_monster_interference_strength")), 0.0, 1.0)
+    battery_player.volume_db = lerpf(interference_battery_far_volume_db, interference_battery_near_volume_db, strength)
+    battery_player.pitch_scale = lerpf(0.96, 1.08, strength)
+    if battery_player.stream != battery_stream:
+        battery_player.stream = battery_stream
+    if not battery_player.playing:
         battery_player.play()
-        battery_warning_timer = critical_battery_repeat_seconds if battery <= max_battery * 0.10 else low_battery_repeat_seconds
-
-    if battery > threshold + 2.0:
-        battery_warning_timer = 0.0
-    last_battery = battery
 
 func _update_monster_audio(player: CharacterBody3D, delta: float) -> void:
     var nearest_distance: float = _nearest_active_monster_distance(player.global_position)
