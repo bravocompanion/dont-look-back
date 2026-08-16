@@ -14,6 +14,8 @@ const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 @export var idle_move_speed: float = 0.12
 @export var idle_look_speed_deg: float = 3.0
 @export var spawn_request_cooldown: float = 2.5
+@export var monster_hit_panic_gain: float = 40.0
+@export var minimum_monster_hit_damage: float = 6.0
 
 var tracked_player_id: int = 0
 var player: CharacterBody3D
@@ -23,6 +25,7 @@ var current_move_speed: float = 0.0
 var current_look_speed_deg: float = 0.0
 var idle_timer: float = 0.0
 var request_cooldown: float = 0.0
+var last_health: float = 100.0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -57,12 +60,14 @@ func _process(delta: float) -> void:
         current_move_speed = 0.0
         current_look_speed_deg = 0.0
         idle_timer = 0.0
+        last_health = float(player.get("health"))
         _publish_panic()
         return
 
     current_move_speed = Vector2(player.velocity.x, player.velocity.z).length()
     current_look_speed_deg = _consume_real_look_speed(delta)
     _update_panic(delta)
+    _update_monster_hit_panic()
     _update_idle_tenant(delta)
     _publish_panic()
 
@@ -77,6 +82,11 @@ func get_look_speed_degrees() -> float:
 
 func get_idle_time() -> float:
     return idle_timer
+
+func add_monster_hit_panic(amount: float = -1.0) -> void:
+    var gain: float = monster_hit_panic_gain if amount < 0.0 else maxf(0.0, amount)
+    panic_value = minf(100.0, panic_value + gain)
+    _publish_panic()
 
 func _ensure_player() -> bool:
     var found: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -96,6 +106,7 @@ func _ensure_player() -> bool:
     current_look_speed_deg = 0.0
     idle_timer = 0.0
     request_cooldown = 1.25
+    last_health = float(player.get("health"))
     _publish_panic()
     return true
 
@@ -106,6 +117,7 @@ func _release_player() -> void:
     current_look_speed_deg = 0.0
     idle_timer = 0.0
     request_cooldown = 0.0
+    last_health = 100.0
 
 func _consume_real_look_speed(delta: float) -> float:
     if player == null or delta <= 0.0001:
@@ -146,6 +158,41 @@ func _update_panic(delta: float) -> void:
         panic_value = minf(100.0, panic_value + panic_gain * delta)
     else:
         panic_value = maxf(0.0, panic_value - calm_panic_decay_per_second * delta)
+
+func _update_monster_hit_panic() -> void:
+    if player == null:
+        return
+
+    var health: float = float(player.get("health"))
+    var damage_taken: float = maxf(0.0, last_health - health)
+    last_health = health
+    if damage_taken < minimum_monster_hit_damage:
+        return
+    if not _last_damage_looks_like_monster_hit():
+        return
+
+    panic_value = minf(100.0, panic_value + monster_hit_panic_gain)
+    idle_timer = 0.0
+
+func _last_damage_looks_like_monster_hit() -> bool:
+    if player == null:
+        return false
+    var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+    if objective == null:
+        return false
+
+    var text: String = objective.text.to_lower()
+    var monster_terms: Array[String] = [
+        "tenant",
+        "warden",
+        "mourner",
+        "crawler",
+        "darkness"
+    ]
+    for term: String in monster_terms:
+        if text.contains(term):
+            return true
+    return false
 
 func _update_idle_tenant(delta: float) -> void:
     var stationary: bool = current_move_speed <= idle_move_speed and current_look_speed_deg <= idle_look_speed_deg
