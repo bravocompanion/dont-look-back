@@ -20,6 +20,8 @@ var retarget_timer: float = 0.0
 var attack_timer: float = 0.0
 var wander_target: Vector3 = Vector3.ZERO
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var wounded_seconds: float = 0.0
+var blood_mark_timer: float = 0.0
 
 func _ready() -> void:
     add_to_group("wildlife")
@@ -54,6 +56,7 @@ func _physics_process(delta: float) -> void:
 
     attack_timer = maxf(0.0, attack_timer - delta)
     retarget_timer -= delta
+    _update_wound_trail(delta)
 
     var nearest: CharacterBody3D = _nearest_player()
     var goal: Vector3 = wander_target
@@ -64,16 +67,17 @@ func _physics_process(delta: float) -> void:
         offset.y = 0.0
         var distance: float = offset.length()
         var hostile: bool = animal_kind == "wolf" or animal_kind == "boar"
+        var alerted_by_wound: bool = wounded_seconds > 0.0 and distance <= alert_radius * 2.2
 
-        if hostile and distance <= alert_radius:
+        if hostile and (distance <= alert_radius or alerted_by_wound):
             goal = nearest.global_position
             speed *= 1.18 if animal_kind == "wolf" else 1.28
             if distance <= attack_distance and attack_timer <= 0.0:
                 _attack_player(nearest)
-        elif not hostile and distance <= alert_radius:
+        elif not hostile and (distance <= alert_radius or alerted_by_wound):
             var away: Vector3 = -offset.normalized() if distance > 0.05 else Vector3(1.0, 0.0, 0.0)
-            goal = global_position + away * 11.0
-            speed *= 1.55 if animal_kind == "rabbit" else 1.32
+            goal = global_position + away * 13.0
+            speed *= 1.70 if animal_kind == "rabbit" else 1.48
         elif retarget_timer <= 0.0:
             _pick_wander_target()
             goal = wander_target
@@ -105,14 +109,33 @@ func take_hunting_damage(amount: float, hunter_peer_id: int) -> void:
         return
     current_health = maxf(0.0, current_health - maxf(0.0, amount))
     retarget_timer = 0.0
+    wounded_seconds = 13.0
+    blood_mark_timer = 0.0
+
+    var system: Node = get_node_or_null("/root/SurvivalSystem/ForestSurvivalRuntime")
     if current_health <= 0.0:
         alive = false
         visible = false
         velocity = Vector3.ZERO
         _set_collision_enabled(false)
-        var system: Node = get_node_or_null("/root/SurvivalSystem/ForestSurvivalRuntime")
         if system != null and system.has_method("on_animal_killed"):
-            system.call("on_animal_killed", animal_id, animal_kind, hunter_peer_id)
+            system.call("on_animal_killed", animal_id, animal_kind, hunter_peer_id, global_position)
+        return
+
+    if system != null and system.has_method("on_animal_wounded"):
+        system.call("on_animal_wounded", animal_id, animal_kind, global_position)
+
+func _update_wound_trail(delta: float) -> void:
+    if wounded_seconds <= 0.0:
+        return
+    wounded_seconds = maxf(0.0, wounded_seconds - delta)
+    blood_mark_timer -= delta
+    if blood_mark_timer > 0.0:
+        return
+    blood_mark_timer = 1.75 if animal_kind != "rabbit" else 1.2
+    var system: Node = get_node_or_null("/root/SurvivalSystem/ForestSurvivalRuntime")
+    if system != null and system.has_method("on_animal_blood_trail"):
+        system.call("on_animal_blood_trail", global_position, animal_kind)
 
 func apply_remote_state(position_value: Vector3, yaw: float, alive_value: bool, health_value: float) -> void:
     remote_position = position_value
@@ -132,6 +155,8 @@ func reset_animal(spawn_position: Vector3) -> void:
     visible = true
     velocity = Vector3.ZERO
     retarget_timer = 0.0
+    wounded_seconds = 0.0
+    blood_mark_timer = 0.0
     _set_collision_enabled(true)
     _pick_wander_target()
 
