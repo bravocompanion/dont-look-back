@@ -19,6 +19,8 @@ func interact() -> void:
     var granted: PackedStringArray = PackedStringArray()
     if not bool(player.call("has_item", "hunting_bow")) and bool(player.call("add_item", "hunting_bow", "Hunting Bow")):
         granted.append("Hunting Bow")
+    if not bool(player.call("has_item", "hunting_knife")) and bool(player.call("add_item", "hunting_knife", "Hunting Knife")):
+        granted.append("Hunting Knife")
     if not bool(player.call("has_item", "fishing_rod")) and bool(player.call("add_item", "fishing_rod", "Fishing Rod")):
         granted.append("Fishing Rod")
 
@@ -38,7 +40,7 @@ func interact() -> void:
     searched = true
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
-        objective.text = "RANGER CACHE: %s. Bow uses arrows; the Fishing Rod works at marked water." % ", ".join(granted)
+        objective.text = "RANGER CACHE: %s. Kill prey with the bow, then harvest the carcass with the knife." % ", ".join(granted)
 
 func _build_visual() -> void:
     var material: StandardMaterial3D = StandardMaterial3D.new()
