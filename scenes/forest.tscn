@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
 
@@ -12,13 +12,59 @@ ambient_light_energy = 0.28
 radius = 0.34
 height = 1.75
 
+[sub_resource type="StandardMaterial3D" id="Material_ranger_fence"]
+albedo_color = Color(0.22, 0.135, 0.07, 1)
+roughness = 0.96
+
 [node name="ForestMap" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_forest")
 
+[node name="RangerFenceLeft" type="CSGBox3D" parent="."]
+position = Vector3(6.5, 0.5, -82)
+size = Vector3(0.12, 1, 15)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerFenceRight" type="CSGBox3D" parent="."]
+position = Vector3(21.5, 0.5, -82)
+size = Vector3(0.12, 1, 15)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerFenceBack" type="CSGBox3D" parent="."]
+position = Vector3(14, 0.5, -89.5)
+size = Vector3(15, 1, 0.12)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerFenceFrontLeft" type="CSGBox3D" parent="."]
+position = Vector3(9.75, 0.5, -74.5)
+size = Vector3(6.5, 1, 0.12)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerFenceFrontRight" type="CSGBox3D" parent="."]
+position = Vector3(18.25, 0.5, -74.5)
+size = Vector3(6.5, 1, 0.12)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerGateLeftPost" type="CSGBox3D" parent="."]
+position = Vector3(13, 0.65, -74.5)
+size = Vector3(0.18, 1.3, 0.18)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
+[node name="RangerGateRightPost" type="CSGBox3D" parent="."]
+position = Vector3(15, 0.65, -74.5)
+size = Vector3(0.18, 1.3, 0.18)
+use_collision = true
+material = SubResource("Material_ranger_fence")
+
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(0, 0.92, -57.5)
+position = Vector3(14, 0.92, -76)
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
@@ -57,16 +103,25 @@ color = Color(0.18, 0, 0, 0)
 [node name="Objective" type="Label" parent="Player/HUD"]
 offset_left = 28.0
 offset_top = 24.0
-offset_right = 800.0
+offset_right = 940.0
 offset_bottom = 68.0
 theme_override_font_sizes/font_size = 22
-text = "THE OUTSIDE: Find the cabin before night."
+text = "RANGER BASE: Secure food, water, fuel, and light before night."
+
+[node name="CaseFile" type="Label" parent="Player/HUD"]
+offset_left = 28.0
+offset_top = 62.0
+offset_right = 700.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(0.68, 0.72, 0.67, 1)
+theme_override_font_sizes/font_size = 14
+text = "CASE 07 • Missing survey team • Research begins after the base is stable"
 
 [node name="InventoryLabel" type="Label" parent="Player/HUD"]
 offset_left = 28.0
-offset_top = 74.0
-offset_right = 330.0
-offset_bottom = 160.0
+offset_top = 100.0
+offset_right = 360.0
+offset_bottom = 190.0
 theme_override_colors/font_color = Color(0.78, 0.78, 0.72, 1)
 theme_override_font_sizes/font_size = 16
 text = "INVENTORY\n(empty)"
@@ -148,7 +203,7 @@ offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 40
-text = "THE OUTSIDE"
+text = "RANGER FIELD BASE"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Player/HUD/EndPanel"]
@@ -165,7 +220,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 20
-text = "Find shelter. Keep a light alive."
+text = "Survive first. Then follow the evidence."
 horizontal_alignment = 1
 
 [node name="CaughtPanel" type="ColorRect" parent="Player/HUD"]
@@ -207,7 +262,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.78, 0.65, 0.65, 1)
 theme_override_font_sizes/font_size = 20
-text = "The dark outside is not empty."
+text = "A ranger who cannot survive cannot finish the investigation."
 horizontal_alignment = 1
 
 [node name="Restart" type="Label" parent="Player/HUD/CaughtPanel"]
