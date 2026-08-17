@@ -23,6 +23,12 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 func _ready() -> void:
     add_to_group("wildlife")
+    call_deferred("_finish_setup")
+
+func _finish_setup() -> void:
+    if not is_inside_tree():
+        return
+    _apply_kind_stats()
     rng.seed = int(abs(hash(animal_id))) + 1337
     home_position = global_position
     current_health = max_health
