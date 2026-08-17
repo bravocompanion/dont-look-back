@@ -12,7 +12,7 @@ func get_interaction_text() -> String:
 func interact() -> void:
     if searched:
         return
-    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    var player: CharacterBody3D = _local_player()
     if player == null or not player.has_method("add_item"):
         return
 
@@ -41,6 +41,19 @@ func interact() -> void:
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
         objective.text = "RANGER CACHE: %s. Kill prey with the bow, then harvest the carcass with the knife." % ", ".join(granted)
+
+func _local_player() -> CharacterBody3D:
+    var fallback: CharacterBody3D
+    for node: Node in get_tree().get_nodes_in_group("player"):
+        var player: CharacterBody3D = node as CharacterBody3D
+        if player == null:
+            continue
+        if fallback == null:
+            fallback = player
+        var camera: Camera3D = player.get_node_or_null("Camera3D") as Camera3D
+        if camera != null and camera.current:
+            return player
+    return fallback
 
 func _build_visual() -> void:
     var material: StandardMaterial3D = StandardMaterial3D.new()
