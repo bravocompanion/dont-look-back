@@ -17,7 +17,7 @@ func _ready() -> void:
     _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v25.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
-    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system.gd")
+    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v26.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
