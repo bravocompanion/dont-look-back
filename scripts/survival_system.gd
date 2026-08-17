@@ -8,12 +8,15 @@ var inventory_menu_script: Script
 var inventory_menu_runtime: Node
 var panic_movement_script: Script
 var panic_movement_runtime: Node
+var narrative_lore_script: Script
+var narrative_lore_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
     _attach_runtime("HudIconRuntime", "res://scripts/hud_icon_system.gd")
     _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
+    _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
@@ -37,6 +40,9 @@ func _attach_runtime(node_name: String, script_path: String) -> void:
         "PanicMovementTuningRuntime":
             panic_movement_script = runtime_script
             panic_movement_runtime = runtime
+        "NarrativeLoreRuntime":
+            narrative_lore_script = runtime_script
+            narrative_lore_runtime = runtime
 
 func _process(_delta: float) -> void:
     var scene: Node = get_tree().current_scene
