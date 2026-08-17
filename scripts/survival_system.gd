@@ -2,9 +2,17 @@ extends Node
 
 var configured_scene_id: int = 0
 var pickup_script: Script
+var hud_icon_script: Script
+var hud_icon_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
+    hud_icon_script = load("res://scripts/hud_icon_system.gd") as Script
+    if hud_icon_script != null:
+        hud_icon_runtime = Node.new()
+        hud_icon_runtime.name = "HudIconRuntime"
+        hud_icon_runtime.set_script(hud_icon_script)
+        add_child(hud_icon_runtime)
 
 func _process(_delta: float) -> void:
     var scene: Node = get_tree().current_scene
