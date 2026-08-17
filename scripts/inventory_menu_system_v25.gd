@@ -5,10 +5,11 @@ const FOREST_FOOD: Dictionary = {
     "cooked_fish": {"hunger": 44.0, "health": 2.0}
 }
 const FOREST_EQUIPMENT: Array[String] = ["hunting_bow", "fishing_rod"]
+const FOREST_TOOLS: Array[String] = ["hunting_knife"]
 const FOREST_MATERIALS: Array[String] = ["arrow", "raw_meat", "raw_fish", "hide", "bone", "animal_fat"]
 
 func _add_item_row(item_id: String, display_name: String, count: int) -> void:
-    if not FOREST_FOOD.has(item_id) and item_id not in FOREST_EQUIPMENT and item_id not in FOREST_MATERIALS:
+    if not FOREST_FOOD.has(item_id) and item_id not in FOREST_EQUIPMENT and item_id not in FOREST_TOOLS and item_id not in FOREST_MATERIALS:
         super._add_item_row(item_id, display_name, count)
         return
 
@@ -35,6 +36,9 @@ func _add_item_row(item_id: String, display_name: String, count: int) -> void:
         action.pressed.connect(_use_forest_food.bind(item_id))
     elif item_id in FOREST_EQUIPMENT:
         action.text = "EQUIPPED"
+        action.disabled = true
+    elif item_id in FOREST_TOOLS:
+        action.text = "TOOL"
         action.disabled = true
     else:
         action.text = "MATERIAL"
