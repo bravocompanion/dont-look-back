@@ -16,6 +16,8 @@ HUD survival sekarang memakai ikon visual + progress bar + angka, menggantikan l
 
 ## Runtime integration
 - `scripts/hud_icon_system.gd` membangun HUD ikon saat local player aktif.
+- Integrasi sekarang diluncurkan dari `SurvivalSystem`, yang memang sudah autoload sebelumnya.
+- Update HUD tidak lagi menambah atau mengubah entry autoload di `project.godot`, sehingga pull lebih aman untuk project Godot yang dibuka/diedit lokal.
 - HUD lama `SurvivalPanel` disembunyikan, tetapi sistem survival lama tetap berjalan sehingga tidak mengubah gameplay/network state.
 - Layout compact aktif untuk mobile atau viewport di bawah 800 px.
 - Layout desktop memakai bar yang lebih panjang dan ikon lebih besar.
