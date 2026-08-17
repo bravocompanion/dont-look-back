@@ -6,8 +6,14 @@ var harvested: bool = false
 
 func _ready() -> void:
     add_to_group("wildlife_carcass")
+    call_deferred("_finish_setup")
+
+func _finish_setup() -> void:
+    if not is_inside_tree():
+        return
     _build_visual()
     _build_collision()
+    set_harvested(harvested)
 
 func configure(id_value: String, kind_value: String) -> void:
     carcass_id = id_value
