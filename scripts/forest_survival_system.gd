@@ -116,7 +116,7 @@ func request_fishing(spot_id: String) -> void:
     else:
         _resolve_fishing(peer_id, spot_id)
 
-func on_animal_killed(animal_id: String, animal_kind: String, hunter_peer_id: int) -> void:
+func on_animal_killed(animal_id: String, animal_kind: String, hunter_peer_id: int, _death_position: Vector3) -> void:
     if not _is_authoritative():
         return
     respawn_timers[animal_id] = animal_respawn_seconds
