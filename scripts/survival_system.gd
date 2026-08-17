@@ -4,15 +4,39 @@ var configured_scene_id: int = 0
 var pickup_script: Script
 var hud_icon_script: Script
 var hud_icon_runtime: Node
+var inventory_menu_script: Script
+var inventory_menu_runtime: Node
+var panic_movement_script: Script
+var panic_movement_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
-    hud_icon_script = load("res://scripts/hud_icon_system.gd") as Script
-    if hud_icon_script != null:
-        hud_icon_runtime = Node.new()
-        hud_icon_runtime.name = "HudIconRuntime"
-        hud_icon_runtime.set_script(hud_icon_script)
-        add_child(hud_icon_runtime)
+    _attach_runtime("HudIconRuntime", "res://scripts/hud_icon_system.gd")
+    _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system.gd")
+    _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
+
+func _attach_runtime(node_name: String, script_path: String) -> void:
+    if get_node_or_null(NodePath(node_name)) != null:
+        return
+    var runtime_script: Script = load(script_path) as Script
+    if runtime_script == null:
+        push_warning("SurvivalSystem: runtime script tidak dapat dimuat: %s" % script_path)
+        return
+    var runtime: Node = Node.new()
+    runtime.name = node_name
+    runtime.set_script(runtime_script)
+    add_child(runtime)
+
+    match node_name:
+        "HudIconRuntime":
+            hud_icon_script = runtime_script
+            hud_icon_runtime = runtime
+        "InventoryMenuRuntime":
+            inventory_menu_script = runtime_script
+            inventory_menu_runtime = runtime
+        "PanicMovementTuningRuntime":
+            panic_movement_script = runtime_script
+            panic_movement_runtime = runtime
 
 func _process(_delta: float) -> void:
     var scene: Node = get_tree().current_scene
