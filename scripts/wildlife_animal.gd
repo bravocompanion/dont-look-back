@@ -32,6 +32,7 @@ func _finish_setup() -> void:
         return
     _apply_kind_stats()
     rng.seed = int(abs(hash(animal_id))) + 1337
+    global_position = _safe_adjust_position(global_position)
     home_position = global_position
     current_health = max_health
     remote_position = global_position
@@ -42,9 +43,10 @@ func _finish_setup() -> void:
 func configure(id_value: String, kind_value: String, spawn_position: Vector3, is_remote: bool) -> void:
     animal_id = id_value
     animal_kind = kind_value
-    global_position = spawn_position
-    home_position = spawn_position
-    remote_position = spawn_position
+    var safe_spawn: Vector3 = _safe_adjust_position(spawn_position)
+    global_position = safe_spawn
+    home_position = safe_spawn
+    remote_position = safe_spawn
     remote_controlled = is_remote
     _apply_kind_stats()
     current_health = max_health
@@ -53,6 +55,11 @@ func _physics_process(delta: float) -> void:
     if remote_controlled or not alive:
         velocity = Vector3.ZERO
         return
+
+    if _position_in_safe_zone(global_position):
+        global_position = _safe_adjust_position(global_position)
+        velocity = Vector3.ZERO
+        _pick_wander_target()
 
     attack_timer = maxf(0.0, attack_timer - delta)
     retarget_timer -= delta
@@ -85,6 +92,9 @@ func _physics_process(delta: float) -> void:
         _pick_wander_target()
         goal = wander_target
 
+    if _position_in_safe_zone(goal):
+        goal = _safe_adjust_position(goal)
+
     var direction: Vector3 = goal - global_position
     direction.y = 0.0
     if direction.length() > 0.22:
@@ -97,11 +107,17 @@ func _physics_process(delta: float) -> void:
         velocity.z = move_toward(velocity.z, 0.0, 6.0 * delta)
 
     move_and_slide()
+    if _position_in_safe_zone(global_position):
+        global_position = _safe_adjust_position(global_position)
+        velocity = Vector3.ZERO
 
 func _process(delta: float) -> void:
     if not remote_controlled or not alive:
         return
-    global_position = global_position.lerp(remote_position, clampf(delta * 10.0, 0.0, 1.0))
+    var safe_remote: Vector3 = _safe_adjust_position(remote_position)
+    global_position = global_position.lerp(safe_remote, clampf(delta * 10.0, 0.0, 1.0))
+    if _position_in_safe_zone(global_position):
+        global_position = safe_remote
     rotation.y = lerp_angle(rotation.y, remote_yaw, clampf(delta * 9.0, 0.0, 1.0))
 
 func take_hunting_damage(amount: float, hunter_peer_id: int) -> void:
@@ -138,7 +154,7 @@ func _update_wound_trail(delta: float) -> void:
         system.call("on_animal_blood_trail", global_position, animal_kind)
 
 func apply_remote_state(position_value: Vector3, yaw: float, alive_value: bool, health_value: float) -> void:
-    remote_position = position_value
+    remote_position = _safe_adjust_position(position_value)
     remote_yaw = yaw
     current_health = health_value
     if alive != alive_value:
@@ -147,9 +163,10 @@ func apply_remote_state(position_value: Vector3, yaw: float, alive_value: bool, 
         _set_collision_enabled(alive)
 
 func reset_animal(spawn_position: Vector3) -> void:
-    global_position = spawn_position
-    home_position = spawn_position
-    remote_position = spawn_position
+    var safe_spawn: Vector3 = _safe_adjust_position(spawn_position)
+    global_position = safe_spawn
+    home_position = safe_spawn
+    remote_position = safe_spawn
     current_health = max_health
     alive = true
     visible = true
@@ -165,13 +182,15 @@ func _pick_wander_target() -> void:
     var angle: float = rng.randf_range(0.0, TAU)
     var radius: float = rng.randf_range(1.5, wander_radius)
     wander_target = home_position + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+    if _position_in_safe_zone(wander_target):
+        wander_target = _safe_adjust_position(wander_target)
 
 func _nearest_player() -> CharacterBody3D:
     var best: CharacterBody3D
     var best_distance: float = INF
     for node: Node in get_tree().get_nodes_in_group("player"):
         var player: CharacterBody3D = node as CharacterBody3D
-        if player == null or bool(player.get("is_dead")):
+        if player == null or bool(player.get("is_dead")) or _player_in_safe_zone(player):
             continue
         var distance: float = Vector2(player.global_position.x - global_position.x, player.global_position.z - global_position.z).length()
         if distance < best_distance:
@@ -180,6 +199,8 @@ func _nearest_player() -> CharacterBody3D:
     return best
 
 func _attack_player(player: CharacterBody3D) -> void:
+    if player == null or _player_in_safe_zone(player):
+        return
     attack_timer = attack_cooldown
     var system: Node = get_node_or_null("/root/SurvivalSystem/ForestSurvivalRuntime")
     if system != null and system.has_method("report_wildlife_attack"):
@@ -211,6 +232,22 @@ func _apply_kind_stats() -> void:
             max_health = 2.0
             alert_radius = 10.0
             wander_radius = 9.0
+
+func _safe_adjust_position(position_value: Vector3) -> Vector3:
+    var safe_zone: Node = get_node_or_null("/root/RangerSafeZone")
+    if safe_zone == null or not safe_zone.has_method("is_position_safe") or not safe_zone.has_method("push_position_outside"):
+        return position_value
+    if not bool(safe_zone.call("is_position_safe", position_value)):
+        return position_value
+    var adjusted: Variant = safe_zone.call("push_position_outside", position_value, 2.5)
+    return adjusted if adjusted is Vector3 else position_value
+
+func _position_in_safe_zone(position_value: Vector3) -> bool:
+    var safe_zone: Node = get_node_or_null("/root/RangerSafeZone")
+    return safe_zone != null and safe_zone.has_method("is_position_safe") and bool(safe_zone.call("is_position_safe", position_value))
+
+func _player_in_safe_zone(player: Node3D) -> bool:
+    return player != null and _position_in_safe_zone(player.global_position)
 
 func _build_visual() -> void:
     if get_node_or_null("Body") != null:
