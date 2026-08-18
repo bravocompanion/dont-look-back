@@ -3,6 +3,7 @@ extends StaticBody3D
 var searched: bool = false
 
 func _ready() -> void:
+    _relocate_outside_ranger_safe_zone()
     _build_visual()
     _build_collision()
 
@@ -54,6 +55,16 @@ func _local_player() -> CharacterBody3D:
         if camera != null and camera.current:
             return player
     return fallback
+
+func _relocate_outside_ranger_safe_zone() -> void:
+    var safe_zone: Node = get_node_or_null("/root/RangerSafeZone")
+    if safe_zone == null or not safe_zone.has_method("is_position_safe") or not safe_zone.has_method("push_position_outside"):
+        return
+    if not bool(safe_zone.call("is_position_safe", global_position)):
+        return
+    var relocated: Variant = safe_zone.call("push_position_outside", global_position, 3.0)
+    if relocated is Vector3:
+        global_position = relocated
 
 func _build_visual() -> void:
     var material: StandardMaterial3D = StandardMaterial3D.new()
