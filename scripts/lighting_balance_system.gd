@@ -1,7 +1,8 @@
 extends Node
 
 const FLASHLIGHT_RANGE: float = 65.0
-const FLASHLIGHT_ENERGY: float = 9.50
+const FLASHLIGHT_SPOT_ANGLE: float = 36.4
+const FLASHLIGHT_ENERGY: float = 20.0
 const FLASHLIGHT_DIM_START_BATTERY: float = 75.0
 const LOW_BATTERY_FLICKER_THRESHOLD: float = 22.0
 const FULL_DARKNESS_AMBIENT: float = 0.05
@@ -14,8 +15,8 @@ var last_scene_id: int = 0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
-    # Apply after Player.gd so the 75% battery curve becomes the final visual
-    # output while retaining the existing panic and low-battery behavior.
+    # Apply after Player.gd so the shared flashlight profile becomes the final
+    # visual output while retaining panic and low-battery instability.
     process_priority = 90
 
 func _process(_delta: float) -> void:
@@ -40,7 +41,10 @@ func _configure_player_flashlights() -> void:
         if flashlight == null:
             continue
 
+        # v0.31: keep the 65 m reach, widen the cone by 30% (28 -> 36.4 deg),
+        # and provide 20 energy while battery is between 100% and 75%.
         flashlight.spot_range = FLASHLIGHT_RANGE
+        flashlight.spot_angle = FLASHLIGHT_SPOT_ANGLE
         player.set("flashlight_base_energy", FLASHLIGHT_ENERGY)
 
         var battery: float = clampf(float(player.get("flashlight_battery")), 0.0, 100.0)
@@ -48,14 +52,13 @@ func _configure_player_flashlights() -> void:
             flashlight.light_energy = 0.0
             continue
 
-        # 100% through 75% stays at full 9.5 energy. Below 75%, brightness
-        # drops proportionally with battery: 50%=6.33, 25%=3.17, 10%=1.27.
+        # 100% through 75% stays at full 20 energy. Below 75%, brightness
+        # drops proportionally: 50%=13.33, 25%=6.67, 10%=2.67.
         var battery_factor: float = 1.0
         if battery < FLASHLIGHT_DIM_START_BATTERY:
             battery_factor = clampf(battery / FLASHLIGHT_DIM_START_BATTERY, 0.0, 1.0)
 
-        # Preserve the existing low-battery instability, but only after the
-        # smooth 75% brightness degradation has already taken effect.
+        # Keep the existing low-battery flicker after the smooth dimming curve.
         if battery <= LOW_BATTERY_FLICKER_THRESHOLD:
             var low_ratio: float = clampf(battery / LOW_BATTERY_FLICKER_THRESHOLD, 0.0, 1.0)
             var flicker: float = 0.62 + 0.38 * absf(sin(float(Time.get_ticks_msec()) / 72.0))
