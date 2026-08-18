@@ -9,9 +9,9 @@ const YARD_MIN_Z: float = -97.0
 const YARD_MAX_Z: float = -67.0
 const EVICT_MARGIN: float = 2.0
 const RESOURCE_FRONT_Z: float = -63.5
-const SCAN_INTERVAL: float = 0.20
+const RESOURCE_SCAN_INTERVAL: float = 0.25
 
-var scan_timer: float = 0.0
+var resource_scan_timer: float = 0.0
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -22,17 +22,14 @@ func _process(delta: float) -> void:
         _restore_solo_directors()
         return
 
-    scan_timer -= delta
-    if scan_timer > 0.0:
-        return
-    scan_timer = SCAN_INTERVAL
-
     var local_player: CharacterBody3D = _local_player()
     var local_safe: bool = local_player != null and is_position_safe(local_player.global_position)
 
     if local_safe:
         _protect_player(local_player)
 
+    # Threat enforcement runs every frame. RangerSafeZone is loaded after
+    # CoopHorrorSystem so co-op spawns are cancelled before the frame renders.
     _enforce_solo_threat_state(scene, local_safe)
     _enforce_coop_threat_state()
     _evict_group("darkness_creature", true)
@@ -44,7 +41,12 @@ func _process(delta: float) -> void:
     _evict_group("tenant", false)
     _evict_group("warden", false)
     _evict_named_tenant(scene, local_safe)
-    _relocate_dynamic_resources(scene)
+
+    # Recursive resource scanning is intentionally throttled for mobile.
+    resource_scan_timer -= delta
+    if resource_scan_timer <= 0.0:
+        resource_scan_timer = RESOURCE_SCAN_INTERVAL
+        _relocate_dynamic_resources(scene)
 
 func is_position_safe(world_position: Vector3) -> bool:
     return (
@@ -63,16 +65,16 @@ func push_position_outside(world_position: Vector3, margin: float = EVICT_MARGIN
 
     var left_distance: float = world_position.x - YARD_MIN_X
     var right_distance: float = YARD_MAX_X - world_position.x
-    var front_distance: float = world_position.z - YARD_MIN_Z
-    var back_distance: float = YARD_MAX_Z - world_position.z
-    var nearest: float = minf(minf(left_distance, right_distance), minf(front_distance, back_distance))
+    var rear_distance: float = world_position.z - YARD_MIN_Z
+    var front_distance: float = YARD_MAX_Z - world_position.z
+    var nearest: float = minf(minf(left_distance, right_distance), minf(rear_distance, front_distance))
     var result: Vector3 = world_position
 
     if is_equal_approx(nearest, left_distance):
         result.x = YARD_MIN_X - margin
     elif is_equal_approx(nearest, right_distance):
         result.x = YARD_MAX_X + margin
-    elif is_equal_approx(nearest, front_distance):
+    elif is_equal_approx(nearest, rear_distance):
         result.z = YARD_MIN_Z - margin
     else:
         result.z = YARD_MAX_Z + margin
