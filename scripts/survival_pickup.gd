@@ -7,6 +7,7 @@ extends StaticBody3D
 var collected: bool = false
 
 func _ready() -> void:
+    _relocate_outside_ranger_safe_zone()
     _build_visual()
     call_deferred("_remove_if_already_claimed")
 
@@ -88,6 +89,16 @@ func _remove_if_already_claimed() -> void:
     var claimed: Dictionary = Dictionary(network.get("claimed_pickups"))
     if bool(claimed.get(pickup_path, false)):
         queue_free()
+
+func _relocate_outside_ranger_safe_zone() -> void:
+    var safe_zone: Node = get_node_or_null("/root/RangerSafeZone")
+    if safe_zone == null or not safe_zone.has_method("is_position_safe") or not safe_zone.has_method("push_position_outside"):
+        return
+    if not bool(safe_zone.call("is_position_safe", global_position)):
+        return
+    var relocated: Variant = safe_zone.call("push_position_outside", global_position, 3.0)
+    if relocated is Vector3:
+        global_position = relocated
 
 func _build_visual() -> void:
     var mesh_instance: MeshInstance3D = MeshInstance3D.new()
