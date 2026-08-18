@@ -14,9 +14,16 @@ func _on_body_entered(body: Node3D) -> void:
         return
 
     var transition: Node = get_node_or_null("/root/MapTransitionSystem")
-    if transition == null or not transition.has_method("request_forest_transition"):
+    if transition == null:
+        return
+
+    # Ranger-first route: Forest -> Mine -> Labyrinth -> Research Facility.
+    # Fall back to the old Forest exit only if the upgraded transition system
+    # is not present, keeping older builds recoverable.
+    var method_name: String = "request_research_transition" if transition.has_method("request_research_transition") else "request_forest_transition"
+    if not transition.has_method(method_name):
         return
 
     triggered = true
     monitoring = false
-    transition.call("request_forest_transition")
+    transition.call(method_name)
