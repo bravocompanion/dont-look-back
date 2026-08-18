@@ -2,6 +2,15 @@ extends "res://scripts/main_menu.gd"
 
 const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
+func _ready() -> void:
+    super._ready()
+    version_label.text = "v0.28  •  RANGER INVESTIGATION"
+    save_summary.tooltip_text = "Game dimulai di Ranger Forest. Progress mengikuti Forest → Mine → Labyrinth → Research Facility."
+    new_game_button.tooltip_text = "Mulai sebagai ranger di cabin forest. Survival dulu, lalu ikuti evidence."
+    host_button.tooltip_text = "Host co-op dimulai di Ranger Forest yang sama."
+    join_button.tooltip_text = "Join host dan sinkron ke scene investigasi host."
+    _set_status("RANGER CASE 07 — Survive the forest, investigate the missing survey team, then follow the evidence underground.")
+
 func _start_new_game() -> void:
     if scene_booting:
         return
@@ -54,7 +63,7 @@ func _process_join(delta: float) -> void:
     var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
     var connecting: bool = bool(network.get("connecting"))
     if online:
-        _set_status("Terhubung. Menyiapkan ranger station...")
+        _set_status("Terhubung. Menyiapkan ranger investigation...")
         if join_elapsed >= 1.0:
             join_waiting = false
             _enter_scene_safely(RANGER_START_SCENE_PATH, "JOIN CO-OP — RANGER STATION")
@@ -68,4 +77,4 @@ func _process_join(delta: float) -> void:
 func _show_main() -> void:
     super._show_main()
     if not scene_booting:
-        _set_status("NEW GAME dimulai sebagai ranger di forest research station.")
+        _set_status("NEW GAME: Ranger Forest → evidence → Old Mine → Labyrinth → Research Facility.")
