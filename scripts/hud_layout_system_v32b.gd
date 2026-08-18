@@ -12,6 +12,24 @@ func _apply_gameplay_layout() -> void:
     var top_margin: float = 5.0 if compact else 16.0
     var secondary_y: float = bar_height + top_margin + 76.0
 
+    var objective: Label = tracked_player.get_node_or_null("HUD/Objective") as Label
+    if objective != null:
+        objective.max_lines_visible = 2
+        objective.clip_text = true
+        objective.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+    var case_file: Label = tracked_player.get_node_or_null("HUD/CaseFile") as Label
+    if case_file != null:
+        case_file.max_lines_visible = 1
+        case_file.clip_text = true
+        case_file.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+    var interaction: Label = tracked_player.get_node_or_null("HUD/InteractionHint") as Label
+    if interaction != null:
+        interaction.max_lines_visible = 2
+        interaction.clip_text = true
+        interaction.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
     # Use absolute top-left coordinates for edge-aligned labels so their final
     # rect is independent of whatever anchor preset the original scene used.
     var panic: Label = tracked_player.get_node_or_null("HUD/PanicLabel") as Label
@@ -21,12 +39,22 @@ func _apply_gameplay_layout() -> void:
         panic.position = Vector2(size.x - margin - panic_width, secondary_y)
         panic.size = Vector2(panic_width, 24.0)
         panic.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+        panic.max_lines_visible = 1
+        panic.clip_text = true
+
+    var shelter_status: Label = tracked_player.get_node_or_null("HUD/ShelterStatus") as Label
+    if shelter_status != null:
+        shelter_status.max_lines_visible = 1
+        shelter_status.clip_text = true
+        shelter_status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
     var controls: Label = tracked_player.get_node_or_null("HUD/Controls") as Label
     if controls != null and controls.visible:
         controls.set_anchors_preset(Control.PRESET_TOP_LEFT)
         controls.position = Vector2(24.0, maxf(0.0, size.y - 34.0))
         controls.size = Vector2(minf(900.0, size.x - 48.0), 26.0)
+        controls.max_lines_visible = 1
+        controls.clip_text = true
 
 func _layout_journal() -> void:
     super._layout_journal()
@@ -58,3 +86,15 @@ func _layout_journal() -> void:
         panel.offset_top = -height_desktop * 0.5
         panel.offset_right = width_desktop * 0.5
         panel.offset_bottom = height_desktop * 0.5
+
+    var mission: Label = journal.get("mission_label") as Label
+    if mission != null:
+        mission.max_lines_visible = 6 if compact else 8
+        mission.clip_text = true
+        mission.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+    var heading: Label = journal.get("entry_heading") as Label
+    if heading != null:
+        heading.max_lines_visible = 2
+        heading.clip_text = true
+        heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
