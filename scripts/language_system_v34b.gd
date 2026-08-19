@@ -1,5 +1,5 @@
-extends "res://scripts/language_system_v36_stable.gd"
+extends Node
 
-# Legacy compatibility shim.
-# v0.34b runtime localization is superseded by v0.36 stable localization.
-# This file remains parse-safe for cached editor references.
+# Legacy localization compatibility stub.
+# v0.34b localization was removed in v0.38.
+# English-only: intentionally inert.
