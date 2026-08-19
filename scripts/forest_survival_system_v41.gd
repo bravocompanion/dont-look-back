@@ -1,4 +1,4 @@
-extends "res://scripts/forest_survival_system_v28_english.gd"
+extends "res://scripts/forest_survival_system_v29_status_menu.gd"
 
 func _process(delta: float) -> void:
     super._process(delta)
