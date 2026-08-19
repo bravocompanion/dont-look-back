@@ -1,5 +1,5 @@
-extends "res://scripts/language_system_v36_stable.gd"
+extends Node
 
-# Legacy compatibility shim.
-# v0.34c is no longer part of the active localization chain.
-# Point directly at v0.36 so Godot can safely parse old/cached references.
+# Legacy localization compatibility stub.
+# v0.34c localization was removed in v0.38.
+# English-only: intentionally inert.
