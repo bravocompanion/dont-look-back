@@ -9,7 +9,7 @@ const PANIC_INPUT_SYSTEM_SCRIPT: String = "res://scripts/panic_input_system.gd"
 const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_network_bridge.gd"
 const TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT: String = "res://scripts/tenant_flashlight_fx_system.gd"
 const TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT: String = "res://scripts/tenant_death_feedback_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.40  •  RANGER INVESTIGATION  •  ICON HUD"
+const VERSION_BADGE_TEXT: String = "v0.41  •  RADIATION SURVIVAL  •  12:00 START"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
