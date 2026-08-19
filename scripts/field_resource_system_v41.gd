@@ -2,7 +2,7 @@ extends Node
 
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
 const MINE_SCENE_PATH: String = "res://scenes/mine.tscn"
-const PICKUP_SCRIPT_PATH: String = "res://scripts/survival_pickup.gd"
+const PICKUP_SCRIPT_PATH: String = "res://scripts/survival_pickup_v41.gd"
 
 var configured_scene_id: int = 0
 var pickup_script: Script = null
