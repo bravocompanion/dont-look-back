@@ -4,7 +4,7 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.36  •  RANGER INVESTIGATION  •  ID / EN  •  STABLE UI"
+    version_label.text = "v0.37  •  RANGER INVESTIGATION  •  ID / EN  •  FOREST NIGHT AUDIO"
     save_summary.tooltip_text = "Game dimulai di Ranger Forest. Progress mengikuti Forest → Mine → Labyrinth → Research Facility."
     new_game_button.tooltip_text = "Mulai sebagai ranger di cabin forest. Survival dulu, lalu ikuti evidence."
     host_button.tooltip_text = "Host co-op dimulai di Ranger Forest yang sama."
