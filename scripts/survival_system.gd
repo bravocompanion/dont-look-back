@@ -17,14 +17,14 @@ func _ready() -> void:
     _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v25.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
-    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v27.gd")
+    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v28_english.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
         return
     var runtime_script: Script = load(script_path) as Script
     if runtime_script == null:
-        push_warning("SurvivalSystem: runtime script tidak dapat dimuat: %s" % script_path)
+        push_warning("SurvivalSystem: runtime script could not be loaded: %s" % script_path)
         return
     var runtime: Node = Node.new()
     runtime.name = node_name
