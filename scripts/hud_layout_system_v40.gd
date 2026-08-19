@@ -75,7 +75,8 @@ func _ensure_icon_headers_v40() -> void:
             icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
             icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
             icon.texture = load(str(ICON_PATHS_V40.get(stat_id, ""))) as Texture2D
-            icon.modulate = Color(ICON_COLORS_V40.get(stat_id, Color.WHITE))
+            var icon_color: Color = ICON_COLORS_V40.get(stat_id, Color.WHITE)
+            icon.modulate = icon_color
             icon.tooltip_text = str(TOOLTIP_NAMES_V40.get(stat_id, stat_id.capitalize()))
             header.add_child(icon)
 
@@ -96,8 +97,9 @@ func _ensure_icon_headers_v40() -> void:
 
         var bar: ProgressBar = cell.get_node_or_null("Bar") as ProgressBar
         if bar != null:
+            var bar_color: Color = ICON_COLORS_V40.get(stat_id, Color.WHITE)
             bar.add_theme_stylebox_override("background", _v40_bar_background())
-            bar.add_theme_stylebox_override("fill", _v40_bar_fill(Color(ICON_COLORS_V40.get(stat_id, Color.WHITE))))
+            bar.add_theme_stylebox_override("fill", _v40_bar_fill(bar_color))
 
 func _update_icon_values_v40() -> void:
     if tracked_player == null or not is_instance_valid(tracked_player):
