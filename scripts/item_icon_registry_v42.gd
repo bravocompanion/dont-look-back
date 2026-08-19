@@ -12,9 +12,10 @@ const IconData08 = preload("res://scripts/icon_data/item_icon_data_08.gd")
 const IconData09 = preload("res://scripts/icon_data/item_icon_data_09.gd")
 const IconData10 = preload("res://scripts/icon_data/item_icon_data_10.gd")
 const IconData11 = preload("res://scripts/icon_data/item_icon_data_11.gd")
+const IconData12 = preload("res://scripts/icon_data/item_icon_data_12.gd")
 
-const ATLAS_SIZE: Vector2i = Vector2i(896, 672)
-const CELL_SIZE: Vector2i = Vector2i(112, 96)
+const ATLAS_SIZE: Vector2i = Vector2i(448, 336)
+const CELL_SIZE: Vector2i = Vector2i(56, 48)
 
 const ICON_CELLS: Dictionary = {
     "flashlight": Vector2i(0, 0),
@@ -148,6 +149,7 @@ func _ensure_atlas() -> void:
         IconData00.DATA + IconData01.DATA + IconData02.DATA + IconData03.DATA
         + IconData04.DATA + IconData05.DATA + IconData06.DATA + IconData07.DATA
         + IconData08.DATA + IconData09.DATA + IconData10.DATA + IconData11.DATA
+        + IconData12.DATA
     )
     var raw: PackedByteArray = Marshalls.base64_to_raw(encoded)
     if raw.is_empty():
@@ -159,5 +161,11 @@ func _ensure_atlas() -> void:
     if error != OK:
         push_error("ItemIconRegistry: PNG atlas decode failed (%s)." % error_string(error))
         return
+
+    if image.get_width() != ATLAS_SIZE.x or image.get_height() != ATLAS_SIZE.y:
+        push_warning(
+            "ItemIconRegistry: decoded atlas size is %dx%d, expected %dx%d."
+            % [image.get_width(), image.get_height(), ATLAS_SIZE.x, ATLAS_SIZE.y]
+        )
 
     atlas_texture = ImageTexture.create_from_image(image)
