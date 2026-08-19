@@ -356,7 +356,7 @@ func _on_peer_connected(peer_id: int) -> void:
         return
     _receive_tower_state.rpc_id(peer_id, tower_built)
 
-@rpc("authority", "call_remote", "reliable", 63)
+@rpc("authority", "call_remote", "reliable", 44)
 func _receive_tower_state(built: bool) -> void:
     tower_built = built
     var scene: Node = get_tree().current_scene
