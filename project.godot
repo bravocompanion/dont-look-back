@@ -3,18 +3,20 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.41"
+config/name="Don't Look Back v0.42"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
+ItemIconRegistry="*res://scripts/item_icon_registry_v42.gd"
 SurvivalSystem="*res://scripts/survival_system_ranger_v2.gd"
 DarknessDirector="*res://scripts/darkness_director.gd"
 CheckpointSystem="*res://scripts/checkpoint_system.gd"
 LabyrinthDirector="*res://scripts/labyrinth_director_v181.gd"
 OutsideDirector="*res://scripts/outside_director_ranger_v6.gd"
-ShelterSystem="*res://scripts/shelter_system_ranger_v3.gd"
+ShelterSystem="*res://scripts/shelter_system_ranger_v4.gd"
+StashMenuSystem="*res://scripts/stash_menu_system_v42.gd"
 RadiationSystem="*res://scripts/radiation_survival_system_v41.gd"
-CraftingSystem="*res://scripts/crafting_system_v41_safe.gd"
+CraftingSystem="*res://scripts/crafting_system_v42_icons.gd"
 NetworkManager="*res://scripts/network_manager_v41.gd"
 MobileControls="*res://scripts/mobile_controls_v183.gd"
 MovementSystem="*res://scripts/movement_system_v41.gd"
