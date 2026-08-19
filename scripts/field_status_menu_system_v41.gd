@@ -50,4 +50,7 @@ func _other_menu_open() -> bool:
     if super._other_menu_open():
         return true
     var crafting: Node = get_node_or_null("/root/CraftingSystem")
-    return crafting != null and crafting.has_method("is_open") and bool(crafting.call("is_open"))
+    if crafting != null and crafting.has_method("is_open") and bool(crafting.call("is_open")):
+        return true
+    var stash: Node = get_node_or_null("/root/StashMenuSystem")
+    return stash != null and stash.has_method("is_open") and bool(stash.call("is_open"))
