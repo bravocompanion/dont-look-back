@@ -2,8 +2,6 @@ extends Node
 
 var configured_scene_id: int = 0
 var pickup_script: Script
-var hud_icon_script: Script
-var hud_icon_runtime: Node
 var inventory_menu_script: Script
 var inventory_menu_runtime: Node
 var panic_movement_script: Script
@@ -13,11 +11,12 @@ var narrative_lore_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
-    _attach_runtime("HudIconRuntime", "res://scripts/hud_icon_system.gd")
+    # v0.39: the vertical icon HUD was removed. HUDLayoutSystem owns the single
+    # horizontal survival strip at the top of the screen.
     _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v25.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
-    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v28_english.gd")
+    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v29_status_menu.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
@@ -32,9 +31,6 @@ func _attach_runtime(node_name: String, script_path: String) -> void:
     add_child(runtime)
 
     match node_name:
-        "HudIconRuntime":
-            hud_icon_script = runtime_script
-            hud_icon_runtime = runtime
         "InventoryMenuRuntime":
             inventory_menu_script = runtime_script
             inventory_menu_runtime = runtime
