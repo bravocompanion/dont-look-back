@@ -11,9 +11,9 @@ var narrative_lore_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
-    # v0.42: one compact item atlas now drives Inventory, Workbench and Stash.
+    # v0.43: stable cached icon registry; no embedded base64 icon scripts.
     # The vertical duplicate survival HUD remains removed.
-    _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v42_icons.gd")
+    _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v43.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
     _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v41.gd")
