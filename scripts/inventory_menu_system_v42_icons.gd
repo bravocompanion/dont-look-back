@@ -10,6 +10,12 @@ func _add_item_row(item_id: String, display_name: String, count: int) -> void:
     super._add_item_row(item_id, display_name, count)
     _inject_icon_into_last_row(item_id)
 
+func _blocked_elsewhere() -> bool:
+    if super._blocked_elsewhere():
+        return true
+    var stash: Node = get_node_or_null("/root/StashMenuSystem")
+    return stash != null and stash.has_method("is_open") and bool(stash.call("is_open"))
+
 func _inject_icon_into_last_row(item_id: String) -> void:
     if item_list == null or item_list.get_child_count() <= 0:
         return
