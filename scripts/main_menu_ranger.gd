@@ -4,18 +4,18 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.39  •  RANGER INVESTIGATION  •  ENGLISH ONLY  •  STABLE HUD"
+    version_label.text = "v0.40  •  RANGER INVESTIGATION  •  06:00 START  •  ICON HUD"
     save_summary.tooltip_text = "The game starts in Ranger Forest. Progress follows Forest → Mine → Labyrinth → Research Facility."
-    new_game_button.tooltip_text = "Start as a ranger at the forest cabin. Survive first, then follow the evidence."
-    host_button.tooltip_text = "Host co-op starts in the same Ranger Forest."
-    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene."
+    new_game_button.tooltip_text = "Start at 06:00 at the ranger cabin. Survive first, then follow the evidence."
+    host_button.tooltip_text = "Host co-op starts at 06:00 in the same Ranger Forest."
+    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene and time."
     _set_status("RANGER CASE 07 — Survive the forest, investigate the missing survey team, then follow the evidence underground.")
 
 func _start_new_game() -> void:
     if scene_booting:
         return
     _set_menu_buttons_enabled(false)
-    _set_status("Preparing the ranger station in the forest...")
+    _set_status("Preparing the ranger station at 06:00...")
     _disconnect_network()
 
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -49,6 +49,9 @@ func _host_game() -> void:
         _set_status("Failed to create the HOST session.")
         return
     _set_menu_buttons_enabled(false)
+    var save_system: Node = get_node_or_null("/root/SaveSystem")
+    if save_system != null and save_system.has_method("_prepare_clean_reload"):
+        save_system.call("_prepare_clean_reload")
     _enter_scene_safely(RANGER_START_SCENE_PATH, "HOST CO-OP — RANGER STATION")
 
 func _process_join(delta: float) -> void:
@@ -77,4 +80,4 @@ func _process_join(delta: float) -> void:
 func _show_main() -> void:
     super._show_main()
     if not scene_booting:
-        _set_status("NEW GAME: Ranger Forest → evidence → Old Mine → Labyrinth → Research Facility.")
+        _set_status("NEW GAME: 06:00 Ranger Forest → evidence → Old Mine → Labyrinth → Research Facility.")
