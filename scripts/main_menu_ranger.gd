@@ -4,18 +4,18 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.40  •  RANGER INVESTIGATION  •  06:00 START  •  ICON HUD"
-    save_summary.tooltip_text = "The game starts in Ranger Forest. Progress follows Forest → Mine → Labyrinth → Research Facility."
-    new_game_button.tooltip_text = "Start at 06:00 at the ranger cabin. Survive first, then follow the evidence."
-    host_button.tooltip_text = "Host co-op starts at 06:00 in the same Ranger Forest."
-    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene and time."
-    _set_status("RANGER CASE 07 — Survive the forest, investigate the missing survey team, then follow the evidence underground.")
+    version_label.text = "v0.41  •  RADIATION SURVIVAL  •  12:00 START  •  EXPANDED CRAFTING"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; power and protection become part of the investigation route."
+    new_game_button.tooltip_text = "Start at 12:00 at the ranger cabin. Day 1 prepares the base; Day 3 begins the radiation phase."
+    host_button.tooltip_text = "Host co-op starts at 12:00 in the same Ranger Forest with shared shelter power and tower infrastructure."
+    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene and world time."
+    _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
     if scene_booting:
         return
     _set_menu_buttons_enabled(false)
-    _set_status("Preparing the ranger station at 06:00...")
+    _set_status("Preparing the ranger station at 12:00...")
     _disconnect_network()
 
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -80,4 +80,4 @@ func _process_join(delta: float) -> void:
 func _show_main() -> void:
     super._show_main()
     if not scene_booting:
-        _set_status("NEW GAME: 06:00 Ranger Forest → evidence → Old Mine → Labyrinth → Research Facility.")
+        _set_status("NEW GAME: 12:00 Ranger Forest → Day 3 radiation → Old Mine → Labyrinth → Research Facility.")
