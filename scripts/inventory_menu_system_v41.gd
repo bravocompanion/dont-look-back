@@ -32,3 +32,14 @@ func _add_item_row(item_id: String, display_name: String, count: int) -> void:
         action.text = "MATERIAL"
     action.disabled = true
     row.add_child(action)
+
+func _blocked_elsewhere() -> bool:
+    if super._blocked_elsewhere():
+        return true
+    var crafting: Node = get_node_or_null("/root/CraftingSystem")
+    if crafting != null and crafting.has_method("is_open") and bool(crafting.call("is_open")):
+        return true
+    var status_menu: Node = get_node_or_null("/root/FieldStatusMenuSystem")
+    if status_menu != null and status_menu.has_method("is_open") and bool(status_menu.call("is_open")):
+        return true
+    return false
