@@ -1,5 +1,5 @@
-extends "res://scripts/language_system_v36_stable.gd"
+extends Node
 
-# Legacy compatibility shim.
-# v0.34 localization was replaced by the parser-safe/stable v0.36 system.
-# Keep this path valid for old editor tabs, cached resources, and older scenes.
+# Legacy localization compatibility stub.
+# v0.34 localization was removed in v0.38.
+# English-only: intentionally inert.
