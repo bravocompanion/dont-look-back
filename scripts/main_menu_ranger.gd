@@ -4,18 +4,18 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.37  •  RANGER INVESTIGATION  •  ID / EN  •  FOREST NIGHT AUDIO"
-    save_summary.tooltip_text = "Game dimulai di Ranger Forest. Progress mengikuti Forest → Mine → Labyrinth → Research Facility."
-    new_game_button.tooltip_text = "Mulai sebagai ranger di cabin forest. Survival dulu, lalu ikuti evidence."
-    host_button.tooltip_text = "Host co-op dimulai di Ranger Forest yang sama."
-    join_button.tooltip_text = "Join host dan sinkron ke scene investigasi host."
+    version_label.text = "v0.38  •  RANGER INVESTIGATION  •  ENGLISH ONLY  •  FOREST NIGHT AUDIO"
+    save_summary.tooltip_text = "The game starts in Ranger Forest. Progress follows Forest → Mine → Labyrinth → Research Facility."
+    new_game_button.tooltip_text = "Start as a ranger at the forest cabin. Survive first, then follow the evidence."
+    host_button.tooltip_text = "Host co-op starts in the same Ranger Forest."
+    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene."
     _set_status("RANGER CASE 07 — Survive the forest, investigate the missing survey team, then follow the evidence underground.")
 
 func _start_new_game() -> void:
     if scene_booting:
         return
     _set_menu_buttons_enabled(false)
-    _set_status("Menyiapkan ranger station di forest...")
+    _set_status("Preparing the ranger station in the forest...")
     _disconnect_network()
 
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -23,7 +23,7 @@ func _start_new_game() -> void:
         if save_system.has_method("delete_save") and not bool(save_system.call("delete_save")):
             _set_menu_buttons_enabled(true)
             _show_main()
-            _set_status("Save lama gagal dihapus.")
+            _set_status("Failed to delete the previous save.")
             return
         if save_system.has_method("_prepare_clean_reload"):
             save_system.call("_prepare_clean_reload")
@@ -42,11 +42,11 @@ func _host_game() -> void:
     _disconnect_network()
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null or not network.has_method("host_game"):
-        _set_status("NetworkManager tidak tersedia.")
+        _set_status("NetworkManager is not available.")
         return
     network.call("host_game")
     if not (network.has_method("is_online") and bool(network.call("is_online"))):
-        _set_status("HOST gagal dibuat.")
+        _set_status("Failed to create the HOST session.")
         return
     _set_menu_buttons_enabled(false)
     _enter_scene_safely(RANGER_START_SCENE_PATH, "HOST CO-OP — RANGER STATION")
@@ -57,13 +57,13 @@ func _process_join(delta: float) -> void:
     if network == null:
         join_waiting = false
         join_connect_button.disabled = false
-        _set_status("NetworkManager tidak tersedia.")
+        _set_status("NetworkManager is not available.")
         return
 
     var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
     var connecting: bool = bool(network.get("connecting"))
     if online:
-        _set_status("Terhubung. Menyiapkan ranger investigation...")
+        _set_status("Connected. Preparing the ranger investigation...")
         if join_elapsed >= 1.0:
             join_waiting = false
             _enter_scene_safely(RANGER_START_SCENE_PATH, "JOIN CO-OP — RANGER STATION")
@@ -72,7 +72,7 @@ func _process_join(delta: float) -> void:
     if not connecting and join_elapsed > 0.35:
         join_waiting = false
         join_connect_button.disabled = false
-        _set_status("Gagal terhubung. Periksa IP HOST.")
+        _set_status("Connection failed. Check the HOST IP address.")
 
 func _show_main() -> void:
     super._show_main()
