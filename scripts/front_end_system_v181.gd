@@ -1,15 +1,15 @@
 extends "res://scripts/front_end_system.gd"
 
-const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu_ranger.tscn"
+const LEGACY_MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
 const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
-const LANGUAGE_SYSTEM_SCRIPT: String = "res://scripts/language_system.gd"
 const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
 const PANIC_TENANT_SYSTEM_SCRIPT: String = "res://scripts/panic_tenant_system.gd"
 const PANIC_INPUT_SYSTEM_SCRIPT: String = "res://scripts/panic_input_system.gd"
 const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_network_bridge.gd"
 const TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT: String = "res://scripts/tenant_flashlight_fx_system.gd"
 const TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT: String = "res://scripts/tenant_death_feedback_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.24.4  •  TENANT BEAM PURSUIT"
+const VERSION_BADGE_TEXT: String = "v0.39  •  RANGER INVESTIGATION  •  STABLE HUD"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
@@ -27,7 +27,7 @@ func _process(delta: float) -> void:
         Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
         return
 
-    var on_main_menu: bool = scene.scene_file_path == MAIN_MENU_SCENE_PATH
+    var on_main_menu: bool = _is_main_menu_scene(scene)
     if on_main_menu:
         if layer != null:
             layer.visible = false
@@ -75,7 +75,7 @@ func _input(event: InputEvent) -> void:
     if not frontend_initialized:
         return
     var scene: Node = get_tree().current_scene
-    if scene == null or scene.scene_file_path == MAIN_MENU_SCENE_PATH:
+    if scene == null or _is_main_menu_scene(scene):
         return
     super._input(event)
 
@@ -83,7 +83,7 @@ func _initialize_gameplay_frontend() -> void:
     if frontend_initialized:
         return
     var scene: Node = get_tree().current_scene
-    if scene == null or scene.scene_file_path == MAIN_MENU_SCENE_PATH:
+    if scene == null or _is_main_menu_scene(scene):
         return
 
     _load_settings()
@@ -113,7 +113,6 @@ func _ensure_runtime_support_systems() -> void:
     _ensure_root_system("PanicInputSystem", PANIC_INPUT_SYSTEM_SCRIPT)
     _ensure_root_system("FlashlightMotionSystem", FLASHLIGHT_MOTION_SYSTEM_SCRIPT)
     _ensure_root_system("TenantFlashlightFXSystem", TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT)
-    _ensure_root_system("LanguageSystem", LANGUAGE_SYSTEM_SCRIPT)
     _ensure_root_system("DynamicAudioSystem", DYNAMIC_AUDIO_SYSTEM_SCRIPT)
     _ensure_root_system("TenantPanicNetworkBridge", TENANT_PANIC_NETWORK_BRIDGE_SCRIPT)
     _ensure_root_system("TenantDeathFeedbackSystem", TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT)
@@ -128,6 +127,11 @@ func _ensure_root_system(node_name: String, script_path: String) -> void:
     runtime_node.name = node_name
     runtime_node.set_script(runtime_script)
     get_tree().root.add_child(runtime_node)
+
+func _is_main_menu_scene(scene: Node) -> bool:
+    if scene == null:
+        return false
+    return scene.scene_file_path == MAIN_MENU_SCENE_PATH or scene.scene_file_path == LEGACY_MAIN_MENU_SCENE_PATH
 
 func _return_to_title() -> void:
     get_tree().paused = false
