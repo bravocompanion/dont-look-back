@@ -183,18 +183,18 @@ func _continue_game() -> void:
     if scene_booting:
         return
     if not FileAccess.file_exists(SAVE_PATH):
-        _set_status("Belum ada save. Pilih NEW GAME.")
+        _set_status("No save found. Select NEW GAME.")
         return
     _set_menu_buttons_enabled(false)
-    _set_status("Memuat save...")
+    _set_status("Loading save...")
     var save_system: Node = get_node_or_null("/root/SaveSystem")
     if save_system == null or not save_system.has_method("load_game"):
         _set_menu_buttons_enabled(true)
-        _set_status("SaveSystem tidak tersedia.")
+        _set_status("SaveSystem is not available.")
         return
     if not bool(save_system.call("load_game")):
         _set_menu_buttons_enabled(true)
-        _set_status("Save tidak dapat dimuat.")
+        _set_status("The save could not be loaded.")
 
 func _new_game_pressed() -> void:
     if scene_booting:
@@ -202,7 +202,7 @@ func _new_game_pressed() -> void:
     if FileAccess.file_exists(SAVE_PATH):
         _hide_all_panels()
         confirm_panel.visible = true
-        _set_status("NEW GAME akan menghapus world save saat ini.")
+        _set_status("NEW GAME will delete the current world save.")
         return
     _start_new_game()
 
@@ -210,7 +210,7 @@ func _start_new_game() -> void:
     if scene_booting:
         return
     _set_menu_buttons_enabled(false)
-    _set_status("Memverifikasi Labyrinth...")
+    _set_status("Verifying Labyrinth...")
     _disconnect_network()
 
     var save_system: Node = get_node_or_null("/root/SaveSystem")
@@ -218,7 +218,7 @@ func _start_new_game() -> void:
         if save_system.has_method("delete_save") and not bool(save_system.call("delete_save")):
             _set_menu_buttons_enabled(true)
             _show_main()
-            _set_status("Save lama gagal dihapus.")
+            _set_status("Failed to delete the previous save.")
             return
         if save_system.has_method("_prepare_clean_reload"):
             save_system.call("_prepare_clean_reload")
@@ -237,11 +237,11 @@ func _host_game() -> void:
     _disconnect_network()
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null or not network.has_method("host_game"):
-        _set_status("NetworkManager tidak tersedia.")
+        _set_status("NetworkManager is not available.")
         return
     network.call("host_game")
     if not (network.has_method("is_online") and bool(network.call("is_online"))):
-        _set_status("HOST gagal dibuat.")
+        _set_status("Failed to create the HOST session.")
         return
     _set_menu_buttons_enabled(false)
     _enter_scene_safely(LABYRINTH_SCENE_PATH, "HOST CO-OP")
@@ -252,25 +252,25 @@ func _show_join() -> void:
     _hide_all_panels()
     join_panel.visible = true
     join_connect_button.disabled = false
-    _set_status("Masukkan IPv4 HOST pada LAN/Wi-Fi yang sama.")
+    _set_status("Enter the HOST IPv4 address on the same LAN/Wi-Fi.")
 
 func _connect_join() -> void:
     if scene_booting:
         return
     var address: String = join_address.text.strip_edges()
     if address.is_empty():
-        _set_status("Masukkan IP, contoh 192.168.1.10")
+        _set_status("Enter an IP address, for example 192.168.1.10")
         return
     _disconnect_network()
     var network: Node = get_node_or_null("/root/NetworkManager")
     if network == null or not network.has_method("join_game"):
-        _set_status("NetworkManager tidak tersedia.")
+        _set_status("NetworkManager is not available.")
         return
     join_waiting = true
     join_elapsed = 0.0
     join_connect_button.disabled = true
     network.call("join_game", address)
-    _set_status("Menghubungkan ke %s..." % address)
+    _set_status("Connecting to %s..." % address)
 
 func _process_join(delta: float) -> void:
     join_elapsed += delta
@@ -278,13 +278,13 @@ func _process_join(delta: float) -> void:
     if network == null:
         join_waiting = false
         join_connect_button.disabled = false
-        _set_status("NetworkManager tidak tersedia.")
+        _set_status("NetworkManager is not available.")
         return
 
     var online: bool = network.has_method("is_online") and bool(network.call("is_online"))
     var connecting: bool = bool(network.get("connecting"))
     if online:
-        _set_status("Terhubung. Memverifikasi Labyrinth...")
+        _set_status("Connected. Verifying Labyrinth...")
         if join_elapsed >= 1.0:
             join_waiting = false
             _enter_scene_safely(LABYRINTH_SCENE_PATH, "JOIN CO-OP")
@@ -293,7 +293,7 @@ func _process_join(delta: float) -> void:
     if not connecting and join_elapsed > 0.35:
         join_waiting = false
         join_connect_button.disabled = false
-        _set_status("Gagal terhubung. Periksa IP HOST.")
+        _set_status("Connection failed. Check the HOST IP address.")
 
 func _enter_scene_safely(scene_path: String, reason: String) -> bool:
     if scene_booting:
@@ -306,7 +306,7 @@ func _enter_scene_safely(scene_path: String, reason: String) -> bool:
     if not ResourceLoader.exists(scene_path, "PackedScene"):
         scene_booting = false
         _set_menu_buttons_enabled(true)
-        _set_status("BOOT FAILED: PackedScene tidak ditemukan: %s" % scene_path)
+        _set_status("BOOT FAILED: PackedScene not found: %s" % scene_path)
         return false
 
     var resource: Resource = ResourceLoader.load(scene_path)
@@ -314,7 +314,7 @@ func _enter_scene_safely(scene_path: String, reason: String) -> bool:
     if packed_scene == null:
         scene_booting = false
         _set_menu_buttons_enabled(true)
-        _set_status("BOOT FAILED: resource bukan PackedScene.")
+        _set_status("BOOT FAILED: resource is not a PackedScene.")
         return false
 
     _set_status("%s — instantiating gameplay..." % reason)
@@ -322,7 +322,7 @@ func _enter_scene_safely(scene_path: String, reason: String) -> bool:
     if next_scene == null:
         scene_booting = false
         _set_menu_buttons_enabled(true)
-        _set_status("BOOT FAILED: PackedScene.instantiate() menghasilkan null.")
+        _set_status("BOOT FAILED: PackedScene.instantiate() returned null.")
         return false
 
     var player: CharacterBody3D = next_scene.get_node_or_null("Player") as CharacterBody3D
@@ -332,7 +332,7 @@ func _enter_scene_safely(scene_path: String, reason: String) -> bool:
         next_scene.free()
         scene_booting = false
         _set_menu_buttons_enabled(true)
-        _set_status("BOOT FAILED: main.tscn missing Player, Camera3D, atau HUD.")
+        _set_status("BOOT FAILED: main.tscn is missing Player, Camera3D, or HUD.")
         return false
 
     var old_scene: Node = get_tree().current_scene
@@ -370,7 +370,7 @@ func _show_settings() -> void:
     _hide_all_panels()
     settings_panel.visible = true
     _sync_settings_controls()
-    _set_status("Settings disimpan di device ini.")
+    _set_status("Settings are saved on this device.")
 
 func _close_settings() -> void:
     _save_settings()
