@@ -26,6 +26,13 @@ func _refresh_status(player: CharacterBody3D) -> void:
         "%s\nRadiation %d%%  •  Rate %.2f/s  •  Protection gear: %s" % [base_condition, int(round(radiation_value)), radiation_rate, gear_text]
     )
 
+func _environment_text() -> String:
+    var text: String = super._environment_text()
+    var escalation: Node = get_node_or_null("/root/SurvivalEscalationSystem")
+    if escalation != null and escalation.has_method("get_difficulty_name"):
+        text += "\nDifficulty phase: %s" % str(escalation.call("get_difficulty_name"))
+    return text
+
 func _shelter_text() -> String:
     var text: String = super._shelter_text()
     var radiation_system: Node = get_node_or_null("/root/RadiationSystem")
