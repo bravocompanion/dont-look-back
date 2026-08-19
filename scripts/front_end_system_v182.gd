@@ -4,6 +4,12 @@ func _input(event: InputEvent) -> void:
     if event is InputEventKey:
         var key_event: InputEventKey = event as InputEventKey
         if key_event.pressed and not key_event.echo and key_event.physical_keycode == KEY_ESCAPE:
+            var stash: Node = get_node_or_null("/root/StashMenuSystem")
+            if stash != null and stash.has_method("is_open") and bool(stash.call("is_open")):
+                if stash.has_method("close_stash"):
+                    stash.call("close_stash")
+                get_viewport().set_input_as_handled()
+                return
             var crafting: Node = get_node_or_null("/root/CraftingSystem")
             if crafting != null and crafting.has_method("is_open") and bool(crafting.call("is_open")):
                 if crafting.has_method("close_workbench"):
