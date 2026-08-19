@@ -2,14 +2,14 @@ extends "res://scripts/front_end_system.gd"
 
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu_ranger.tscn"
 const LEGACY_MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
-const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system.gd"
+const FLASHLIGHT_MOTION_SYSTEM_SCRIPT: String = "res://scripts/flashlight_motion_system_v40.gd"
 const DYNAMIC_AUDIO_SYSTEM_SCRIPT: String = "res://scripts/dynamic_audio_system.gd"
 const PANIC_TENANT_SYSTEM_SCRIPT: String = "res://scripts/panic_tenant_system.gd"
 const PANIC_INPUT_SYSTEM_SCRIPT: String = "res://scripts/panic_input_system.gd"
 const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_network_bridge.gd"
 const TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT: String = "res://scripts/tenant_flashlight_fx_system.gd"
 const TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT: String = "res://scripts/tenant_death_feedback_system.gd"
-const VERSION_BADGE_TEXT: String = "v0.39  •  RANGER INVESTIGATION  •  STABLE HUD"
+const VERSION_BADGE_TEXT: String = "v0.40  •  RANGER INVESTIGATION  •  ICON HUD"
 var frontend_initialized: bool = false
 
 func _ready() -> void:
