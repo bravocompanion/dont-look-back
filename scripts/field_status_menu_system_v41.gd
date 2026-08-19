@@ -23,7 +23,7 @@ func _refresh_status(player: CharacterBody3D) -> void:
     var base_condition: String = condition_label.text if condition_label != null else "CONDITION"
     _set_label_text(
         condition_label,
-        "%s\nRadiation %d%%  •  Rate %+.2f/s  •  Protection gear: %s" % [base_condition, int(round(radiation_value)), radiation_rate, gear_text]
+        "%s\nRadiation %d%%  •  Rate %.2f/s  •  Protection gear: %s" % [base_condition, int(round(radiation_value)), radiation_rate, gear_text]
     )
 
 func _shelter_text() -> String:
@@ -38,3 +38,9 @@ func _shelter_text() -> String:
     if built:
         tower_text = "POWERED — %dm protection" % radius if powered else "BUILT — NO POWER"
     return "%s\nAnti-Radiation Tower: %s" % [text, tower_text]
+
+func _other_menu_open() -> bool:
+    if super._other_menu_open():
+        return true
+    var crafting: Node = get_node_or_null("/root/CraftingSystem")
+    return crafting != null and crafting.has_method("is_open") and bool(crafting.call("is_open"))
