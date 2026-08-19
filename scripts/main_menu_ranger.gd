@@ -4,10 +4,10 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.41  •  RADIATION SURVIVAL  •  12:00 START  •  EXPANDED CRAFTING"
+    version_label.text = "v0.42  •  RADIATION SURVIVAL  •  ICON INVENTORY / WORKBENCH / STASH"
     save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; power and protection become part of the investigation route."
-    new_game_button.tooltip_text = "Start at 12:00 at the ranger cabin. Day 1 prepares the base; Day 3 begins the radiation phase."
-    host_button.tooltip_text = "Host co-op starts at 12:00 in the same Ranger Forest with shared shelter power and tower infrastructure."
+    new_game_button.tooltip_text = "Start at 12:00 at the ranger cabin. Inventory, crafting and shared stash now use item icons."
+    host_button.tooltip_text = "Host co-op starts at 12:00 with shared shelter power, tower infrastructure and host-controlled stash transfers."
     join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene and world time."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
