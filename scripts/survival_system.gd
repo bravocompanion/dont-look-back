@@ -11,12 +11,12 @@ var narrative_lore_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
-    # v0.39: the vertical icon HUD was removed. HUDLayoutSystem owns the single
-    # horizontal survival strip at the top of the screen.
-    _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v25.gd")
+    # v0.39+: the vertical icon HUD stays removed. HUDLayoutSystem owns the
+    # single horizontal survival strip at the top of the screen.
+    _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v41.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
-    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v29_status_menu.gd")
+    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v41.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
