@@ -10,7 +10,9 @@ const TENANT_PANIC_NETWORK_BRIDGE_SCRIPT: String = "res://scripts/tenant_panic_n
 const TENANT_FLASHLIGHT_FX_SYSTEM_SCRIPT: String = "res://scripts/tenant_flashlight_fx_system.gd"
 const TENANT_DEATH_FEEDBACK_SYSTEM_SCRIPT: String = "res://scripts/tenant_death_feedback_system.gd"
 const VERSION_BADGE_TEXT: String = "v0.43  •  STABLE ITEM ICONS  •  RADIATION SURVIVAL"
+
 var frontend_initialized: bool = false
+var pending_root_systems: Dictionary = {}
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -119,10 +121,25 @@ func _ensure_runtime_support_systems() -> void:
 
 func _ensure_root_system(node_name: String, script_path: String) -> void:
     if get_node_or_null("/root/%s" % node_name) != null:
+        pending_root_systems.erase(node_name)
         return
+    if pending_root_systems.has(node_name):
+        return
+
     var runtime_script: Script = load(script_path) as Script
     if runtime_script == null:
         return
+
+    pending_root_systems[node_name] = true
+    call_deferred("_add_root_system_deferred", node_name, runtime_script)
+
+func _add_root_system_deferred(node_name: String, runtime_script: Script) -> void:
+    pending_root_systems.erase(node_name)
+    if get_node_or_null("/root/%s" % node_name) != null:
+        return
+    if runtime_script == null:
+        return
+
     var runtime_node: Node = Node.new()
     runtime_node.name = node_name
     runtime_node.set_script(runtime_script)
