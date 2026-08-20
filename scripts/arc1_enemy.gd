@@ -137,14 +137,14 @@ func _select_target() -> Dictionary:
             if not (transform_value is Transform3D):
                 continue
             var survivor_transform: Transform3D = transform_value
-            var position: Vector3 = survivor_transform.origin
-            var distance: float = _horizontal_distance(global_position, position)
+            var survivor_position: Vector3 = survivor_transform.origin
+            var distance: float = _horizontal_distance(global_position, survivor_position)
             if distance > detection_radius or distance >= best_distance:
                 continue
             best_distance = distance
             result = {
                 "peer_id": peer_id,
-                "position": position,
+                "position": survivor_position,
                 "in_light": bool(state.get("in_light", false))
             }
         return result
@@ -216,8 +216,8 @@ func _send_network_state(delta: float) -> void:
     _receive_enemy_state.rpc(global_position, rotation.y, active)
 
 @rpc("authority", "call_remote", "unreliable", 9)
-func _receive_enemy_state(position: Vector3, yaw: float, enabled: bool) -> void:
-    remote_target_position = position
+func _receive_enemy_state(synced_position: Vector3, yaw: float, enabled: bool) -> void:
+    remote_target_position = synced_position
     remote_target_yaw = yaw
     remote_has_state = true
     active = enabled
