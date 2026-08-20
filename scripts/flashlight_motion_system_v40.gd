@@ -7,8 +7,8 @@ const V40_LOWER_PLACEMENT_RATIO: float = 0.20
 const V40_VERTICAL_DROP: float = V40_CAMERA_HEIGHT_REFERENCE * V40_LOWER_PLACEMENT_RATIO
 
 func _ensure_player() -> bool:
-    var ready: bool = super._ensure_player()
-    if not ready or flashlight == null:
+    var player_ready: bool = super._ensure_player()
+    if not player_ready or flashlight == null:
         return false
 
     # Metadata prevents a second 20% drop if this same flashlight node is
