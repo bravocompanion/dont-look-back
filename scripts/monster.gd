@@ -189,13 +189,13 @@ func _spawn_segment_clear(from_position: Vector3, to_position: Vector3) -> bool:
         return bool(navigation.call("_segment_clear", from_position, to_position, 0.18))
     return true
 
-func _clamp_tenant_position(position: Vector3) -> Vector3:
+func _clamp_tenant_position(world_position: Vector3) -> Vector3:
     var navigation: Node = get_node_or_null("/root/AINavigationSystem")
     if navigation != null and navigation.has_method("_clamp_monster_position"):
-        var clamped_value: Variant = navigation.call("_clamp_monster_position", position)
+        var clamped_value: Variant = navigation.call("_clamp_monster_position", world_position)
         if clamped_value is Vector3:
             return clamped_value
-    return position
+    return world_position
 
 func _collider_belongs_to_tenant(collider: Node) -> bool:
     var current: Node = collider
@@ -255,9 +255,7 @@ func _update_hud() -> void:
 
     var panic_label: Label = get_node_or_null(panic_label_path) as Label
     if panic_label != null:
-        var language: Node = get_node_or_null("/root/LanguageSystem")
-        var prefix: String = "PANIK" if language != null and language.has_method("is_indonesian") and bool(language.call("is_indonesian")) else "PANIC"
-        panic_label.text = "%s %d%%" % [prefix, int(round(local_panic))]
+        panic_label.text = "PANIC %d%%" % int(round(local_panic))
 
     var overlay: ColorRect = get_node_or_null(panic_overlay_path) as ColorRect
     if overlay != null:
