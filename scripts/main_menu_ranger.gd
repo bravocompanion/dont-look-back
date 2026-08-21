@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.43  •  STABLE ITEM ICONS  •  RADIATION SURVIVAL"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; item icons now use the stable v0.43 atlas pipeline."
-    new_game_button.tooltip_text = "Start at 12:00 at the ranger cabin. Inventory, Workbench and Shared Stash use cached item icons."
-    host_button.tooltip_text = "Host co-op starts at 12:00 with shared shelter power, tower infrastructure and host-controlled stash transfers."
-    join_button.tooltip_text = "Join the host and synchronize to the host's investigation scene and world time."
+    version_label.text = "v0.44  •  PHYSICAL ARROWS  •  RADIATION SURVIVAL"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; hunting arrows are now physical projectiles with an 80% recovery chance."
+    new_game_button.tooltip_text = "Start at 12:00 at the ranger cabin. Fired arrows can be recovered after impact unless the shaft breaks."
+    host_button.tooltip_text = "Host co-op starts at 12:00. The host resolves arrow impacts, damage and the 20% break roll for all survivors."
+    join_button.tooltip_text = "Join the host and synchronize investigation, world time, wildlife and physical arrow impacts."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
