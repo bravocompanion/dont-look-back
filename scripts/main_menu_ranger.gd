@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.47  •  WEB PUBLISHING  •  EMBEDDED ARROWS"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. v0.47 adds reproducible Godot Web export and Cloudflare Pages CI while keeping the v0.46 embedded-arrow hunting system."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw, release to fire. Web builds are generated automatically by GitHub Actions."
-    host_button.tooltip_text = "Native co-op still uses ENet host authority. Browser multiplayer transport is a separate future WebSocket pass."
-    join_button.tooltip_text = "Join the native ENet host. The current Cloudflare Pages Web build is intended for browser/single-player validation first."
+    version_label.text = "v0.48  •  PHYSICAL BOW SWAY  •  WILDLIFE FLEE FIX"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Bow draw sway now moves the camera/head naturally and grows while running or airborne; wounded wildlife flees from the hunter instead of orbiting survivors."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw, release to fire. Draw while moving, sprinting or jumping to feel stronger physical camera sway."
+    host_button.tooltip_text = "Host co-op keeps wildlife HP, arrow damage, embedded arrows and wounded flee steering authoritative."
+    join_button.tooltip_text = "Join the native ENet host. Wounded wildlife uses the shooter's synchronized position as its flee threat."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
