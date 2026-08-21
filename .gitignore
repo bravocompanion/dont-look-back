@@ -3,6 +3,9 @@
 *.tmp
 *.translation
 
+# CI / export output
+build/
+
 # OS/editor files
 .DS_Store
 Thumbs.db
