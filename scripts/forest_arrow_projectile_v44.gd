@@ -91,14 +91,14 @@ func resolve_impact(impact_position: Vector3, impact_normal: Vector3, can_recove
     _orient_to_velocity()
 
     if recoverable:
-        collision_layer = 1
+        set_deferred("collision_layer", 1)
         if collision_shape != null:
-            collision_shape.disabled = false
+            collision_shape.set_deferred("disabled", false)
         return
 
-    collision_layer = 0
+    set_deferred("collision_layer", 0)
     if collision_shape != null:
-        collision_shape.disabled = true
+        collision_shape.set_deferred("disabled", true)
     visible = false
     queue_free()
 
