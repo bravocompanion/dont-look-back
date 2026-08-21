@@ -11,12 +11,12 @@ var narrative_lore_runtime: Node
 
 func _ready() -> void:
     pickup_script = load("res://scripts/survival_pickup.gd") as Script
-    # v0.43: stable cached icon registry; no embedded base64 icon scripts.
+    # v0.44: stable cached item icons plus physical/recoverable Forest arrows.
     # The vertical duplicate survival HUD remains removed.
     _attach_runtime("InventoryMenuRuntime", "res://scripts/inventory_menu_system_v43.gd")
     _attach_runtime("PanicMovementTuningRuntime", "res://scripts/panic_movement_tuning_system.gd")
     _attach_runtime("NarrativeLoreRuntime", "res://scripts/narrative_lore_system.gd")
-    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v41.gd")
+    _attach_runtime("ForestSurvivalRuntime", "res://scripts/forest_survival_system_v44.gd")
 
 func _attach_runtime(node_name: String, script_path: String) -> void:
     if get_node_or_null(NodePath(node_name)) != null:
