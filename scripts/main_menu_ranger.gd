@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.46  •  EMBEDDED ARROWS  •  RADIATION SURVIVAL"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; recoverable arrows now stay embedded in moving wildlife after impact."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw, release to fire. Intact arrows stick to wildlife and can be recovered after impact."
-    host_button.tooltip_text = "Host co-op starts at 12:00. The host resolves draw damage, wildlife HP, arrow attachment and the 20% break roll."
-    join_button.tooltip_text = "Join the host and synchronize investigation, world time, wildlife HP and embedded arrow impacts."
+    version_label.text = "v0.47  •  WEB PUBLISHING  •  EMBEDDED ARROWS"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. v0.47 adds reproducible Godot Web export and Cloudflare Pages CI while keeping the v0.46 embedded-arrow hunting system."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw, release to fire. Web builds are generated automatically by GitHub Actions."
+    host_button.tooltip_text = "Native co-op still uses ENet host authority. Browser multiplayer transport is a separate future WebSocket pass."
+    join_button.tooltip_text = "Join the native ENet host. The current Cloudflare Pages Web build is intended for browser/single-player validation first."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
