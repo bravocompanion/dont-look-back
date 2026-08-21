@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.45  •  HOLD-TO-DRAW BOW  •  RADIATION SURVIVAL"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; bow damage, speed and range now depend on draw power."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw the bow, then release to fire. Wildlife now uses real HP pools."
-    host_button.tooltip_text = "Host co-op starts at 12:00. The host resolves draw-powered projectile damage, wildlife HP and the 20% arrow break roll."
-    join_button.tooltip_text = "Join the host and synchronize investigation, world time, wildlife HP and physical arrow impacts."
+    version_label.text = "v0.46  •  EMBEDDED ARROWS  •  RADIATION SURVIVAL"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Radiation begins on Day 3; recoverable arrows now stay embedded in moving wildlife after impact."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw, release to fire. Intact arrows stick to wildlife and can be recovered after impact."
+    host_button.tooltip_text = "Host co-op starts at 12:00. The host resolves draw damage, wildlife HP, arrow attachment and the 20% break roll."
+    join_button.tooltip_text = "Join the host and synchronize investigation, world time, wildlife HP and embedded arrow impacts."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
