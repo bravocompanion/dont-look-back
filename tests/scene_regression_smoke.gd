@@ -29,7 +29,7 @@ func _initialize() -> void:
     call_deferred("_run_regression")
 
 func _run_regression() -> void:
-    print("[REGRESSION] Don't Look Back v0.63 scene smoke starting...")
+    print("[REGRESSION] Don't Look Back v0.64 scene smoke starting...")
     _check_runtime_contracts()
     _check_v63_light_ownership_contracts()
 
@@ -39,7 +39,7 @@ func _run_regression() -> void:
     _check_export_presets()
 
     if failures.is_empty():
-        print("[REGRESSION] PASS — canonical maps, v0.63 light/ownership rules, pacing, and native presets are ready.")
+        print("[REGRESSION] PASS — canonical maps, v0.64 wildlife stability, light/ownership rules, pacing, and native presets are ready.")
         quit(0)
         return
 
@@ -172,6 +172,7 @@ func _boot_case(case_data: Dictionary) -> void:
     if path == "res://scenes/forest.tscn":
         _check_forest_authority_targets()
         _check_v62_pacing_runtime()
+        await _check_v64_wildlife_runtime()
     elif path == "res://scenes/main.tscn":
         _check_checkpoint_snapshot_contract()
         await _check_labyrinth_rules_runtime()
@@ -192,6 +193,71 @@ func _check_forest_authority_targets() -> void:
     for target: String in ["OutsideWorld/ShelterGenerator", "OutsideWorld/ShelterCampfire"]:
         if scene.get_node_or_null(NodePath(target)) == null:
             failures.append("Forest authority target missing: %s" % target)
+
+func _check_v64_wildlife_runtime() -> void:
+    var runtime: Node = null
+    var deer: Node = null
+    for _frame_index: int in range(240):
+        await process_frame
+        runtime = root.get_node_or_null("SurvivalSystem/ForestSurvivalRuntime")
+        for candidate: Node in get_nodes_in_group("wildlife"):
+            if str(candidate.get("animal_kind")) == "deer":
+                deer = candidate
+                break
+        if runtime != null and deer != null:
+            break
+
+    if runtime == null:
+        failures.append("v0.64 ForestSurvivalRuntime did not attach")
+        return
+    if not runtime.has_method("get_wildlife_runtime_contract_v64"):
+        failures.append("v0.64 ForestSurvivalRuntime missing wildlife contract")
+        return
+
+    var runtime_contract: Dictionary = Dictionary(runtime.call("get_wildlife_runtime_contract_v64"))
+    if str(runtime_contract.get("wildlife_script", "")) != "res://scripts/wildlife_animal_v64.gd":
+        failures.append("v0.64 Forest runtime is not loading wildlife_animal_v64.gd")
+    if str(runtime_contract.get("arrow_projectile_script", "")) != "res://scripts/forest_arrow_projectile_v64.gd":
+        failures.append("v0.64 Forest runtime is not loading forest_arrow_projectile_v64.gd")
+    if bool(runtime_contract.get("embedded_arrow_blocks_wildlife", true)):
+        failures.append("v0.64 embedded arrow must not block wildlife")
+
+    if deer == null:
+        failures.append("v0.64 Forest did not spawn a deer for wildlife regression")
+        return
+    if not deer.has_method("get_flee_stability_contract_v64"):
+        failures.append("v0.64 live deer is not using wildlife_animal_v64.gd")
+        return
+
+    var flee_contract: Dictionary = Dictionary(deer.call("get_flee_stability_contract_v64"))
+    if bool(flee_contract.get("repeat_hit_speed_stacks", true)):
+        failures.append("v0.64 repeat wildlife hits must not stack flee speed")
+    var deer_speed_cap: float = float(flee_contract.get("speed_cap", 99.0))
+    if deer_speed_cap > 2.641:
+        failures.append("v0.64 deer flee speed cap regressed above 2.64 m/s")
+    if float(flee_contract.get("heading_turn_rate_degrees", 0.0)) <= 0.0:
+        failures.append("v0.64 deer flee heading must have a bounded positive turn rate")
+    if float(flee_contract.get("repeat_hit_heading_lock_seconds", 0.0)) <= 0.0:
+        failures.append("v0.64 repeat-hit heading lock is missing")
+
+    var projectile_script: Script = load("res://scripts/forest_arrow_projectile_v64.gd") as Script
+    if projectile_script == null:
+        failures.append("v0.64 embedded-arrow projectile script failed to load")
+        return
+    var projectile: StaticBody3D = StaticBody3D.new()
+    projectile.set_script(projectile_script)
+    if not projectile.has_method("get_attachment_collision_contract_v64"):
+        failures.append("v0.64 projectile missing attachment collision contract")
+        projectile.free()
+        return
+    var arrow_contract: Dictionary = Dictionary(projectile.call("get_attachment_collision_contract_v64"))
+    if int(arrow_contract.get("interaction_layer", 0)) != 2:
+        failures.append("v0.64 attached recoverable arrow must use interaction-only layer 2")
+    if bool(arrow_contract.get("blocks_wildlife", true)):
+        failures.append("v0.64 attached recoverable arrow still reports blocking wildlife")
+    if not bool(arrow_contract.get("explicit_collision_exception", false)):
+        failures.append("v0.64 attached arrow must add an explicit collision exception")
+    projectile.free()
 
 func _check_v62_pacing_runtime() -> void:
     var pacing: Node = root.get_node_or_null("HorrorPacingSystem")
