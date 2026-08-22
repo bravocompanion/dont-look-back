@@ -6,8 +6,8 @@
 - Wounded horizontal speed is hard-capped to base move speed × 1.20 for the existing 3 second wound response.
 - If collision sliding reduces distance to the shooter, the next velocity is forced directly away.
 - Dead wildlife uses a deterministic procedural side-fall pose instead of remaining upright.
-- Living CharacterBody collision is disabled on death; a separate non-blocking Area3D is enabled for carcass interaction.
-- Forest InteractionRay now detects both bodies and areas.
+- Living CharacterBody collision is disabled on death; a separate StaticBody3D on collision layer 2 is enabled only for carcass interaction.
+- Forest InteractionRay keeps area detection disabled and uses collision mask 3, so it sees normal world bodies plus the dedicated carcass interaction layer without letting corpse bodies block player movement.
 - Wildlife loot is no longer auto-granted at the lethal hit. A survivor must approach the carcass with a Hunting Knife and use E / USE.
 - Successful harvest grants the species loot and removes the carcass until the existing wildlife respawn cycle.
 - Multiplayer harvest uses a host-side carcass claim and distance validation, then synchronizes the collected corpse state.
