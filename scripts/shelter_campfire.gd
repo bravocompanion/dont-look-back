@@ -24,10 +24,11 @@ func interact() -> void:
     var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
     if network_client:
         var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+        var counts: Dictionary = Dictionary(player.get("inventory_counts"))
         var action: String = ""
-        if player.has_method("remove_item") and bool(player.call("remove_item", "firewood_bundle")):
+        if int(counts.get("firewood_bundle", 0)) > 0:
             action = "campfire_bundle"
-        elif player.has_method("remove_item") and bool(player.call("remove_item", "wood")):
+        elif int(counts.get("wood", 0)) > 0:
             action = "campfire_wood"
         else:
             if objective != null:
@@ -36,8 +37,6 @@ func interact() -> void:
 
         if network.has_method("request_shared_shelter_action"):
             network.call("request_shared_shelter_action", action)
-        if objective != null:
-            objective.text = "Campfire fuel request sent to host."
         return
 
     director.call("fuel_campfire", player)

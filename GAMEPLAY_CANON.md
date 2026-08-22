@@ -1,16 +1,16 @@
-# DON'T LOOK BACK — Gameplay Canon v0.59
+# DON'T LOOK BACK — Gameplay Canon v0.60
 
-Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama bertentangan dengan file ini dan runtime aktif, gunakan canon ini.
+Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama bertentangan dengan runtime aktif dan file ini, gunakan runtime + canon v0.60 sebagai sumber utama.
 
-## Premis utama
+## Premis
 
-Player adalah ranger yang menyelidiki hilangnya tim survey di hutan terpencil. Ranger Cabin menjadi base operasi pertama. Investigasi permukaan membuka Old Mine, kemudian Facility Level 03 / Labyrinth, lalu Restricted Research Facility.
+Player adalah ranger yang menyelidiki hilangnya tim survey di hutan terpencil. Ranger Cabin menjadi base operasi. Jejak kasus membawa tim ke Old Mine, Facility Level 03 / Labyrinth, lalu Restricted Research Facility dan jaringan anomali yang lebih besar.
 
-## Loop utama
+## Core loop
 
 **Prepare → Investigate → Expose yourself to danger → Recover evidence/resources → Survive encounter → Unlock deeper anomaly.**
 
-Survival harus memperkuat keputusan horror. Sistem yang hanya menambah administrasi tanpa risiko, pilihan, atau tension harus disederhanakan.
+Setiap sistem survival harus menghasilkan keputusan horror. Jika hanya menambah administrasi, sistem harus disederhanakan.
 
 ---
 
@@ -21,43 +21,61 @@ Opening investigation:
 1. Abandoned House → Survey Manifest
 2. Old Gas Station → Radio Trace
 3. kedua clue dapat ditemukan dalam urutan berbeda
-4. Ranger Case Board → synthesis Manifest + Radio Trace
+4. Ranger Case Board → synthesis kedua clue
 5. Warehouse → Maintenance Map
-6. Water Pump → optional anomaly evidence
+6. Water Pump → optional Water Sample
 7. Old Mine terbuka setelah clue synthesis + Maintenance Map
 
-Aturan investigation:
+Water Sample tetap optional tetapi memberi stabilized junction light di Mine.
 
-- mengumpulkan evidence tidak sama dengan memahami evidence;
-- clue penting boleh membutuhkan synthesis/cross-check;
-- optional evidence harus memberi manfaat gameplay;
-- host memvalidasi scene, target fisik, state, dan distance sebelum shared progression berubah.
+Ranger Yard bukan safe zone permanen. Yard hanya protected jika generator hidup atau campfire masih menyala.
 
-Water Sample tetap opsional tetapi memberi stabilized emergency light di Mine junction.
+### v0.60 shelter authority rule
 
-Ranger Yard bukan safe zone permanen. Perlindungan penuh hanya ada saat generator hidup atau campfire masih menyala.
+Dalam co-op, resource untuk shared shelter tidak boleh dikonsumsi client sebelum host menerima transaksi.
+
+Flow canonical:
+
+1. inventory mutation client dicerminkan ke host dengan revision berurutan;
+2. client mengirim pending inventory diff sebelum shelter request;
+3. host memvalidasi scene, target, jarak, downed state, world state, dan resource;
+4. host mengurangi resource pada mirror inventory;
+5. host mengubah shared generator/campfire state;
+6. host mengirim authoritative item count kembali;
+7. client mengoreksi inventory ke hasil host.
+
+Target v0.60:
+
+- generator fuel;
+- campfire Firewood Bundle;
+- campfire loose Wood;
+- generator repair 2 Scrap + 1 Electronics.
+
+Legacy shelter RPC yang dapat mengubah state tanpa resource transaction tidak boleh dipakai lagi.
+
+Batas authority saat ini: initial inventory snapshot peer masih berasal dari peer tersebut. Jadi ini transaction authority untuk normal co-op clients, bukan competitive anti-cheat inventory server.
 
 ---
 
 # 2. OLD MINE — DESCENT + LIGHT ALLOCATION
 
-Jalur bukti:
+Evidence route:
 
 1. Foreman's Log
 2. Sealed Shaft Report
 3. Facility Access Badge
-4. Gate menuju Level 03 / Labyrinth
+4. Labyrinth gate
 
-Signature rule:
+Mine signature rule:
 
-- UPPER SHAFT circuit menerangi bagian awal;
-- DEEP SHAFT circuit menerangi bagian bawah;
+- UPPER SHAFT circuit menerangi early shaft;
+- DEEP SHAFT circuit menerangi lower route;
 - hanya satu main circuit aktif;
-- routing station tersedia di entrance dan junction;
-- pilihan circuit shared dan host-authoritative di co-op;
-- Water Sample mengaktifkan stabilized junction light tambahan.
+- entrance + junction routing station dapat mengubah pilihan;
+- state shared dan host-authoritative;
+- Water Sample menjaga stabilized junction light tetap tersedia.
 
-Mine harus terasa lebih sempit, industrial, dan tidak stabil daripada Forest.
+Mine harus terasa seperti transisi dari survival exploration ke fasilitas horror yang lebih mekanis.
 
 ---
 
@@ -66,82 +84,34 @@ Mine harus terasa lebih sempit, industrial, dan tidak stabil daripada Forest.
 Tujuan:
 
 - aktifkan emergency relays;
-- pulihkan Maintenance/Flooded/Archive;
-- temukan data T-03;
-- kelola Darkness Exposure dan panic;
+- pulihkan Maintenance/Flooded/Archive systems;
+- pahami hubungan T-03 dengan kasus survey;
 - survive Lockdown;
-- bawa data menuju Restricted Research Facility.
+- lanjutkan data ke Restricted Research Facility.
 
-Labyrinth harus membuat player takut bergerak cepat sekaligus takut terlalu lama diam. Cahaya, panic, stamina, orientasi, dan suara saling menekan.
+Current Arc 1 memiliki fuse, valves, breaker sequence, alarm/fault pressure, checkpoints, enemies, dan 120-second Lockdown.
 
-Maintenance objective tidak boleh berhenti sebagai checklist tombol. Iterasi berikutnya harus membuat stage mengubah rule bermain: visibility, sound masking, team split, route safety, atau threat pressure.
-
----
-
-# 4. CHECKPOINT / DEATH CANON — v0.59
-
-Checkpoint adalah **time snapshot**, bukan hanya titik teleport.
-
-Saat checkpoint aktif, snapshot menyimpan state yang dibutuhkan agar rollback konsisten:
-
-- transform checkpoint;
-- inventory dan survival state masing-masing survivor;
-- finite-pickup claims;
-- investigation/evidence progression;
-- Labyrinth Arc 1 progression;
-- shelter/generator/campfire/storage;
-- renewable/radiation state yang sudah dimiliki SaveSystem;
-- Mine UPPER/DEEP power-routing state;
-- Journal/world save data yang relevan.
-
-### Aturan rollback
-
-Jika solo player mati atau seluruh party wipe:
-
-1. current scene reload;
-2. shared world kembali ke snapshot checkpoint;
-3. setiap survivor kembali ke inventory/stats checkpoint miliknya;
-4. supply yang diambil **setelah** checkpoint muncul kembali;
-5. supply yang sudah diambil **sebelum** checkpoint tetap hilang;
-6. objective yang diselesaikan setelah checkpoint kembali belum selesai;
-7. Mine/support/world state kembali ke state checkpoint;
-8. major horror mendapat recovery singkat setelah restore.
-
-Dengan model ini, finite loot tidak boleh terduplikasi dan tidak boleh hilang tanpa kembali ke inventory.
-
-### Aturan map transition
-
-Pindah map normal **tidak** memicu checkpoint restore dan tidak boleh menarik player kembali ke checkpoint map lama.
-
-### Save/load
-
-Checkpoint snapshot ikut disimpan ke persistent save. Save lama tanpa snapshot v0.59 menggunakan best-effort migration dari world state yang berhasil dimuat.
+Next design rule: tiap stage Labyrinth harus mengubah cara bermain, bukan hanya mengganti checklist objective. Contoh perubahan rule: visibility, sound masking, split-team requirement, route safety, atau power allocation.
 
 ---
 
-# 5. RESTRICTED RESEARCH FACILITY
+# 4. RESTRICTED RESEARCH FACILITY
 
-Facility menunjukkan bahwa kasus lebih besar daripada Forest/Mine/Labyrinth.
+Facility adalah investigation node yang menghubungkan kasus ini ke jaringan anomaly routes.
 
-Tujuan saat ini:
-
-- inspect routing terminal;
-- hubungkan data T-03 dengan insiden lain;
-- buka daftar ekspedisi masa depan.
-
-Potential future routes:
+Future routes dapat mencakup:
 
 - Hospital
 - Museum
 - Laboratory
 - Cave
-- other Labyrinth/anomaly nodes
+- other anomaly/Labyrinth nodes
 
-Sebelum major map baru, Facility sebaiknya menerima payoff encounter/choice agar campaign tidak berakhir hanya sebagai “coming soon terminal”.
+Jangan membuka major map baru hanya untuk breadth. Facility terlebih dahulu membutuhkan payoff encounter/choice yang benar-benar menyelesaikan satu beat campaign.
 
 ---
 
-# 6. SURVIVAL RULE
+# 5. SURVIVAL HIERARCHY
 
 Primary horror resources:
 
@@ -163,135 +133,170 @@ Background survival:
 - Thirst
 - Infection
 
-FOOD/WATER/MED adalah vulnerable actions, bukan instant resolution:
+Background survival tidak boleh mengambil perhatian lebih besar daripada horror utama.
 
-- Food sekitar 2.0 detik
-- Water sekitar 1.4 detik
-- Medkit sekitar 3.5 detik
-
-Player berhenti bergerak selama channel. Damage/downed/death/invalid footing membatalkan action dan item hanya dikonsumsi saat action selesai.
-
-Contoh keputusan horror yang benar:
-
-- fishing membuat player diam dan terekspos;
-- hunting/harvesting menghasilkan noise;
-- generator memaksa fuel run;
-- medkit menciptakan vulnerability;
-- resource bernilai berada di luar protected light;
-- Mine support power memaksa pilihan area terang;
-- checkpoint menentukan seberapa jauh risiko expedition yang siap diulang jika gagal.
+FOOD/WATER/MED adalah vulnerable timed actions. Item baru dikonsumsi saat action selesai. Menu/gameplay action menggunakan central input lock agar input tidak tembus di belakang UI.
 
 ---
 
-# 7. MONSTER IDENTITIES
+# 6. MONSTER IDENTITIES
 
 ## The Tenant
 
 Identity: **panic + observation**.
 
-- Stillness dapat memicu kemunculan.
-- Gerakan/look agresif menaikkan panic.
-- Watched/freeze rule harus terbaca.
-- Flashlight continuous contact dapat banish.
+- stillness/panic dapat memicu kemunculan;
+- watched/freeze harus tetap terbaca;
+- panic menaikkan pursuit pressure;
+- flashlight contact adalah counter/banish route.
 
 Tenant tidak boleh menjadi generic chaser.
 
 ## Darkness Creature
 
-Identity: **fear of losing light**.
+Identity: **fear of losing protective light**.
 
-- Darkness Exposure dan area tanpa protective light memicu ancaman.
-- Cahaya adalah counter utama.
-- Visual/audio harus berbeda jelas dari Tenant.
+- Darkness Exposure memicu pressure;
+- protective light adalah counter utama;
+- visual/audio/behavior harus berbeda jelas dari Tenant.
 
-Warden/Mourner/Crawler/hazard tetap boleh punya rule sendiri, tetapi major encounter harus tunduk pada pacing global.
+## Horror pacing
 
----
+Major Tenant dan Darkness encounters menggunakan shared threat budget:
 
-# 8. HORROR PACING
-
-Current co-op rule:
-
-- hanya satu major Tenant/Darkness threat mendapat full budget;
-- selesai encounter menghasilkan RECOVERY window;
-- checkpoint restore juga memberi short recovery agar monster tidak langsung respawn di atas survivor yang baru hidup;
-- pacing system tidak mengatur navigation/motor/combat AI.
+- satu major threat mendapatkan pressure penuh pada satu waktu;
+- selesai encounter → RECOVERY;
+- subsystem kecil boleh tetap memberi unease selama recovery;
+- major chase baru tidak boleh langsung bertumpuk.
 
 Target states:
 
-- CALM
-- UNEASE
-- STALK
-- THREAT
-- HUNT
-- RECOVERY
-
-Solo integration lebih luas masih follow-up.
+CALM → UNEASE → STALK → THREAT → HUNT → RECOVERY
 
 ---
 
-# 9. CO-OP CANON
+# 7. CHECKPOINT / FINITE LOOT CANON
+
+Checkpoint adalah **time snapshot**, bukan hanya respawn transform.
+
+Pada solo death atau co-op team wipe:
+
+- scene reload;
+- shared world rollback ke snapshot;
+- masing-masing peer memulihkan inventory/stats miliknya sendiri;
+- pre-checkpoint finite claim tetap claimed;
+- post-checkpoint finite claim rollback dan pickup muncul kembali;
+- inventory yang didapat setelah checkpoint juga rollback;
+- investigation, shelter, Arc 1, Journal, Mine power, renewable/radiation state ikut konsisten.
+
+Normal map transition tidak boleh memicu old checkpoint restore.
+
+---
+
+# 8. CO-OP CANON
 
 Target party: **2–4 survivors**.
 
-Co-op harus menambah keputusan, bukan hanya menaikkan monster HP.
+2 players:
 
-### 2 player
-
-- coordination;
-- revive pressure;
+- coordination + revive pressure;
 - limited simultaneous objectives.
 
-### 3 player
+3 players:
 
-- target switching;
 - separation pressure;
-- resource demand meningkat.
+- resource demand;
+- lebih banyak simultaneous decision.
 
-### 4 player
+4 players:
 
-- multi-location decisions;
-- secondary pressure;
-- regroup decisions;
-- resource scaling agar survival tetap playable.
+- multi-location objective;
+- split/regroup tension;
+- rescue pressure;
+- resource scaling agar tetap playable.
 
-Checkpoint v0.59 adalah shared world snapshot, tetapi setiap peer menyimpan local survivor payload miliknya sendiri. Team wipe harus mengembalikan semua peer ke checkpoint yang sama tanpa menyalin inventory host ke client.
+Difficulty tidak boleh diselesaikan dengan monster HP inflation.
 
-World/objective/monster state penting harus host-authoritative.
+Shared world/objective/monster/interactable state penting harus host-owned atau host-validated.
+
+Current authority layers mencakup:
+
+- remote movement sanity filter;
+- evidence validation;
+- finite pickup claim;
+- relay validation;
+- Mine power routing;
+- main co-op monster state/damage;
+- checkpoint/team-wipe world restore;
+- v0.60 shelter resource transaction ordering.
 
 ---
 
-# 10. INPUT / PLATFORM CANON
+# 9. PLATFORM / INPUT CANON
 
-Target:
+Game harus playable pada:
 
 - Desktop keyboard/mouse
 - Native Android touch
 - Web demo where supported
 
-`GameplayInputLock` menjadi sumber block state untuk movement, desktop camera/actions, mobile movement/look/actions, dan vulnerable actions.
+Responsive target:
 
-Mobile target minimum: stable 30 FPS pada target hardware realistis. Desktop target normal: 60 FPS.
+- viewport 1280×720;
+- `canvas_items` stretch;
+- `gl_compatibility` desktop/mobile;
+- mobile target minimum stable 30 FPS pada hardware realistis;
+- desktop target normal 60 FPS.
+
+v0.60 committed export presets:
+
+- Web
+- Windows Desktop
+- Linux Desktop
+- Android Debug
+- Android Release
+
+Native CI harus boot canonical scenes sebelum build dan menghasilkan Linux release, Windows release, dan Android Debug APK. Android Release signing credential tidak boleh disimpan di repository.
 
 ---
 
-# 11. PRODUCTION PRIORITY SETELAH v0.59
+# 10. REGRESSION POLICY
 
-1. manual real-device + 2–4 player checkpoint regression validation;
-2. server-authoritative shared shelter inventory;
-3. Android + Windows/Linux export presets dan CI smoke build;
-4. automated save/checkpoint/co-op regression tests;
-5. Labyrinth rule-depth pass;
-6. solo horror pacing integration;
-7. 3–4 player split/regroup objective scaling;
-8. Research Facility payoff encounter/choice;
-9. monster ownership cleanup;
-10. LightRegistry / authored protection volumes;
-11. Reduce Flashing;
-12. production assets;
-13. content expansion.
+Mulai v0.60, update gameplay besar harus menjaga automated smoke berikut:
 
-Jangan menambah major map baru sebelum fail-state, platform, dan regression foundation cukup stabil.
+- Forest loads + player + shelter targets;
+- Mine loads;
+- Labyrinth loads + Arc 1 runtime;
+- Research Facility loads;
+- v0.59 checkpoint snapshot API tetap ada;
+- Mine power persistence API tetap ada;
+- v0.60 shelter authority API aktif;
+- required export presets tersedia.
+
+Regression smoke bukan pengganti manual co-op test. Manual matrix tetap wajib untuk:
+
+- host + 1 client;
+- host + 3 clients;
+- team wipe;
+- simultaneous interaction;
+- network latency/race-sensitive shelter spending;
+- Android touch + thermals/performance.
+
+---
+
+# 11. PRODUCTION PRIORITY AFTER v0.60
+
+1. manual co-op verification untuk shelter authority;
+2. remote Shared Stash transaction authority;
+3. automated checkpoint/finite-loot transaction tests;
+4. Android real-device profiling + safe-area polish;
+5. deeper Labyrinth rule changes;
+6. 3–4 player split/regroup objective design;
+7. Research Facility payoff encounter/choice;
+8. monster brain/navigation/motor/network consolidation;
+9. LightRegistry / authored protection volumes;
+10. production character/monster/environment/audio pass;
+11. major content expansion.
 
 ---
 
@@ -299,11 +304,18 @@ Jangan menambah major map baru sebelum fail-state, platform, dan regression foun
 
 Setiap update harus mencatat:
 
-- New required assets
-- New recommended assets
-- Existing pending assets
-- Status: available / prototype / missing
+- new required assets;
+- new recommended assets;
+- existing pending assets;
+- status: available / prototype / missing.
 
-v0.59 membutuhkan **0 mandatory production asset**. Recommended polish: checkpoint activation sting, checkpoint pulse, wipe/restore ambience, checkpoint-restored icon, dan synchronized co-op confirmation cue.
+v0.60 membutuhkan **0 mandatory runtime asset baru**.
 
-Lihat `ASSET_DELTA_V059_CHECKPOINT_CONSISTENCY.md` dan `ASSET_BACKLOG.md`.
+Recommended baru:
+
+- Android launcher/adaptive/monochrome icon set;
+- Windows app `.ico`;
+- Linux app icon;
+- optional shelter transaction accepted/rejected feedback.
+
+Lihat `ASSET_DELTA_V060_AUTHORITY_NATIVE_TESTS.md` dan `ASSET_BACKLOG.md`.
