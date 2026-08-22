@@ -1,8 +1,8 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.58 — Gameplay Depth / Investigation / Horror Pacing**.
+Updated for **v0.59 — Checkpoint Snapshot / Finite-Loot Consistency**.
 
-Current project state: gameplay/procedural systems remain ahead of final production art and audio. v0.58 adds new gameplay rules while keeping all new presentation requirements optional so the update can run with procedural/text fallbacks.
+Current project state: gameplay/procedural systems remain ahead of final production art and audio. v0.59 changes persistence/fail-state behavior and requires no mandatory production asset.
 
 Status legend:
 
@@ -183,7 +183,7 @@ Player:
 - death;
 - interaction rejects/blocked action may reuse current UI feedback initially.
 
-Pending committed-file targets still noted by the current runtime docs:
+Pending committed-file targets:
 
 - `res://assets/audio/forest_night.mp3`
 - `res://assets/audio/draw.mp3`
@@ -196,23 +196,22 @@ Pending committed-file targets still noted by the current runtime docs:
 
 Status: **PROTOTYPE / MISSING polish**
 
-Required/recommended:
+Recommended:
 
 - generator start/idle/failure/repair audio;
-- generator production model states if current procedural representation remains temporary;
 - campfire loop/extinguish audio;
 - powered/unpowered cabin exterior light fixtures;
 - protected/exposed shelter status emissive indicator;
-- cabin dressing and survival storage props;
+- cabin dressing and storage props;
 - low-cost night readability suitable for mobile.
 
 ---
 
-# P1 — Forest Production Pass
+# P1 — Forest / Investigation Production Pass
 
 Status: **PROTOTYPE / PARTIAL**
 
-Required/recommended:
+Recommended:
 
 - final Ranger Cabin exterior/interior dressing;
 - Abandoned House production pass;
@@ -230,7 +229,7 @@ Required/recommended:
 
 # P1 — Consumable Interaction Production Pass
 
-Status: **MISSING / v0.58 uses HUD text fallback**
+Status: **MISSING / HUD text fallback available**
 
 Recommended:
 
@@ -239,7 +238,7 @@ Recommended:
 - food handling/eating animation and SFX;
 - water bottle/drinking animation and SFX;
 - interrupted-treatment cue;
-- animation timing that preserves the vulnerable gameplay durations.
+- animation timing that preserves vulnerable gameplay durations.
 
 ---
 
@@ -260,19 +259,34 @@ Recommended:
 
 ---
 
+# P1 — Checkpoint / Fail-State Feedback
+
+Status: **PROTOTYPE / existing safe lamps + HUD text available**
+
+Recommended after v0.59:
+
+- short checkpoint activation sting;
+- safe-lamp/checkpoint confirmation emissive pulse;
+- team-wipe rewind/restore ambience;
+- checkpoint-restored UI icon;
+- synchronized co-op checkpoint confirmation cue.
+
+Accessibility: confirmation pulse must support Reduce Flashing and should use slow emissive change instead of rapid full-screen flashes.
+
+---
+
 # P1 — Hunting / Wildlife
 
 Status: **PROTOTYPE / MISSING production content**
 
-Required/recommended:
+Recommended:
 
 - first-person/world Hunting Bow;
 - Arrow model;
 - draw/release/impact presentation;
 - Hunting Knife;
 - harvest animation;
-- wildlife locomotion;
-- hit/flee/death animations;
+- wildlife locomotion/hit/flee/death animations;
 - wildlife audio;
 - low-cost mobile LODs.
 
@@ -312,7 +326,7 @@ Status: **PROTOTYPE / MISSING production set**
 
 Status: **PROTOTYPE / MISSING production set**
 
-Production work should begin only after current horror/authority foundation is stable and their gameplay identity is locked.
+Production work should begin only after their gameplay identity is locked.
 
 ---
 
@@ -342,18 +356,18 @@ Status: **PLANNED**
 
 ---
 
-# v0.58 Asset Delta
+# v0.59 Asset Delta
 
 New required assets: **NONE**.
 
-New recommended assets:
+New recommended P1 polish:
 
-- P1 vulnerable consumable animation/audio;
-- P1 Ranger Case Board synthesis presentation;
-- P1 Mine UPPER/DEEP routing-console + support-light production kit;
-- P1 stabilized junction-light presentation;
-- P1 subtle post-major-encounter recovery ambience/tails.
+- checkpoint activation sting;
+- checkpoint/safe-lamp confirmation pulse;
+- team-wipe rewind/restore ambience;
+- checkpoint-restored UI icon;
+- synchronized co-op checkpoint cue.
 
-The code currently provides procedural/text fallbacks for every v0.58 gameplay addition.
+Existing v0.58 Case Board, consumable, Mine routing, monster, survivor, flashlight, footsteps, and environment production backlog remains pending.
 
-See `ASSET_DELTA_V058_GAMEPLAY_DEPTH.md` for the exact v0.58 status and validation checklist.
+See `ASSET_DELTA_V059_CHECKPOINT_CONSISTENCY.md` for exact behavior and validation.
