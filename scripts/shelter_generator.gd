@@ -15,9 +15,7 @@ func get_interaction_text() -> String:
 
     var broken: bool = system.has_method("is_generator_broken_v55") and bool(system.call("is_generator_broken_v55"))
     if broken:
-        var network: Node = get_node_or_null("/root/NetworkManager")
-        var client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
-        return "Generator broken — HOST repair" if client else "Repair generator (2 Scrap + 1 Electronics)"
+        return "Repair generator (2 Scrap + 1 Electronics)"
 
     var fuel_percent: int = int(system.call("get_generator_percent")) if system.has_method("get_generator_percent") else 0
     var condition_percent: int = int(system.call("get_generator_condition_percent_v55")) if system.has_method("get_generator_condition_percent_v55") else 100
@@ -39,10 +37,16 @@ func interact() -> void:
     var network: Node = get_node_or_null("/root/NetworkManager")
     var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
     var broken: bool = system.has_method("is_generator_broken_v55") and bool(system.call("is_generator_broken_v55"))
+
     if broken:
         if network_client:
-            _set_objective_v55(player, "Only the HOST can repair the shared generator. Repair cost: 2 Scrap + 1 Electronics.")
+            if not _player_has_v60(player, "scrap", 2) or not _player_has_v60(player, "electronics", 1):
+                _set_objective_v55(player, "Generator repair requires 2 Scrap + 1 Electronics.")
+                return
+            if network.has_method("request_shared_shelter_action"):
+                network.call("request_shared_shelter_action", "generator_repair")
             return
+
         if system.has_method("repair_generator_v55") and bool(system.call("repair_generator_v55", player)):
             powered = false
             _set_indicator(false)
@@ -55,13 +59,11 @@ func interact() -> void:
         if percent >= 99:
             _set_objective_v55(player, "Generator fuel tank is full.")
             return
-        if not player.has_method("remove_item") or not bool(player.call("remove_item", "generator_fuel")):
+        if not _player_has_v60(player, "generator_fuel", 1):
             _set_objective_v55(player, "You have no Fuel Can.")
             return
         if network.has_method("request_shared_shelter_action"):
             network.call("request_shared_shelter_action", "generator_fuel")
-        _set_objective_v55(player, "Fuel request sent to host.")
-        _report_ai_noise(0.62 if was_powered else 1.20, "generator fuel" if was_powered else "generator start")
         return
 
     var accepted: bool = false
@@ -78,6 +80,12 @@ func interact() -> void:
 func set_powered_from_restore(value: bool) -> void:
     powered = value
     _set_indicator(value)
+
+func _player_has_v60(player: CharacterBody3D, item_id: String, amount: int) -> bool:
+    if player == null:
+        return false
+    var counts: Dictionary = Dictionary(player.get("inventory_counts"))
+    return int(counts.get(item_id, 0)) >= amount
 
 func _set_indicator(value: bool) -> void:
     if indicator_material == null:
