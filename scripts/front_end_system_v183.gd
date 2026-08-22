@@ -1,6 +1,6 @@
 extends "res://scripts/front_end_system_v182.gd"
 
-const VERSION_BADGE_TEXT_V51: String = "v0.51  •  NIGHT TENANT  •  BOW FEEL TUNING"
+const VERSION_BADGE_TEXT_V52: String = "v0.52  •  HARVESTABLE CORPSES  •  STRONGER BOW SWAY"
 
 func _ensure_runtime_support_systems() -> void:
     _ensure_root_system("PanicTenantSystem", "res://scripts/panic_tenant_system_v51.gd")
@@ -17,5 +17,5 @@ func _process(delta: float) -> void:
     if scene == null or not _is_main_menu_scene(scene):
         return
     var version_label: Label = scene.get_node_or_null("MenuLayer/Root/Center/MainPanel/VBox/Version") as Label
-    if version_label != null and version_label.text != VERSION_BADGE_TEXT_V51:
-        version_label.text = VERSION_BADGE_TEXT_V51
+    if version_label != null and version_label.text != VERSION_BADGE_TEXT_V52:
+        version_label.text = VERSION_BADGE_TEXT_V52
