@@ -54,9 +54,6 @@ func activate_generator(player: CharacterBody3D) -> bool:
         return false
     if generator_running:
         return refuel_generator(player)
-
-    # If fuel remains after a shutdown or repair, restart without consuming a
-    # new Fuel Can. A new can is only required when the tank is actually dry.
     if generator_fuel_seconds > 1.0:
         generator_running = true
         _sync_generator_state()
@@ -117,11 +114,17 @@ func sleep_until_morning(player: CharacterBody3D) -> bool:
 
     var projected_wear: float = _projected_sleep_generator_wear_v55()
     if projected_wear > 0.0 and generator_condition_v55 <= projected_wear + 3.0:
-        _set_objective(
-            player,
-            "Generator condition is too low to survive the planned sleep. Repair it or rely on enough campfire fuel."
-        )
-        return false
+        if _campfire_can_cover_sleep_v55():
+            generator_running = false
+            _sync_generator_state()
+            projected_wear = 0.0
+            _set_objective(player, "Generator preserved due to low condition. Tonight will use campfire protection only.")
+        else:
+            _set_objective(
+                player,
+                "Generator condition is too low for the planned sleep and the campfire cannot cover the night. Repair or add firewood first."
+            )
+            return false
 
     var success: bool = super.sleep_until_morning(player)
     if not success:
@@ -131,6 +134,16 @@ func sleep_until_morning(player: CharacterBody3D) -> bool:
         _update_generator_warning_v55()
         _broadcast_generator_condition_v55()
     return true
+
+func _campfire_can_cover_sleep_v55() -> bool:
+    var outside: Node = get_node_or_null("/root/OutsideDirector")
+    if outside == null:
+        return false
+    var start_minutes: float = float(outside.get("game_minutes"))
+    var full_day_seconds: float = maxf(60.0, float(outside.get("full_day_seconds")))
+    var simulated_seconds: float = _sleep_duration_seconds_v54(start_minutes, full_day_seconds)
+    var required_fire: float = simulated_seconds * maxf(1.0, sleep_resource_draw_multiplier_v54)
+    return campfire_burn_seconds + 0.01 >= required_fire
 
 func _projected_sleep_generator_wear_v55() -> float:
     if not generator_running or generator_broken_v55:
