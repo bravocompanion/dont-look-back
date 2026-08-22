@@ -98,7 +98,7 @@ jobs:
           COMPRESSED_WASM="${RAW_WASM}.br"
           RAW_SHA="$(sha256sum "$RAW_WASM" | awk '{print $1}')"
 
-          brotli -q 11 -f -o "$COMPRESSED_WASM" "$RAW_WASM"
+          brotli -q 9 -f -o "$COMPRESSED_WASM" "$RAW_WASM"
           brotli -t "$COMPRESSED_WASM"
           RESTORED_SHA="$(brotli -d -c "$COMPRESSED_WASM" | sha256sum | awk '{print $1}')"
           if [[ "$RAW_SHA" != "$RESTORED_SHA" ]]; then
