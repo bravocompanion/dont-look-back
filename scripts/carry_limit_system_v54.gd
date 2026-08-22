@@ -45,7 +45,8 @@ func get_item_count(player: CharacterBody3D, item_id: String) -> int:
     var counts_value: Variant = player.get("inventory_counts")
     if not (counts_value is Dictionary):
         return 0
-    return int((counts_value as Dictionary).get(item_id, 0))
+    var counts: Dictionary = Dictionary(counts_value)
+    return int(counts.get(item_id, 0))
 
 func remaining_stack(player: CharacterBody3D, item_id: String) -> int:
     return maxi(0, get_stack_limit(item_id) - get_item_count(player, item_id))
@@ -62,7 +63,7 @@ func can_accept_item(player: CharacterBody3D, item_id: String, amount: int = 1) 
     var names_value: Variant = player.get("inventory_names")
     if not (names_value is Dictionary):
         return false
-    var names: Dictionary = names_value
+    var names: Dictionary = Dictionary(names_value)
     var capacity: int = maxi(1, int(player.get("inventory_capacity")))
     return names.size() < capacity
 
@@ -73,7 +74,7 @@ func can_accept_bundle(player: CharacterBody3D, bundle: Dictionary) -> bool:
     var names_value: Variant = player.get("inventory_names")
     if not (names_value is Dictionary):
         return false
-    var names: Dictionary = names_value
+    var names: Dictionary = Dictionary(names_value)
     var capacity: int = maxi(1, int(player.get("inventory_capacity")))
     var new_types: int = 0
 
