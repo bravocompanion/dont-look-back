@@ -203,7 +203,7 @@ func _restore_snapshot_after_reload_v59(player: CharacterBody3D, scene_id: int) 
 
     # Inherited restore applies this peer's own checkpoint inventory/stats and
     # the shared respawn transform after the world rollback is complete.
-    _restore_player(player)
+    await _restore_player(player)
     restore_running_v59 = false
     wipe_source_scene_id_v59 = 0
 
