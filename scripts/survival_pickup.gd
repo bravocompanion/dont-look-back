@@ -22,9 +22,7 @@ func interact() -> void:
     if player == null or not player.has_method("add_item"):
         return
     if not _can_player_accept(player):
-        var full_objective: Label = get_node_or_null(objective_label_path) as Label
-        if full_objective != null:
-            full_objective.text = "Inventory full."
+        _show_carry_full(player)
         return
 
     var network: Node = get_node_or_null("/root/NetworkManager")
@@ -51,11 +49,10 @@ func _collect_locally() -> void:
     if player == null or not player.has_method("add_item"):
         return
 
-    var accepted: bool = bool(player.call("add_item", item_id, display_name))
+    var accepted: bool = _grant_with_carry_limit(player)
     var objective: Label = get_node_or_null(objective_label_path) as Label
     if not accepted:
-        if objective != null:
-            objective.text = "Inventory full."
+        _show_carry_full(player)
         return
 
     collected = true
@@ -68,12 +65,38 @@ func _collect_locally() -> void:
     queue_free()
 
 func _can_player_accept(player: CharacterBody3D) -> bool:
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    if carry != null and carry.has_method("can_accept_item"):
+        return bool(carry.call("can_accept_item", player, item_id, 1))
+
     var counts: Dictionary = Dictionary(player.get("inventory_counts"))
     if int(counts.get(item_id, 0)) > 0:
         return true
     var names: Dictionary = Dictionary(player.get("inventory_names"))
     var capacity: int = int(player.get("inventory_capacity"))
     return names.size() < capacity
+
+func _grant_with_carry_limit(player: CharacterBody3D) -> bool:
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    if carry != null and carry.has_method("grant_item"):
+        return bool(carry.call("grant_item", player, item_id, display_name, 1))
+    return bool(player.call("add_item", item_id, display_name))
+
+func _show_carry_full(player: CharacterBody3D) -> void:
+    var objective: Label = get_node_or_null(objective_label_path) as Label
+    if objective == null and player != null:
+        objective = player.get_node_or_null("HUD/Objective") as Label
+    if objective == null:
+        return
+
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    if carry != null and carry.has_method("stack_status"):
+        objective.text = "Carry limit reached for %s (%s). Store supplies at the cabin." % [
+            display_name,
+            str(carry.call("stack_status", player, item_id))
+        ]
+    else:
+        objective.text = "Inventory full."
 
 func _remove_if_already_claimed() -> void:
     var pickup_path: String = str(get_path())
