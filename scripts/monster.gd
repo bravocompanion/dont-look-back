@@ -207,10 +207,10 @@ func _clamp_tenant_position(world_position: Vector3) -> Vector3:
             return clamped_value
     return world_position
 
-func _collider_belongs_to_tenant(collider: Node, tenant: Node3D = self) -> bool:
+func _collider_belongs_to_tenant(collider: Node) -> bool:
     var current: Node = collider
     while current != null:
-        if current == tenant:
+        if current == self:
             return true
         current = current.get_parent()
     return false
