@@ -1,8 +1,8 @@
-extends Area3D
+extends StaticBody3D
 
-# Non-blocking interaction target for a dead wildlife body. The living
-# CharacterBody collision can stay disabled while the player's InteractionRay
-# still has something safe to hit for harvesting.
+# Non-blocking-for-player interaction target on collision layer 2. The player
+# movement body uses the normal world mask, while Forest InteractionRay includes
+# this extra layer so a dead carcass can be harvested without becoming an obstacle.
 
 func get_interaction_text() -> String:
     var animal: Node = get_parent()
