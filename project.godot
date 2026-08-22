@@ -3,13 +3,13 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.63"
+config/name="Don't Look Back v0.64"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
 ItemIconRegistry="*res://scripts/item_icon_registry_v43.gd"
 CarryLimitSystem="*res://scripts/carry_limit_system_v54.gd"
-SurvivalSystem="*res://scripts/survival_system_ranger_v12.gd"
+SurvivalSystem="*res://scripts/survival_system_ranger_v13.gd"
 LightRegistry="*res://scripts/light_registry_v63.gd"
 DarknessDirector="*res://scripts/darkness_director_v63.gd"
 CheckpointSystem="*res://scripts/checkpoint_system_v59.gd"
@@ -55,7 +55,7 @@ SurvivalDepthSystem="*res://scripts/survival_depth_system_v54.gd"
 JournalSystem="*res://scripts/journal_system_ranger_v6.gd"
 SaveSystem="*res://scripts/save_system_ranger_v7.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system_v192.gd"
+FrontEndSystem="*res://scripts/front_end_system_v193.gd"
 MineAssetSystem="*res://scripts/mine_asset_system.gd"
 
 [display]
