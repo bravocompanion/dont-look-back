@@ -1,38 +1,33 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.59 — Checkpoint Snapshot / Finite-Loot Consistency**.
+Updated for **v0.60 — Shelter Authority / Native Build Foundation / Regression Smoke**.
 
-Current project state: gameplay/procedural systems remain ahead of final production art and audio. v0.59 changes persistence/fail-state behavior and requires no mandatory production asset.
+Gameplay/procedural systems are still ahead of final production art/audio. v0.60 adds **no mandatory runtime asset**, but native distribution now makes app-identity packaging assets a visible production need.
 
-Status legend:
+Status:
 
-- **AVAILABLE** — committed and usable now.
-- **PROTOTYPE** — represented procedurally or with temporary content.
+- **AVAILABLE** — committed and usable.
+- **PROTOTYPE** — procedural/temporary representation exists.
 - **MISSING** — production asset still required.
 
 ---
 
-# P0 — Character / Co-op Readability
-
-## Survivor player
+# P0 — Survivor / Co-op Readability
 
 Status: **PROTOTYPE / MISSING production set**
 
 Required:
 
-- one production survivor base model;
+- one final survivor base model;
 - 3–4 clearly readable co-op outfit/color variants;
 - first-person arms/hands rig;
 - world/remote-player body;
-- remote-player flashlight attachment;
-- simple mobile LOD/collision representation.
+- remote flashlight attachment;
+- mobile LOD/collision proxy.
 
 Animation:
 
-- idle;
-- walk;
-- sprint/run;
-- strafe;
+- idle/walk/sprint/strafe;
 - jump/fall/landing;
 - hit reaction;
 - downed/crawl;
@@ -43,24 +38,19 @@ Animation:
 
 # P0 — The Tenant
 
-Status: **PROTOTYPE / MISSING final model + animation/audio/VFX**
+Status: **PROTOTYPE / MISSING final production set**
 
-Required final model:
+Required:
 
-- humanoid horror silhouette;
-- rig suitable for observation/freeze and panic-driven pursuit;
-- mobile LOD;
-- simple collision proxy.
-
-Animation/presentation:
-
-- emergence/materialize;
+- final humanoid horror model + rig;
 - watched/freeze pose;
+- emergence/materialize;
 - low-panic stalk locomotion;
-- medium/high-panic locomotion blend;
+- high-panic pursuit;
 - attack/recovery;
 - flashlight reaction;
-- 3-second banish/dissolve.
+- banish/dissolve;
+- mobile LOD/collision proxy.
 
 Audio/VFX:
 
@@ -68,13 +58,9 @@ Audio/VFX:
 - movement/body-creak/footstep layer;
 - breathing/proximity pressure;
 - attack cue/impact;
-- flashlight interference/burn reaction;
-- banish/death release;
-- low-overdraw distortion/dissolve.
-
-Accessibility requirement:
-
-- reaction visuals must support a future Reduce Flashing mode.
+- flashlight interference/burn;
+- banish release;
+- low-overdraw distortion compatible with future Reduce Flashing mode.
 
 ---
 
@@ -84,15 +70,15 @@ Status: **PROTOTYPE / MISSING final production set**
 
 Required:
 
-- final creature model visibly distinct from Tenant;
-- darkness emergence/materialization;
+- final model clearly distinct from Tenant;
+- darkness emergence;
 - pursuit/attack motion;
 - light recoil;
 - retreat/dissolve;
 - mobile LOD;
-- darkness/proximity/attack/light-recoil audio.
+- emergence/proximity/attack/light-recoil audio.
 
-Identity rule: production art must reinforce that this creature is about **losing protective light**, not panic/observation.
+Identity must communicate **loss of protective light**, not panic/observation.
 
 ---
 
@@ -102,19 +88,18 @@ Status: **PROTOTYPE / MISSING production models**
 
 Required:
 
-- first-person flashlight model;
-- world/remote-player flashlight model;
+- first-person flashlight;
+- world/remote-player flashlight;
 - switch animation;
 - battery replacement animation;
-- idle/walk/sprint handling compatible with current procedural motion;
-- jump/landing response;
-- low-cost beam/dust presentation suitable for mobile.
+- idle/walk/sprint handling;
+- low-cost beam/dust presentation for mobile.
 
 Audio:
 
 - switch on/off;
 - battery insert/remove;
-- electrical buzz/flicker variants;
+- buzz/flicker variants;
 - monster-interference layer.
 
 ---
@@ -125,37 +110,30 @@ Audio:
 
 Status: **PROTOTYPE / MISSING production kit**
 
-Required:
-
 - concrete/plaster/tile wall set;
-- floor and ceiling materials;
+- floor/ceiling materials;
 - normal/roughness maps;
-- industrial trims/conduit;
-- dirty fluorescent/caged light fixtures;
-- safe-light visual language;
-- evacuation/fault lighting variants;
-- apartment door;
-- labyrinth metal/security door;
-- exit/security gate.
+- industrial trim/conduit;
+- dirty fluorescent/caged fixtures;
+- safe-light language;
+- fault/evacuation lighting variants;
+- apartment/labyrinth/security/exit door set.
 
 ## Mine
 
 Status: **PARTIAL / PROTOTYPE**
 
-Required production integration/dressing:
-
 - reinforced shaft walls;
-- timber/metal support variants;
-- mine doors/gates;
-- rail/cart/industrial clutter where useful;
-- signage and warning decals;
-- production light fixtures;
-- interaction props matching evidence route;
-- UPPER/DEEP shaft power-routing console variants;
-- powered/unpowered circuit indicators;
-- stabilized junction-light visual variant tied to Water Sample analysis.
+- timber/metal supports;
+- mine gates/doors;
+- rails/carts/industrial clutter;
+- warning decals/signage;
+- production support lights;
+- UPPER/DEEP routing consoles;
+- powered/unpowered indicators;
+- stabilized Water Sample junction-light variant.
 
-Use authored scene anchors for gameplay-critical placement instead of baking important coordinates into code.
+Gameplay-critical placement should move toward authored scene anchors rather than hard-coded coordinates.
 
 ---
 
@@ -170,20 +148,13 @@ Footsteps:
 - dirt/grass;
 - metal.
 
-Monster audio:
+Monster/player:
 
 - Tenant movement/breath/proximity/attack/reaction;
 - Darkness emergence/proximity/attack/retreat;
-- Warden/Mourner/Crawler as those systems receive production presentation.
+- player hurt/downed/revive/death.
 
-Player:
-
-- hurt variants;
-- downed/revive feedback;
-- death;
-- interaction rejects/blocked action may reuse current UI feedback initially.
-
-Pending committed-file targets:
+Existing pending file targets:
 
 - `res://assets/audio/forest_night.mp3`
 - `res://assets/audio/draw.mp3`
@@ -192,141 +163,109 @@ Pending committed-file targets:
 
 ---
 
-# P1 — Ranger Cabin / Safe-Zone Production Pass
+# P1 — Ranger Cabin / Shelter
 
 Status: **PROTOTYPE / MISSING polish**
 
-Recommended:
-
 - generator start/idle/failure/repair audio;
+- production generator states;
 - campfire loop/extinguish audio;
-- powered/unpowered cabin exterior light fixtures;
-- protected/exposed shelter status emissive indicator;
-- cabin dressing and storage props;
-- low-cost night readability suitable for mobile.
+- powered/unpowered cabin exterior fixtures;
+- protected/exposed status emissive;
+- cabin survival/storage dressing;
+- v0.60 shelter transaction accepted/rejected feedback.
+
+Network feedback should stay subtle and diegetic; do not turn shelter interaction into an intrusive online-service UI.
 
 ---
 
-# P1 — Forest / Investigation Production Pass
+# P1 — Forest / Investigation
 
 Status: **PROTOTYPE / PARTIAL**
 
-Recommended:
-
-- final Ranger Cabin exterior/interior dressing;
-- Abandoned House production pass;
-- Old Gas Station production pass;
-- Warehouse production pass;
+- final Ranger Cabin dressing;
+- Abandoned House pass;
+- Old Gas Station pass;
+- Warehouse pass;
 - Water Pump anomaly dressing;
-- Ranger Case Board production pass with manifest/radio synthesis presentation;
-- evidence-added and clue-synthesized audio feedback;
-- tree/foliage variants with mobile LOD;
-- terrain/ground material variants;
-- fog/rain/storm presentation with performance tiers;
+- Ranger Case Board production model/presentation;
+- evidence-added and clue-synthesis audio;
+- foliage/terrain variants with mobile LOD;
+- weather/fog/rain performance tiers;
 - ambient wildlife/forest audio.
 
 ---
 
-# P1 — Consumable Interaction Production Pass
+# P1 — Consumable Interaction
 
-Status: **MISSING / HUD text fallback available**
+Status: **MISSING / HUD fallback active**
 
-Recommended:
-
-- first-person medkit treatment animation;
-- medkit unzip/cloth/tape/treatment SFX;
-- food handling/eating animation and SFX;
-- water bottle/drinking animation and SFX;
+- first-person medkit treatment animation + SFX;
+- food handling/eating animation + SFX;
+- water drinking animation + SFX;
 - interrupted-treatment cue;
-- animation timing that preserves vulnerable gameplay durations.
+- timing aligned to vulnerable gameplay channels.
 
 ---
 
-# P1 — Mine Power Routing Production Pass
+# P1 — Mine Power Routing
 
-Status: **PROTOTYPE / procedural consoles + lights available**
+Status: **PROTOTYPE**
 
-Recommended:
-
-- industrial UPPER / DEEP routing-console meshes;
+- industrial UPPER/DEEP console meshes;
 - lever/switch animation;
 - powered/unpowered emissive states;
 - support-light fixture model;
-- electrical relay click / transformer thunk;
-- upper/deep circuit hum variants;
-- stabilized junction-light variant;
-- low-cost mobile materials and no mandatory dynamic shadows.
+- relay click / transformer thunk;
+- circuit hum variants;
+- stabilized junction-light production pass.
 
 ---
 
-# P1 — Checkpoint / Fail-State Feedback
+# P1 — Native App Identity
 
-Status: **PROTOTYPE / existing safe lamps + HUD text available**
+Status: **MISSING production packaging**
 
-Recommended after v0.59:
+Newly relevant in v0.60:
 
-- short checkpoint activation sting;
-- safe-lamp/checkpoint confirmation emissive pulse;
-- team-wipe rewind/restore ambience;
-- checkpoint-restored UI icon;
-- synchronized co-op checkpoint confirmation cue.
+- Android high-resolution launcher icon;
+- Android adaptive foreground;
+- Android adaptive background;
+- Android monochrome/themed icon;
+- Windows `.ico`;
+- Linux app/desktop PNG icon;
+- optional lightweight splash/loading art.
 
-Accessibility: confirmation pulse must support Reduce Flashing and should use slow emissive change instead of rapid full-screen flashes.
+Debug/native CI may use engine/project fallback icons. Final beta/public distribution should not.
 
 ---
 
 # P1 — Hunting / Wildlife
 
-Status: **PROTOTYPE / MISSING production content**
+Status: **PROTOTYPE / MISSING**
 
-Recommended:
-
-- first-person/world Hunting Bow;
+- FP/world Hunting Bow;
 - Arrow model;
 - draw/release/impact presentation;
 - Hunting Knife;
 - harvest animation;
-- wildlife locomotion/hit/flee/death animations;
+- wildlife locomotion/hit/flee/death;
 - wildlife audio;
-- low-cost mobile LODs.
+- mobile LODs.
 
 ---
 
-# P1 — Isolation / Lockdown / Evacuation
+# P1 — Labyrinth Isolation / Lockdown
 
 Status: **PROTOTYPE / MISSING production kit**
 
-Recommended:
-
-- Maintenance/Flooded/Archive Isolation Node variants;
+- Maintenance/Flooded/Archive control variants;
 - active/shutdown/fault states;
-- industrial housing/lever/breaker/core bank;
+- lever/breaker/core bank;
 - conduit/warning labels;
 - shutdown animation/audio;
-- Lockdown interlock cover and release mechanism;
-- temporary shutter model + animation/audio;
-- evacuation-specific signage/lighting.
-
----
-
-# P1 — Other Monsters
-
-## Warden
-
-Status: **PROTOTYPE / MISSING production set**
-
-- broad/heavy industrial humanoid silhouette;
-- patrol/pursuit/isolated-target acceleration;
-- safe-light hesitation;
-- attack/recovery;
-- evacuation pursuit;
-- heavy footsteps/body creak/breath/core pulse/attack audio.
-
-## Mourner / Crawler
-
-Status: **PROTOTYPE / MISSING production set**
-
-Production work should begin only after their gameplay identity is locked.
+- Lockdown interlock/release;
+- shutters/signage/evacuation lighting.
 
 ---
 
@@ -334,12 +273,12 @@ Production work should begin only after their gameplay identity is locked.
 
 Status: **MISSING polish variants**
 
-- POI loot-container variants;
+- POI loot containers;
 - shared supply crates;
 - stash variants;
 - evidence containers;
 - 3–4 player bonus-resource dressing;
-- readable interaction emissive/decals that do not rely only on text.
+- readable interaction emissive/decals.
 
 ---
 
@@ -348,26 +287,24 @@ Status: **MISSING polish variants**
 Status: **PLANNED**
 
 - survey-team personal items;
-- Foreman/miner story dressing;
+- Foreman/miner story props;
 - T-03 archive props;
-- Research Facility routing-terminal production model/UI;
-- evidence folders, tapes, samples, signage;
-- future Hospital/Museum/Laboratory/Cave asset sets only when those maps enter active production.
+- Research Facility routing-terminal production UI/model;
+- evidence folders/tapes/samples/signage;
+- Hospital/Museum/Laboratory/Cave sets only after those maps enter active production.
 
 ---
 
-# v0.59 Asset Delta
+# v0.60 Asset Delta
 
-New required assets: **NONE**.
+New mandatory runtime assets: **NONE**.
 
-New recommended P1 polish:
+New recommended:
 
-- checkpoint activation sting;
-- checkpoint/safe-lamp confirmation pulse;
-- team-wipe rewind/restore ambience;
-- checkpoint-restored UI icon;
-- synchronized co-op checkpoint cue.
+- P1 Android launcher/adaptive/monochrome icon set;
+- P1 Windows/Linux app identity icons;
+- P1 shelter authority accepted/rejected/repair confirmation feedback.
 
-Existing v0.58 Case Board, consumable, Mine routing, monster, survivor, flashlight, footsteps, and environment production backlog remains pending.
+Existing P0 character/monster/flashlight/environment/audio production work remains higher priority than new v0.60-specific presentation.
 
-See `ASSET_DELTA_V059_CHECKPOINT_CONSISTENCY.md` for exact behavior and validation.
+See `ASSET_DELTA_V060_AUTHORITY_NATIVE_TESTS.md` for validation details.
