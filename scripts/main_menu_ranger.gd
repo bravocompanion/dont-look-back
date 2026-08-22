@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.49  •  BOW AUDIO  •  PERSISTENT WILDLIFE CORPSES"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Bow draw audio stretches once to max draw time, release plays shoot audio, impacts are positional, and dead wildlife remains visible until respawn."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. draw.mp3 plays once across the full draw, shoot.mp3 plays on release, and impact.mp3 plays at the hit point."
-    host_button.tooltip_text = "Host co-op keeps wildlife HP, arrow damage, embedded arrows, impact resolution and corpse state authoritative."
-    join_button.tooltip_text = "Join the native ENet host. Impact audio is synchronized from the authoritative hit position."
+    version_label.text = "v0.50  •  SMOOTH BOW SWAY  •  SHORT WOUNDED FLEE"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wounded wildlife now flees at only +20% speed for 3 seconds, while draw sway uses one smooth camera layer with a +30% movement bonus."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Walking, sprinting and jumping each add 30% sway without stacking multiple oscillation layers."
+    host_button.tooltip_text = "Host co-op keeps wildlife HP, short wounded flee steering, embedded arrows, impact resolution and corpse state authoritative."
+    join_button.tooltip_text = "Join the native ENet host. Wounded wildlife uses the shooter's synchronized position and returns to normal AI after 3 seconds."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
