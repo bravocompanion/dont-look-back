@@ -24,6 +24,9 @@ func _ready() -> void:
 func _begin_bow_draw() -> void:
     super._begin_bow_draw()
     if bow_drawing:
+        # The inherited v0.45 draw controller also owns an FOV target. Point it
+        # at the same 30% zoom target so two smoothing passes never fight.
+        bow_draw_fov_reduction = bow_base_fov * bow_full_draw_zoom_fraction
         var player: CharacterBody3D = _local_player()
         bow_was_airborne_v51 = player != null and not player.is_on_floor()
         bow_jump_kick_strength_v51 = 0.0
