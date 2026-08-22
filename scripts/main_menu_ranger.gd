@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.51  •  NIGHT TENANT  •  BOW FEEL TUNING"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Deer/Rabbit return to true base speed after the 3-second wound burst; full bow draw zooms 30%; Tenant only hunts at night away from world light."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Walk sway +25%, sprint sway +40%, jump gives a short 50% kick, and full draw reaches 30% camera zoom."
-    host_button.tooltip_text = "Host validates wildlife speed, arrow state, Tenant night/light rules, random 2-10s stillness spawn delay, and 15-60s Tenant respawn cooldown."
-    join_button.tooltip_text = "Join the native ENet host. Flashlight does not prevent Tenant spawning; nearby world lights do."
+    version_label.text = "v0.52  •  HARVESTABLE CORPSES  •  STRONGER BOW SWAY"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wounded wildlife now flees straight away at a hard +20% speed cap; dead wildlife falls onto its side and can be harvested with a Hunting Knife."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Draw sway is now +40% while still, +80% while walking, and +120% while sprinting, with the existing smooth jump kick and 30% full-draw zoom."
+    host_button.tooltip_text = "Host co-op keeps wildlife HP, wounded flee direction, carcass harvest claims, loot grants, arrow state and Tenant night/light rules authoritative."
+    join_button.tooltip_text = "Join the native ENet host. Aim at a dead carcass and use E / USE with a Hunting Knife to harvest it."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
