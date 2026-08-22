@@ -17,31 +17,58 @@ func interact() -> void:
     if player == null or not player.has_method("add_item"):
         return
 
+    # v0.54 removes the free Hunting Bow and Hunting Knife. The cache gives a
+    # fishing fallback, a few arrows to save for later, and partial materials;
+    # hunting progression now requires scavenging and using the workbench.
     var granted: PackedStringArray = PackedStringArray()
-    if not bool(player.call("has_item", "hunting_bow")) and bool(player.call("add_item", "hunting_bow", "Hunting Bow")):
-        granted.append("Hunting Bow")
-    if not bool(player.call("has_item", "hunting_knife")) and bool(player.call("add_item", "hunting_knife", "Hunting Knife")):
-        granted.append("Hunting Knife")
-    if not bool(player.call("has_item", "fishing_rod")) and bool(player.call("add_item", "fishing_rod", "Fishing Rod")):
+    if not bool(player.call("has_item", "fishing_rod")) and _grant(player, "fishing_rod", "Fishing Rod", 1):
         granted.append("Fishing Rod")
 
-    var arrows_added: int = 0
-    for _index: int in range(8):
-        if bool(player.call("add_item", "arrow", "Arrow")):
-            arrows_added += 1
+    var arrows_added: int = _grant_count(player, "arrow", "Arrow", 4)
     if arrows_added > 0:
         granted.append("%d Arrows" % arrows_added)
+
+    if _grant(player, "cloth", "Cloth", 1):
+        granted.append("Cloth")
+    if _grant(player, "scrap", "Scrap", 1):
+        granted.append("Scrap")
 
     if granted.is_empty():
         var full_objective: Label = player.get_node_or_null("HUD/Objective") as Label
         if full_objective != null:
-            full_objective.text = "The ranger cache is useful, but your inventory has no room for its equipment."
+            full_objective.text = "The ranger cache still has supplies, but your carry limits are full. Store something and return."
         return
 
     searched = true
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
-        objective.text = "RANGER CACHE: %s. Kill prey with the bow, then harvest the carcass with the knife." % ", ".join(granted)
+        objective.text = "RANGER CACHE: %s. Scavenge Wood, Cloth and Scrap, then craft a Hunting Bow and Hunting Knife at the workbench." % ", ".join(granted)
+
+func _grant(player: CharacterBody3D, item_id: String, display_name: String, amount: int) -> bool:
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    if carry != null and carry.has_method("grant_item"):
+        return bool(carry.call("grant_item", player, item_id, display_name, amount))
+
+    var granted: int = 0
+    for _index: int in range(amount):
+        if not bool(player.call("add_item", item_id, display_name)):
+            break
+        granted += 1
+    return granted == amount
+
+func _grant_count(player: CharacterBody3D, item_id: String, display_name: String, requested: int) -> int:
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    var granted: int = 0
+    for _index: int in range(requested):
+        var accepted: bool = false
+        if carry != null and carry.has_method("grant_item"):
+            accepted = bool(carry.call("grant_item", player, item_id, display_name, 1))
+        else:
+            accepted = bool(player.call("add_item", item_id, display_name))
+        if not accepted:
+            break
+        granted += 1
+    return granted
 
 func _local_player() -> CharacterBody3D:
     var fallback: CharacterBody3D
