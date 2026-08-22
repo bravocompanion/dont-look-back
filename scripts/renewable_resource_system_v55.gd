@@ -1,6 +1,7 @@
 extends Node
 
 const FOREST_SCENE_PATH: String = "res://scenes/forest.tscn"
+const MENU_SCENE_PATH: String = "res://scenes/main_menu_ranger.tscn"
 const BRANCH_SCRIPT_PATH: String = "res://scripts/forest_branch_pile_v55.gd"
 const GATHER_DISTANCE: float = 3.2
 
@@ -28,10 +29,10 @@ func _ready() -> void:
         multiplayer.peer_connected.connect(_on_peer_connected_v55)
 
 func _process(delta: float) -> void:
-    if _is_authoritative_v55():
+    var scene: Node = get_tree().current_scene
+    if scene != null and scene.scene_file_path != MENU_SCENE_PATH and _is_authoritative_v55():
         _tick_respawns_v55(delta)
 
-    var scene: Node = get_tree().current_scene
     if scene == null or scene.scene_file_path != FOREST_SCENE_PATH:
         configured_scene_id = 0
         branch_nodes.clear()
@@ -53,9 +54,7 @@ func request_branch_gather(resource_id: String, _world_position: Vector3 = Vecto
     _handle_branch_request_v55(_local_peer_id_v55(), resource_id)
 
 func get_save_state() -> Dictionary:
-    return {
-        "respawn_remaining": respawn_remaining.duplicate(true)
-    }
+    return {"respawn_remaining": respawn_remaining.duplicate(true)}
 
 func restore_save_state(state: Dictionary) -> void:
     respawn_remaining.clear()
@@ -131,7 +130,8 @@ func _handle_branch_request_v55(peer_id: int, resource_id: String) -> void:
     var peer_position_value: Variant = _peer_position_v55(peer_id)
     if not (peer_position_value is Vector3):
         return
-    if (peer_position_value as Vector3).distance_to(branch.global_position) > GATHER_DISTANCE:
+    var peer_position: Vector3 = peer_position_value
+    if peer_position.distance_to(branch.global_position) > GATHER_DISTANCE:
         _message_peer_v55(peer_id, "Move closer to the fallen branches.")
         return
 
@@ -151,17 +151,13 @@ func _complete_branch_gather_v55(resource_id: String, peer_id: int, wood_yield: 
     gather_claims.erase(resource_id)
     respawn_remaining[resource_id] = _branch_respawn_seconds_v55()
     _broadcast_branch_state_v55(resource_id, false)
-    _message_peer_v55(
-        peer_id,
-        "GATHER: collected Wood x%d. Fallen branches regrow slowly; keep moving between gathering sites." % wood_yield
-    )
+    _message_peer_v55(peer_id, "GATHER: collected Wood x%d. Fallen branches regrow slowly; keep moving between gathering sites." % wood_yield)
     _request_autosave_v55("Renewable wood gathered")
 
 func _branch_respawn_seconds_v55() -> float:
     var outside: Node = get_node_or_null("/root/OutsideDirector")
     var full_day_seconds: float = maxf(60.0, float(outside.get("full_day_seconds"))) if outside != null else 720.0
-    var party_size: int = _party_size_v55()
-    var game_hours: float = 6.0 if party_size >= 3 else 8.0
+    var game_hours: float = 6.0 if _party_size_v55() >= 3 else 8.0
     return full_day_seconds * game_hours / 24.0
 
 func _wood_yield_v55() -> int:
@@ -272,7 +268,8 @@ func _peer_position_v55(peer_id: int) -> Variant:
             if state_value is Dictionary:
                 var transform_value: Variant = Dictionary(state_value).get("transform", null)
                 if transform_value is Transform3D:
-                    return (transform_value as Transform3D).origin
+                    var peer_transform: Transform3D = transform_value
+                    return peer_transform.origin
     return null
 
 func _local_player_v55() -> CharacterBody3D:
