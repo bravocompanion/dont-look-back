@@ -95,16 +95,19 @@ jobs:
         run: |
           set -euo pipefail
           RAW_WASM="build/web/index.wasm"
+          COMPRESSED_WASM="${RAW_WASM}.br"
           RAW_SHA="$(sha256sum "$RAW_WASM" | awk '{print $1}')"
-          brotli --quality=11 --force --output "${RAW_WASM}.br" "$RAW_WASM"
-          rm "$RAW_WASM"
-          mv "${RAW_WASM}.br" "$RAW_WASM"
 
-          RESTORED_SHA="$(brotli --decompress --stdout "$RAW_WASM" | sha256sum | awk '{print $1}')"
+          brotli -q 11 -f -o "$COMPRESSED_WASM" "$RAW_WASM"
+          brotli -t "$COMPRESSED_WASM"
+          RESTORED_SHA="$(brotli -d -c "$COMPRESSED_WASM" | sha256sum | awk '{print $1}')"
           if [[ "$RAW_SHA" != "$RESTORED_SHA" ]]; then
             echo "Brotli WASM verification failed."
             exit 1
           fi
+
+          rm "$RAW_WASM"
+          mv "$COMPRESSED_WASM" "$RAW_WASM"
 
           cat > build/web/_headers <<'EOF'
           /index.wasm
