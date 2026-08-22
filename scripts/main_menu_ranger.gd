@@ -4,12 +4,12 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.54  •  SURVIVAL ECONOMY  •  SLEEP REWORK"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Core supplies now have carry limits, stash logistics matter, and sleeping advances real survival/radiation costs instead of cheaply skipping the night."
-    new_game_button.tooltip_text = "The ranger cache no longer gives a free Hunting Bow or Hunting Knife. Scavenge Wood, Cloth and Scrap, then craft hunting gear at the workbench. Bow sway remains 150% still, 200% walking, 350% sprinting."
-    host_button.tooltip_text = "Host co-op keeps wildlife HP, carcass claims, shared pickups, arrow state, Tenant rules and survival infrastructure authoritative. Carry limits apply to pickups, crafting, fishing, harvest and recovered arrows."
-    join_button.tooltip_text = "Join the native ENet host. Store excess supplies at the cabin; sleep consumes sustained generator/campfire fuel and Day-3+ radiation continues during time skip."
-    _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
+    version_label.text = "v0.55  •  RENEWABLE SURVIVAL  •  LATE-GAME UPKEEP"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wildlife and fishing recover more slowly, fallen branches provide renewable Wood, and Day-3+ infrastructure now needs maintenance."
+    new_game_button.tooltip_text = "Scavenge and craft the Hunting Bow / Hunting Knife, plan around carry limits, gather renewable fallen branches, and use the cabin stash between expeditions. Bow sway remains 150% still, 200% walking, 350% sprinting."
+    host_button.tooltip_text = "HOST owns renewable branch cooldowns, wildlife, carcass claims and shared generator state. Larger 3–4 player teams receive slightly more Wood per branch site and faster branch recovery."
+    join_button.tooltip_text = "Radiation Suit filters degrade only while exposed to Day-3+ radiation. Replace them from Inventory with Industrial Filters; generator repairs remain HOST-controlled."
+    _set_status("RANGER CASE 07 — Survive, investigate, maintain your equipment, and follow the evidence underground.")
 
 func _start_new_game() -> void:
     if scene_booting:
