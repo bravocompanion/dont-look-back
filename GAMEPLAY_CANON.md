@@ -1,4 +1,4 @@
-# DON'T LOOK BACK — Gameplay Canon v0.57
+# DON'T LOOK BACK — Gameplay Canon v0.58
 
 Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama atau catatan versi lama bertentangan dengan file ini dan runtime aktif, gunakan canon ini.
 
@@ -28,13 +28,26 @@ Forest adalah titik awal campaign aktif dan base survival utama.
 - pahami weather/night pressure;
 - selidiki hilangnya survey team.
 
-### Jalur bukti utama
+### Jalur bukti v0.58
+
+Opening tidak lagi harus sepenuhnya linear:
 
 1. Abandoned House → Survey Manifest
 2. Old Gas Station → Radio Trace
-3. Warehouse → Maintenance Map
-4. Water Pump → optional anomaly evidence
-5. Old Mine unlocked
+3. kedua bukti di atas dapat ditemukan dalam urutan berbeda
+4. Ranger Case Board → sintesis Manifest + Radio Trace
+5. Warehouse → Maintenance Map
+6. Water Pump → optional anomaly evidence
+7. Old Mine unlocked setelah clue synthesis + Maintenance Map
+
+### Aturan investigation
+
+- mengumpulkan bukti tidak sama dengan memahami bukti;
+- clue penting boleh memerlukan synthesis/cross-check;
+- optional evidence harus memberi manfaat gameplay nyata, bukan hanya teks Journal;
+- multiplayer host memvalidasi scene, physical target, state, dan distance sebelum shared progression berubah.
+
+Water Sample tetap opsional, tetapi v0.58 memberi manfaat nyata: stabilized emergency light di Mine junction.
 
 ### Aturan horror
 
@@ -42,7 +55,7 @@ Safe space tidak permanen. Ranger Yard hanya mendapat perlindungan penuh ketika 
 
 ---
 
-# 2. OLD MINE — DESCENT
+# 2. OLD MINE — DESCENT + LIGHT ALLOCATION
 
 Mine adalah jembatan antara kasus permukaan dan fasilitas bawah tanah.
 
@@ -52,6 +65,19 @@ Mine adalah jembatan antara kasus permukaan dan fasilitas bawah tanah.
 2. Sealed Shaft Report
 3. Facility Access Badge
 4. Gate menuju Level 03 / Labyrinth
+
+### Signature rule v0.58
+
+Mine mempunyai shared support-power routing:
+
+- UPPER SHAFT circuit menerangi bagian awal;
+- DEEP SHAFT circuit menerangi bagian bawah;
+- hanya satu main circuit aktif pada satu waktu;
+- routing station tersedia di entrance dan junction;
+- dalam co-op, pilihan circuit adalah shared host-authoritative world state;
+- Water Sample optional evidence mengaktifkan stabilized junction light yang tetap menyala di antara kedua circuit.
+
+Tujuannya adalah membuat traversal Mine menjadi keputusan light allocation, bukan hanya koridor evidence.
 
 Mine harus terasa lebih sempit, industrial, dan tidak stabil daripada Forest. Resource run tetap penting, tetapi tujuan utamanya adalah investigasi dan descent.
 
@@ -73,6 +99,8 @@ Labyrinth adalah fasilitas horror utama, bukan titik awal campaign saat ini.
 ### Prinsip desain
 
 Labyrinth harus membuat player takut bergerak cepat sekaligus takut terlalu lama diam. Cahaya, panic, orientasi, stamina, dan suara harus saling menekan.
+
+Objective maintenance tidak boleh berhenti pada checklist tombol. Iterasi berikutnya harus membuat setiap stage mengubah rule bermain: visibility, sound masking, team split, route safety, atau threat pressure.
 
 ---
 
@@ -96,6 +124,8 @@ Potential future routes:
 
 Lokasi baru tidak boleh ditambahkan hanya untuk memperbesar map. Setiap ekspedisi harus memberi jawaban baru, aturan horror baru, atau keputusan survival baru.
 
+Sebelum major map baru, Research Facility sebaiknya menerima payoff encounter/choice agar campaign tidak berakhir sebagai sekadar “coming soon terminal”.
+
 ---
 
 # 5. SURVIVAL RULE
@@ -117,6 +147,42 @@ Current / intended pressure includes:
 - Generator/campfire upkeep
 - Hunting/fishing/resource economy
 
+### Hierarki tekanan
+
+Primary horror resources:
+
+- Health
+- Flashlight Battery
+- Darkness Exposure
+- Panic
+
+Secondary expedition pressure:
+
+- Stamina
+- Bleeding
+- Temperature
+- Radiation
+
+Background survival:
+
+- Hunger
+- Thirst
+- Infection
+
+Background survival tidak boleh menutupi horror utama dengan terlalu banyak administrasi HUD.
+
+### Vulnerable consumables v0.58
+
+FOOD/WATER/MED bukan lagi instant resolution dari normal gameplay input.
+
+- Food: sekitar 2.0 detik
+- Water: sekitar 1.4 detik
+- Medkit: sekitar 3.5 detik
+
+Player berhenti bergerak selama channel. Damage, downed/death, player replacement, atau kehilangan footing membatalkan action. Item baru dikonsumsi ketika action selesai.
+
+Prinsip: memakai supply harus menjadi keputusan timing dan vulnerability.
+
 ### Contoh keputusan horror yang benar
 
 - Fishing membuat player diam dan terekspos.
@@ -125,6 +191,7 @@ Current / intended pressure includes:
 - Medkit/bandage membutuhkan waktu dan menciptakan vulnerability.
 - Crafting dilakukan saat player memilih berhenti bergerak.
 - Resource bernilai ditempatkan di luar protected light.
+- Mine support power memaksa player memilih area mana yang lebih aman untuk diterangi.
 
 ### Yang harus dihindari
 
@@ -165,9 +232,16 @@ Warden/Mourner/Crawler/hazard boleh tetap memiliki aturan masing-masing, tetapi 
 
 # 7. HORROR PACING
 
-Target jangka berikutnya adalah high-level threat budget, bukan AI super-controller.
+v0.58 mulai menerapkan high-level threat budget untuk major co-op Tenant/Darkness encounters.
 
-Suggested pacing states:
+Current principle:
+
+- hanya satu major co-op threat mendapat budget penuh pada satu waktu;
+- setelah encounter selesai ada RECOVERY window;
+- pacing system tidak mengatur pathfinding/motor/combat AI;
+- subsystem kecil masih boleh memberi ambience/pressure selama RECOVERY, tetapi major encounter baru tidak langsung menumpuk.
+
+Target pacing states tetap:
 
 - CALM
 - UNEASE
@@ -177,6 +251,8 @@ Suggested pacing states:
 - RECOVERY
 
 Setelah chase/lockdown/major hit, player membutuhkan recovery window. Horror yang terus menerus aktif kehilangan kekuatan.
+
+Solo integration dengan budget yang sama masih follow-up.
 
 ---
 
@@ -205,6 +281,8 @@ Co-op harus menambah keputusan, bukan hanya menaikkan monster HP.
 - regroup decisions;
 - resource scaling agar survival tetap playable.
 
+Mine power routing v0.58 adalah contoh shared co-op decision: satu circuit aktif memengaruhi seluruh tim.
+
 World/objective/monster state yang penting harus host-authoritative. Client boleh meminta interaction, tetapi host harus memvalidasi scene, target, distance, state, dan ownership sebelum world state berubah.
 
 ---
@@ -217,7 +295,18 @@ Game harus playable pada:
 - Native Android touch
 - Web demo where supported
 
-UI harus responsive terhadap ukuran viewport. Gameplay menu yang memblokir kontrol harus menggunakan `GameplayInputLock` atau abstraction yang sama, bukan menambahkan dependency menu khusus ke MovementSystem satu per satu.
+UI harus responsive terhadap ukuran viewport.
+
+`GameplayInputLock` adalah sumber utama block state. v0.58 memperluas efek lock ke:
+
+- movement;
+- desktop camera / legacy action input;
+- mobile movement;
+- mobile look;
+- mobile gameplay action buttons;
+- temporary vulnerable consumable action.
+
+Gameplay menu tidak boleh membiarkan gameplay action “tembus” di belakang UI.
 
 Mobile performance target minimum: stable 30 FPS pada target hardware yang realistis. Desktop target normal: 60 FPS.
 
@@ -225,19 +314,22 @@ Mobile performance target minimum: stable 30 FPS pada target hardware yang reali
 
 # 10. PRODUCTION PRIORITY
 
-Sebelum map/monster besar berikutnya:
+Setelah v0.58, urutan prioritas:
 
-1. multiplayer authority;
-2. save/checkpoint/finite-loot consistency;
-3. input ownership;
-4. native platform export + CI smoke tests;
-5. mobile performance;
-6. monster ownership cleanup;
-7. horror pacing;
-8. production assets;
-9. content expansion.
+1. checkpoint/finite-loot consistency;
+2. server-authoritative shared shelter inventory;
+3. native platform export + CI smoke tests;
+4. automated gameplay/co-op regression tests;
+5. solo horror pacing integration;
+6. Labyrinth rule-depth pass;
+7. 3–4 player split/regroup objective scaling;
+8. Research Facility payoff encounter/choice;
+9. monster ownership cleanup;
+10. LightRegistry / authored protection volumes;
+11. production assets;
+12. content expansion.
 
-Gameplay foundation harus stabil sebelum breadth bertambah.
+Gameplay foundation harus stabil dan dalam sebelum breadth bertambah.
 
 ---
 
@@ -250,4 +342,6 @@ Setiap update harus mencatat:
 - Existing pending assets
 - Status: available / prototype / missing
 
-v0.57 sendiri tidak membutuhkan asset production baru; update ini berfokus pada stability dan authority. Lihat `ASSET_DELTA_V057_STABILITY_AUTHORITY.md`.
+v0.58 tidak membutuhkan mandatory production asset baru. New recommended production needs mencakup consumable-use animation/audio, Ranger Case Board synthesis presentation, Mine power-routing consoles/fixtures/audio, stabilized junction-light presentation, dan subtle recovery ambience.
+
+Lihat `ASSET_DELTA_V058_GAMEPLAY_DEPTH.md` dan `ASSET_BACKLOG.md`.
