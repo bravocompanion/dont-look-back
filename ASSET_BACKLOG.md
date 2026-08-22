@@ -1,8 +1,8 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.57 — Stability / Host Authority / Input Lock**.
+Updated for **v0.58 — Gameplay Depth / Investigation / Horror Pacing**.
 
-Current project state: gameplay/procedural systems are ahead of final production art and audio. v0.57 intentionally adds no mandatory production asset so stability work can land without expanding the asset surface.
+Current project state: gameplay/procedural systems remain ahead of final production art and audio. v0.58 adds new gameplay rules while keeping all new presentation requirements optional so the update can run with procedural/text fallbacks.
 
 Status legend:
 
@@ -150,7 +150,10 @@ Required production integration/dressing:
 - rail/cart/industrial clutter where useful;
 - signage and warning decals;
 - production light fixtures;
-- interaction props matching evidence route.
+- interaction props matching evidence route;
+- UPPER/DEEP shaft power-routing console variants;
+- powered/unpowered circuit indicators;
+- stabilized junction-light visual variant tied to Water Sample analysis.
 
 Use authored scene anchors for gameplay-critical placement instead of baking important coordinates into code.
 
@@ -216,10 +219,44 @@ Required/recommended:
 - Old Gas Station production pass;
 - Warehouse production pass;
 - Water Pump anomaly dressing;
+- Ranger Case Board production pass with manifest/radio synthesis presentation;
+- evidence-added and clue-synthesized audio feedback;
 - tree/foliage variants with mobile LOD;
 - terrain/ground material variants;
 - fog/rain/storm presentation with performance tiers;
 - ambient wildlife/forest audio.
+
+---
+
+# P1 — Consumable Interaction Production Pass
+
+Status: **MISSING / v0.58 uses HUD text fallback**
+
+Recommended:
+
+- first-person medkit treatment animation;
+- medkit unzip/cloth/tape/treatment SFX;
+- food handling/eating animation and SFX;
+- water bottle/drinking animation and SFX;
+- interrupted-treatment cue;
+- animation timing that preserves the vulnerable gameplay durations.
+
+---
+
+# P1 — Mine Power Routing Production Pass
+
+Status: **PROTOTYPE / procedural consoles + lights available**
+
+Recommended:
+
+- industrial UPPER / DEEP routing-console meshes;
+- lever/switch animation;
+- powered/unpowered emissive states;
+- support-light fixture model;
+- electrical relay click / transformer thunk;
+- upper/deep circuit hum variants;
+- stabilized junction-light variant;
+- low-cost mobile materials and no mandatory dynamic shadows.
 
 ---
 
@@ -305,12 +342,18 @@ Status: **PLANNED**
 
 ---
 
-# v0.57 Asset Delta
+# v0.58 Asset Delta
 
 New required assets: **NONE**.
 
-New recommended assets: **NONE required by code**.
+New recommended assets:
 
-The update changes stability, input ownership, and host validation. Existing production backlog remains the priority after technical validation.
+- P1 vulnerable consumable animation/audio;
+- P1 Ranger Case Board synthesis presentation;
+- P1 Mine UPPER/DEEP routing-console + support-light production kit;
+- P1 stabilized junction-light presentation;
+- P1 subtle post-major-encounter recovery ambience/tails.
 
-See `ASSET_DELTA_V057_STABILITY_AUTHORITY.md` for the exact v0.57 validation checklist.
+The code currently provides procedural/text fallbacks for every v0.58 gameplay addition.
+
+See `ASSET_DELTA_V058_GAMEPLAY_DEPTH.md` for the exact v0.58 status and validation checklist.

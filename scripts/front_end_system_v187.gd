@@ -1,6 +1,6 @@
 extends "res://scripts/front_end_system_v186.gd"
 
-const VERSION_BADGE_TEXT_V57: String = "v0.57  •  STABILITY  •  HOST AUTHORITY  •  INPUT LOCK"
+const VERSION_BADGE_TEXT_V58: String = "v0.58  •  GAMEPLAY DEPTH  •  INVESTIGATION  •  HORROR PACING"
 
 func _process(delta: float) -> void:
     super._process(delta)
@@ -8,5 +8,5 @@ func _process(delta: float) -> void:
     if scene == null or not _is_main_menu_scene(scene):
         return
     var version_label: Label = scene.get_node_or_null("MenuLayer/Root/Center/MainPanel/VBox/Version") as Label
-    if version_label != null and version_label.text != VERSION_BADGE_TEXT_V57:
-        version_label.text = VERSION_BADGE_TEXT_V57
+    if version_label != null and version_label.text != VERSION_BADGE_TEXT_V58:
+        version_label.text = VERSION_BADGE_TEXT_V58
