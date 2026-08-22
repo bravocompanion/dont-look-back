@@ -41,7 +41,8 @@ func _submit_state(player_transform: Transform3D, camera_pitch: float, flashligh
     if not _validate_remote_transform_v57(sender_id, player_transform):
         return
 
-    var safe_pitch: float = clampf(camera_pitch, -1.55, 1.55)
+    var pitch_value: float = camera_pitch if is_finite(camera_pitch) else 0.0
+    var safe_pitch: float = clampf(pitch_value, -1.55, 1.55)
     var safe_stats: Dictionary = _sanitize_remote_stats_v57(stats)
     _apply_remote_state(sender_id, player_transform, safe_pitch, flashlight_on, safe_stats)
     _receive_state.rpc(sender_id, player_transform, safe_pitch, flashlight_on, safe_stats)
@@ -80,9 +81,10 @@ func _request_shelter(action: String) -> void:
     var scene: Node = get_tree().current_scene
     if scene == null or scene.scene_file_path != FOREST_SCENE_PATH_V57:
         return
-    var peer_position: Variant = _peer_position_v57(sender_id)
-    if peer_position == null:
+    var peer_position_variant: Variant = _peer_position_v57(sender_id)
+    if peer_position_variant == null:
         return
+    var peer_position: Vector3 = peer_position_variant
 
     # v0.57 first authority pass: shelter requests are accepted only from the
     # physical Ranger Yard. Inventory ownership remains a separate authoritative
@@ -120,15 +122,17 @@ func _validate_pickup_request_v57(sender_id: int, pickup_path: String, pickup: N
     var scene: Node = get_tree().current_scene
     if scene == null or (pickup != scene and not scene.is_ancestor_of(pickup)):
         return false
-    return _peer_is_near_node_v57(sender_id, pickup as Node3D, PICKUP_INTERACTION_DISTANCE_V57)
+    var pickup_3d: Node3D = pickup
+    return _peer_is_near_node_v57(sender_id, pickup_3d, PICKUP_INTERACTION_DISTANCE_V57)
 
 func _peer_is_near_node_v57(peer_id: int, target: Node3D, max_distance: float) -> bool:
     if target == null or not is_instance_valid(target):
         return false
-    var peer_position: Variant = _peer_position_v57(peer_id)
-    if peer_position == null:
+    var peer_position_variant: Variant = _peer_position_v57(peer_id)
+    if peer_position_variant == null:
         return false
-    return (peer_position as Vector3).distance_to(target.global_position) <= max_distance
+    var peer_position: Vector3 = peer_position_variant
+    return peer_position.distance_to(target.global_position) <= max_distance
 
 func _peer_position_v57(peer_id: int) -> Variant:
     if peer_id == 1:
@@ -139,9 +143,10 @@ func _peer_position_v57(peer_id: int) -> Variant:
     if target_variant == null:
         return null
     var target: Dictionary = Dictionary(target_variant)
-    var player_transform: Variant = target.get("transform")
-    if player_transform is Transform3D:
-        return (player_transform as Transform3D).origin
+    var player_transform_variant: Variant = target.get("transform")
+    if player_transform_variant is Transform3D:
+        var player_transform: Transform3D = player_transform_variant
+        return player_transform.origin
     return null
 
 func _validate_remote_transform_v57(peer_id: int, player_transform: Transform3D) -> bool:
@@ -154,7 +159,7 @@ func _validate_remote_transform_v57(peer_id: int, player_transform: Transform3D)
     var previous_variant: Variant = existing.get("transform")
     if not (previous_variant is Transform3D):
         return true
-    var previous: Transform3D = previous_variant as Transform3D
+    var previous: Transform3D = previous_variant
     if not previous.origin.is_finite():
         return true
     return previous.origin.distance_to(player_transform.origin) <= MAX_REMOTE_STEP_DISTANCE_V57
