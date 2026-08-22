@@ -3,7 +3,7 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.56"
+config/name="Don't Look Back v0.57"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
@@ -18,6 +18,7 @@ ShelterSystem="*res://scripts/shelter_system_ranger_v10.gd"
 StashMenuSystem="*res://scripts/stash_menu_system_v54.gd"
 RadiationSystem="*res://scripts/radiation_survival_system_v43.gd"
 CraftingSystem="*res://scripts/crafting_system_v54.gd"
+GameplayInputLock="*res://scripts/gameplay_input_lock.gd"
 NetworkManager="*res://scripts/network_manager_v41.gd"
 MobileControls="*res://scripts/mobile_controls_v183.gd"
 MovementSystem="*res://scripts/movement_system_v41.gd"
@@ -65,6 +66,8 @@ pointing/emulate_touch_from_mouse=false
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_s3tc_bptc=true
+textures/vram_compression/import_etc2_astc=true
 
 [audio]
 driver/enable_input=false

@@ -1,210 +1,103 @@
-# DON'T LOOK BACK — Godot v0.24.3
+# DON'T LOOK BACK — Godot v0.57
 
-First-person survival horror prototype for Godot 4.x with responsive desktop/mobile controls, 2–4 player LAN co-op, persistent saves, bilingual Indonesian/English UI, dynamic flashlight handling, survival systems, adaptive horror AI, Labyrinth Arc 1 progression, reverse evacuation finale, Forest transition, and dynamic horror audio.
+First-person co-op survival horror for Godot 4.x with responsive desktop/mobile controls, 2–4 player LAN co-op, persistent progression, evidence-driven exploration, survival pressure, adaptive horror systems, and a Ranger-first campaign route.
 
-## Current build — v0.24.3 TENANT FLASHLIGHT KILL FEEDBACK
+## Current build — v0.57 STABILITY / HOST AUTHORITY / INPUT LOCK
 
-v0.24.3 adds stronger feedback when the flashlight is held on The Tenant and adds a dedicated Tenant death/banish audio cue.
+v0.57 is a foundation update. It does not add a new map or monster. It hardens the systems already used by the current Ranger campaign before more content is added.
 
-### Tenant flashlight feedback
+### v0.57 changes
 
-While The Tenant is inside the real flashlight beam:
+- Adds a central `GameplayInputLock` autoload.
+- Movement is blocked while Journal, Crafting, Stash, or Field Status is open.
+- Network/co-op menu input respects the same central lock.
+- Host validates remote Labyrinth relay activation requests by scene, id, target, active state, and distance.
+- Host validates remote pickup requests by target existence, scene ownership, network-pickup contract, claimed state, and distance.
+- Remote survivor transforms reject non-finite positions and large one-update teleport jumps before replication.
+- Remote survivor HUD stats are clamped to valid 0–100 ranges.
+- Shared shelter requests are allow-listed and rejected unless the requesting peer is physically inside the Ranger Yard.
+- Main menu version badge now reports v0.57.
 
-- existing `battery.mp3` interference continues to play
-- generic flashlight-monster battery drain still ramps from `1.0x` toward `2.0x` across the 3-second exposure window
-- Tenant receives an additional rapid flashlight modulation layer after the normal flashlight energy/interference calculation
-- rapid flicker begins around `8 Hz` and can rise toward roughly `12 Hz` as the 3-second hold approaches completion
-- brightness is not forced completely black; the effect uses a minimum energy factor around `0.22` at high strength
+See `ASSET_DELTA_V057_STABILITY_AUTHORITY.md` for asset status and the validation checklist.
 
-The generic v0.24.1 `battery.mp3` interference remains available for other monsters. Tenant simply receives stronger visual feedback on top of it.
+## Current canonical campaign route
 
-### Tenant death audio
+The active runtime is Ranger-first:
 
-When the 3-second flashlight hold completes and The Tenant changes from active to inactive because of the flashlight kill/banish, the runtime audio system plays a dedicated `tenant death` one-shot.
+1. **Ranger Forest** — stabilize the cabin/shelter and investigate the missing survey team.
+2. **Abandoned House** — recover the survey manifest.
+3. **Old Gas Station** — recover the radio trace.
+4. **Warehouse** — recover the maintenance map.
+5. **Water Pump** — optional anomaly evidence.
+6. **Old Mine** — recover the foreman log, sealed-shaft report, and Facility Access Badge.
+7. **Labyrinth / Facility Level 03** — restore systems, recover T-03 data, and survive Lockdown.
+8. **Restricted Research Facility** — inspect the routing terminal and reveal future anomaly locations.
 
-The resolver accepts `.wav`, `.ogg`, or `.mp3` and normalizes spaces, underscores, and dashes. Examples:
+Future routes may include Hospital, Museum, Laboratory, Cave, and other Labyrinth nodes, but those are not the next priority until the current runtime is stable.
 
-- `tenant death.mp3`
-- `tenant_death.mp3`
-- `tenant-death.ogg`
-- `tenantdeath.wav`
+## Core gameplay loop
 
-The death cue stops `battery.mp3` first, then plays the Tenant death one-shot at its own mix level.
+**Prepare → Investigate → Expose yourself to danger → Recover evidence/resources → Survive the encounter → Unlock a deeper anomaly.**
 
-A dedicated `TenantDeathFeedbackSystem` guards against false triggers: scene changes reset the kill state, and if the flashlight hold falls below the near-complete threshold while Tenant is still active, the death-armed flag is cleared.
+Survival mechanics should support horror decisions rather than become administration. Fuel, food, water, crafting, hunting, fishing, weather, light, wounds, and shelter should create reasons to leave safety, make noise, stay exposed, or spend time under pressure.
 
-### Co-op death feedback
+## Horror identities
 
-In online play, the host watches the existing per-peer flashlight hold state. When a flashlight kill is confirmed, the host plays the local death cue and sends a reliable Tenant-death feedback RPC on channel 18 so each client plays the same local asset once.
+### The Tenant
 
-See `ASSET_DELTA_V0243.md` for the new audio requirement and test checklist.
+- Triggered by stillness / panic rules.
+- Panic rises from aggressive movement and fast look input.
+- Watched/freeze behavior remains part of its identity.
+- Panic controls pursuit/attack pressure.
+- Continuous flashlight contact can banish it after the existing hold requirement.
 
-## v0.24.2 PANIC-DRIVEN TENANT
+The Tenant should remain an observation/panic monster rather than becoming a generic chaser.
 
-v0.24.2 changes PANIC from a monster-proximity meter into a player-motion meter and rebuilds The Tenant around that rule.
+### Darkness Creature
 
-PANIC sources:
+- Connected to Darkness Exposure and lack of protective light.
+- Light is its primary counter-pressure.
+- Must remain mechanically distinct from The Tenant.
 
-- horizontal movement above roughly `4.75 m/s`
-- fast mouse/touch-look above roughly `95 deg/s`
-- full movement contribution near `6.75 m/s`
-- full look contribution near `420 deg/s`
-- movement contributes up to `16 panic/s`
-- fast look contributes up to `20 panic/s`
-- combined gain is capped around `32 panic/s`
-- calm movement/look lets panic decay around `6/s`
+## Ranger Yard
 
-Normal walking does not automatically increase panic. Sprinting, hard direction changes, fast mouse flicks, and fast touch swipes do.
+The Ranger Yard is conditionally protected.
 
-### The 2-second stillness rule
+Protection exists only while either:
 
-When a player remains effectively still for `2.0 seconds` — horizontal speed <= `0.12 m/s` and look motion <= `3 deg/s` — The Tenant appears near that player if it is not already active.
+- the shelter generator is running; or
+- the campfire has burn time remaining.
 
-The old corridor HorrorTrigger no longer spawns Tenant directly. Pause, menu, Journal, transition, death, and downed state do not count toward the stillness timer.
-
-Tenant spawn tries to appear around `4.2 m` behind/near the player and uses the current navigation clamp, so lower-Labyrinth placement is not restricted to the old opening corridor coordinates. Gameplay maps without a pre-authored `Monster` node receive the runtime Tenant prototype automatically.
-
-### Panic-scaled Tenant
-
-Tenant movement speed scales continuously with the panic of the survivor it is hunting:
-
-- 0% panic — `1.65 m/s`
-- 25% — `~1.99 m/s`
-- 50% — `~2.33 m/s`
-- 75% — `~2.66 m/s`
-- 100% — `3.00 m/s`
-
-Tenant damage remains `28 HP` per hit.
-
-Attack cooldown scales with panic:
-
-- 0% panic — `2.40 s`
-- 25% — `~2.06 s`
-- 50% — `~1.73 s`
-- 75% — `~1.39 s`
-- 100% — `1.05 s`
-
-At panic 100%, movement is roughly `1.82x` the zero-panic speed and attack attempts can occur roughly `2.29x` as often.
-
-The existing watched/freeze rule remains: keeping The Tenant clearly in sight stops its movement. Looking at it alone does not remove it.
-
-### 3-second flashlight kill / banish
-
-The Tenant disappears only after a continuous `3.0-second` flashlight hold.
-
-Requirements:
-
-- flashlight ON
-- battery above zero
-- Tenant inside the actual flashlight cone/range
-- clear world line-of-sight
-- continuous beam contact for 3 seconds
-
-Breaking beam contact resets the Tenant-specific hold. A short contact grace protects the hold from tiny procedural flashlight sway.
-
-The old SafeZone story trigger no longer deletes Tenant automatically.
-
-### Co-op behavior
-
-Each survivor owns a local PANIC meter. A runtime `TenantPanicNetworkBridge` sends local panic + Tenant flashlight contact to the host on RPC channel 17.
-
-The host:
-
-- uses the panic of the survivor currently being hunted for Tenant movement/attack scaling
-- owns the 3-second flashlight-dismiss validation
-- keeps Tenant navigation/attack authoritative through the existing host simulation
-- prevents the older direct co-op Tenant movement path from stacking with AINavigation movement
-
-No new mobile or desktop button is required.
-
-See `V0242_PANIC_TENANT.md` for full tuning and test cases, and `ASSET_DELTA_V0242.md` for production-asset requirements.
-
-## v0.24.1 flashlight monster interference
-
-`battery.mp3` is not a low-battery warning. It is a flashlight-versus-monster interference cue.
-
-The moved SpotLight beam is tested against visible threats using beam direction, cone angle, range, and line-of-sight. Current prototype monster collision is not required for the contact test.
-
-Battery-cost scaling during continuous monster exposure:
-
-- initial contact — `~1.0x`
-- 0.75 s — `~1.25x`
-- 1.5 s — `~1.5x`
-- 2.25 s — `~1.75x`
-- 3.0 s+ — maximum `2.0x`
-
-Base flashlight drain is `1.15/s`, so maximum sustained interference drain is approximately `2.30/s`.
-
-Low battery still has visual weakness/flicker, but it does not play `battery.mp3`.
-
-## v0.24 dynamic horror audio
-
-Runtime audio auto-discovers `.wav`, `.ogg`, or `.mp3` under common folders such as `res://assets`, `res://audio`, `res://sounds`, `res://sfx`, and `res://music`.
-
-Recognized keywords:
-
-- `music` — gameplay BGM
-- `hurt` — player damage reaction
-- `monster` — proximity threat layer
-- `battery` — flashlight/monster interference
-- `tenant death` — Tenant flashlight-kill confirmation added in v0.24.3
-
-BGM follows Master Volume and ducks during close monster pressure. Monster proximity begins around 22 m and includes Tenant, Darkness Creature, Mourner, Crawler, Warden, and Evacuation Warden.
-
-## v0.23 language settings
-
-Settings supports Bahasa Indonesia and English. Language changes immediately and persists in:
-
-`user://dont_look_back_language.cfg`
-
-Core menu/HUD/gameplay text is bilingual. Stable co-op/sector callouts such as M-01, F-02, A-03, L-04, SYNC, LOCKDOWN, and Warden remain consistent between languages.
-
-## v0.22 flashlight and lighting feel
-
-Full flashlight baseline:
-
-- energy `6.7`
-- range `13 m`
-- cone angle `28°`
-
-Flashlight handling includes idle breathing sway, walk bob, stronger sprint sway, look inertia, jump/landing response, stress instability, and reduced motion amplitude on mobile. The camera remains comparatively stable to reduce motion sickness.
-
-Normal Labyrinth ambience/fault/evacuation lights remain visually distinct from genuine protective safe lights.
-
-## Current Arc 1 route
-
-1. Opening Corridor + Apartment 03
-2. Restore 3 emergency relays
-3. M-01 Maintenance — Fuse A/B/C
-4. F-02 Flooded Service — Valve A/B
-5. A-03 Archive — Breaker B → A → C
-6. Isolation Sweep — disable M/F/A Isolation Nodes
-7. Return to L-04 Lockdown
-8. Survive the 120-second three-phase Lockdown
-9. Evacuation Protocol begins
-10. Restore A-03 Emergency Override while reversing route
-11. Restore F-02 Extraction Override
-12. Return toward M-01 while Evacuation Warden hunts
-13. Reach M-01 extraction beacon
-14. Transition to Forest
-
-A blind Arc 1 run is intended to be roughly 40–60 minutes depending on exploration, co-op coordination, shortcuts, SYNC use, route variation, Archive mistakes, resources, and enemy pressure.
+The player flashlight does not globally make the yard safe. If shelter protection fails, threats may enter the yard.
 
 ## Multiplayer
 
-LAN/IP co-op supports 2–4 survivors with Host/Join, Ready/Not Ready, shared checkpoints, revive/downed crawl, late join, reconnect support, remote survivor/flashlight representation, and host-led monster/objective/hazard state.
+Current target: 2–4 survivors.
 
-Multiplayer remains prototype-grade LAN authority rather than hardened competitive-server authority; several older RPC paths still need stronger server-side sanity/distance validation before public release.
+The game already includes:
 
-## Save / Continue
+- Host / Join LAN co-op.
+- Shared world/objective state.
+- Remote survivor and flashlight representation.
+- Host-owned monster damage/state for the main co-op horror systems.
+- Downed / revive / team-wipe flow.
+- Host-led map transitions.
+- Shared finite pickup claims.
+- Party-scaled finite supply bonuses for 3–4 players.
 
-Persistent world save:
+### v0.57 authority baseline
 
-`user://dont_look_back_save_v1.json`
+Remote relay and pickup interactions are now validated by the host before they mutate world state.
 
-It stores survival/inventory state, finite pickup claims, checkpoints, world state, Journal progress, Arc 1 objectives, Isolation/route state, Lockdown, shortcuts, SYNC completion, and Evacuation progress.
+This is still prototype co-op authority, not a hardened competitive server. Remote inventory ownership for shared shelter consumption is still a known follow-up task before public Internet multiplayer.
 
-Language is intentionally stored separately from world save.
+## Maps
+
+- `res://scenes/forest.tscn` — Ranger Forest
+- `res://scenes/mine.tscn` — Old Mine
+- `res://scenes/main.tscn` — Labyrinth / Facility Level 03
+- `res://scenes/research_facility.tscn` — Restricted Research Facility
+- `res://scenes/main_menu_ranger.tscn` — current front end
 
 ## Controls
 
@@ -214,22 +107,21 @@ Desktop:
 - Mouse — look
 - Shift — sprint
 - Space — jump
-- E — use/interact
+- E — interact/use
 - F — flashlight
-- B / 4 — replace battery
+- B / 4 — battery
 - 1 — food
 - 2 — water
 - 3 — medical aid
 - J — Journal
 - M — co-op UI
 - K — save
-- L — offline load / language toggle in language-setting context
-- Esc — menu
+- Esc — menu / close context UI
 
 Mobile:
 
-- left joystick — move
-- right swipe — look
+- Left joystick — move
+- Right swipe — look
 - RUN
 - JUMP
 - USE
@@ -241,45 +133,67 @@ Mobile:
 - JOURNAL
 - MENU
 
-## Recommended v0.24.3 test
+The renderer uses Godot `gl_compatibility` for desktop/mobile breadth. Mobile still requires real-device profiling for lights, CSG, foliage, navigation, audio load, and long-session thermals.
 
-1. Let Tenant appear after the existing stillness rule.
-2. Aim flashlight at Tenant: `battery.mp3` should begin.
-3. Verify Tenant flicker is visibly faster than generic flashlight-monster interference.
-4. Release the beam before 3 seconds: Tenant remains and `tenant death` must stay silent.
-5. Reacquire Tenant and hold the beam continuously for 3 seconds: Tenant disappears.
-6. On successful disappearance, `battery.mp3` stops and `tenant death` plays once.
-7. Verify another monster still triggers the original `battery.mp3` interference behavior.
-8. Put a wall between flashlight and Tenant: kill hold must not advance.
-9. Move to another map with Tenant active: death cue must not fire only because the scene changed.
-10. Co-op host/client: successful flashlight kill should produce one death cue on every peer.
-11. Verify flashlight full-battery baseline remains energy `6.7`.
-12. Verify PANIC speed/attack scaling remains unchanged from v0.24.2.
-13. Test rapid flicker at both 30 FPS mobile target and 60 FPS desktop target.
+## Input ownership
 
-## Current technical priorities
+v0.57 introduces `GameplayInputLock` as the central query point for gameplay-blocking UI.
 
-Before public demo/release-candidate status:
+Current dynamic UI sources:
 
-- harden older host-side objective/map-transition RPC validation
-- make checkpoint + finite-loot rollback consistent
-- block MovementSystem while Journal is open
-- simplify Evacuation Warden state ownership
-- rebalance flashlight battery/darkness economy after runtime playtesting
-- add a Reduce Flashing accessibility option before public release
-- profile CSG/lights/navigation on real Android hardware
-- replace procedural prototype presentation with production assets
+- Journal
+- Crafting
+- Stash
+- Field Status
 
-## Git workflow note
+New gameplay UI should integrate with this lock rather than adding new menu-specific checks directly to MovementSystem.
 
-`project.godot` remains intentionally untouched by v0.22–v0.24.3 runtime feature additions. Flashlight, Language, DynamicAudio, PanicTenant, TenantPanicNetworkBridge, TenantFlashlightFX, and TenantDeathFeedback systems are bootstrapped through existing runtime/autoload infrastructure to reduce conflicts with local project settings.
+## Save / progression
 
-Current visible menu badge:
+Persistent save remains responsible for survival/inventory state, finite pickup claims, checkpoints, investigation/world progression, Journal state, and map-specific systems.
 
-`v0.24.3 • TENANT FLASHLIGHT KILL FEEDBACK`
+Checkpoint + finite-loot rollback consistency remains a high-priority follow-up. Team-wipe/reload tests must verify that finite resources cannot be duplicated or incorrectly deleted.
 
-If local `project.godot` differs from remote, back it up or stash changes before Pull instead of blindly discarding local settings.
+## Platform / export status
 
-## Runtime validation limitation
+Committed export configuration currently contains the Web preset. Native Android and desktop export presets/CI validation remain required before beta/public release.
 
-The assistant environment does not contain the Godot executable. Repository changes receive static code/logic review but still require F5/device validation on the development machine.
+Native ENet multiplayer is appropriate for native desktop/Android builds. Browser multiplayer requires a browser-compatible transport strategy rather than assuming native ENet behavior.
+
+## v0.57 validation priorities
+
+1. Journal/Crafting/Stash/Status always stop movement on desktop and mobile.
+2. Remote relay request from outside interaction range is rejected.
+3. Remote pickup request from outside interaction range is rejected.
+4. Forged pickup path outside the current scene is rejected.
+5. Simultaneous pickup claims award the pickup once.
+6. Large one-update remote teleport state is ignored.
+7. Shelter action from outside Ranger Yard is rejected.
+8. Host/client map transitions still preserve state.
+9. Down/revive/team-wipe behavior is unchanged.
+10. Test 30 FPS mobile and 60 FPS desktop targets.
+
+## Current technical priorities after this pass
+
+- Make checkpoint + finite-loot rollback deterministic.
+- Move shared shelter/resource consumption toward host-owned inventory authority.
+- Add native Android + Windows/Linux export presets and CI smoke builds.
+- Add automated scene/load/save/co-op regression tests.
+- Consolidate monster decision/navigation/motor/network ownership.
+- Replace recursive world-light discovery with a light/protection registry or authored areas.
+- Replace hard-coded gameplay coordinates with authored scene anchors where practical.
+- Add Reduce Flashing accessibility support.
+- Add a high-level horror/threat pacing director before stacking more major threat systems.
+- Replace procedural prototype presentation with production assets after the foundation is stable.
+
+## Asset status
+
+v0.57 adds **no new required production assets**. Existing P0/P1/P2 production needs are tracked in `ASSET_DELTA_V057_STABILITY_AUTHORITY.md` and `ASSET_BACKLOG.md`.
+
+## Workflow
+
+Project workflow is:
+
+**ChatGPT → GitHub → Godot**
+
+GitHub is the code/source-of-truth layer. Pull the tested branch into Godot and validate runtime behavior on desktop and real Android hardware before treating a gameplay update as release-ready.

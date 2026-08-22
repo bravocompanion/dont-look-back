@@ -1,474 +1,316 @@
 # DON'T LOOK BACK — Asset Backlog
 
-Updated for **v0.24.3 — TENANT FLASHLIGHT KILL FEEDBACK**.
+Updated for **v0.57 — Stability / Host Authority / Input Lock**.
 
-The project is still code/procedural-first. Gameplay systems are ahead of final art/audio production, so the highest-value work now is replacing prototype presentation while keeping mobile/desktop performance targets.
+Current project state: gameplay/procedural systems are ahead of final production art and audio. v0.57 intentionally adds no mandatory production asset so stability work can land without expanding the asset surface.
 
-## P0 — v0.24.3 Tenant flashlight kill feedback
+Status legend:
 
-New required audio:
+- **AVAILABLE** — committed and usable now.
+- **PROTOTYPE** — represented procedurally or with temporary content.
+- **MISSING** — production asset still required.
 
-- `tenant death` — one-shot confirmation when The Tenant is successfully removed after a 3-second flashlight hold.
+---
 
-Accepted examples:
+# P0 — Character / Co-op Readability
 
-- `assets/tenant death.mp3`
-- `assets/tenant_death.mp3`
-- `assets/tenant-death.ogg`
-- `assets/tenantdeath.wav`
+## Survivor player
 
-The resolver normalizes spaces, underscores, and dashes. See `ASSET_DELTA_V0243.md` for the exact contract.
+Status: **PROTOTYPE / MISSING production set**
 
-Tenant flashlight presentation now also needs:
+Required:
 
-- rapid light-reactive flicker/readability response while Tenant is inside the beam
-- flashlight-hit animation or material reaction loop
-- final 3-second death/banish dissolve
-- death/banish SFX that remains readable over BGM + proximity audio
-- future Reduce Flashing accessibility variant for the rapid flashlight effect
+- one production survivor base model;
+- 3–4 clearly readable co-op outfit/color variants;
+- first-person arms/hands rig;
+- world/remote-player body;
+- remote-player flashlight attachment;
+- simple mobile LOD/collision representation.
 
-## P0 — v0.24.2 Panic-Driven Tenant
+Animation:
 
-The Tenant production pass needs to support movement-driven panic and a 3-second flashlight banish mechanic.
+- idle;
+- walk;
+- sprint/run;
+- strafe;
+- jump/fall/landing;
+- hit reaction;
+- downed/crawl;
+- revive giver/receiver;
+- death.
 
-Animation / presentation:
+---
 
-- near-player emergence/materialize animation for the 2-second stillness trigger
-- freeze/watched pose that remains readable while the player keeps it in sight
-- low-panic stalk locomotion around 1.65 m/s
-- medium-panic locomotion blend around 2.3 m/s
-- high-panic chase locomotion up to 3.0 m/s
-- attack animation/recovery that can visually support cooldowns from 2.40 s down to about 1.05 s
-- flashlight-hit reaction loop
-- 3-second banish/dissolve/distortion animation
+# P0 — The Tenant
 
-VFX/audio:
+Status: **PROTOTYPE / MISSING final model + animation/audio/VFX**
 
-- low-overdraw appearance distortion
-- flashlight reaction that intensifies over the 0–3 second hold
-- banish dissolve/pop effect
-- emergence sting
-- panic-scaled footsteps/breath/body-creak
-- flashlight burn/interference layer
-- banish/death release sound
+Required final model:
 
-Optional panic feedback:
+- humanoid horror silhouette;
+- rig suitable for observation/freeze and panic-driven pursuit;
+- mobile LOD;
+- simple collision proxy.
 
-- subtle PANIC HUD pulse at 50%+
-- stronger pulse at 75%+
-- restrained movement-driven heartbeat/breath layer
+Animation/presentation:
 
-See `ASSET_DELTA_V0242.md` for the panic/Tenant production delta.
+- emergence/materialize;
+- watched/freeze pose;
+- low-panic stalk locomotion;
+- medium/high-panic locomotion blend;
+- attack/recovery;
+- flashlight reaction;
+- 3-second banish/dissolve.
 
-## P0 — Runtime audio integration
+Audio/VFX:
 
-### Required audio files
+- emergence sting;
+- movement/body-creak/footstep layer;
+- breathing/proximity pressure;
+- attack cue/impact;
+- flashlight interference/burn reaction;
+- banish/death release;
+- low-overdraw distortion/dissolve.
 
-The runtime audio system now expects five keyword assets inside the Godot project, preferably under `res://assets/`:
+Accessibility requirement:
 
-- `music` — background music
-- `hurt` — player hit reaction
-- `monster` — proximity threat cue/layer
-- `battery` — flashlight/monster electrical interference cue
-- `tenant death` — Tenant flashlight-kill confirmation
+- reaction visuals must support a future Reduce Flashing mode.
 
-Accepted runtime resolver formats:
+---
 
-- `.ogg`
-- `.wav`
-- `.mp3`
+# P0 — Darkness Creature
 
-Recommended naming:
+Status: **PROTOTYPE / MISSING final production set**
 
-- `assets/music.ogg`
-- `assets/hurt.wav`
-- `assets/monster.ogg`
-- `assets/battery.mp3`
-- `assets/tenant_death.mp3`
+Required:
 
-Partial names such as `background_music`, `player_hurt`, and `monster_near` are recognized. For Tenant death, spaces/underscores/dashes are normalized before matching.
+- final creature model visibly distinct from Tenant;
+- darkness emergence/materialization;
+- pursuit/attack motion;
+- light recoil;
+- retreat/dissolve;
+- mobile LOD;
+- darkness/proximity/attack/light-recoil audio.
 
-### Repository requirement
+Identity rule: production art must reinforce that this creature is about **losing protective light**, not panic/observation.
 
-If these files currently exist only on the development PC, they need to be committed so clones, collaborators, and repository-based Android/desktop builds include them.
+---
 
-### Audio production recommendations
+# P0 — Flashlight / First-Person Equipment
 
-Music:
+Status: **PROTOTYPE / MISSING production models**
 
-- seamless or near-seamless horror ambience loop
-- avoid constant loud melody
-- leave headroom for monster cue and environmental SFX
-- `.ogg` preferred for longer files
+Required:
 
-Hurt:
-
-- short player vocal/body impact
-- ideally 3–5 variants later
-- no long reverb tail that masks nearby horror audio
-
-Monster proximity:
-
-- designed to tolerate repeated playback while danger remains close
-- dark pulse/drone/breath/heartbeat style works better than a single loud jumpscare hit
-- should remain readable on phone speakers
-
-Battery / interference:
-
-- electrical instability/glitch character rather than a low-battery alarm
-- should tolerate repeated/looped playback during a flashlight hold
-- readable on phone speakers without becoming piercing
-- optional 2–3 variants later to reduce repetition
-
-Tenant death:
-
-- strong short confirmation that the 3-second kill/banish succeeded
-- avoid a long tail that masks the next threat
-- should remain clear on phone speakers
-- final mix should sit above battery interference without clipping
-
-## P0 — Flashlight / lighting production
-
-First-person flashlight:
-
-- production flashlight model
-- first-person hand/forearm rig
-- world/remote-player version
-- switch animation
-- battery replacement animation
-- idle breathing pose
-- walk movement
-- sprint movement
-- jump/landing response
-- optional flashlight beam cookie/dust
-
-Lighting fixtures:
-
-- dirty fluorescent fixture
-- caged industrial lamp
-- dim/off/flicker/fault states
-- genuine protective safe-light visual language
-- evacuation red/orange fixture
-- low-overdraw emissive LODs
-
-Audio still needed beyond current runtime integration:
-
-- flashlight switch on/off
-- battery insert/remove
-- electrical buzz/flicker variants
-- bulb relay clicks
-- failing fluorescent hum
-
-## P0 — The Warden
-
-Production model:
-
-- broad/heavy industrial humanoid silhouette
-- distinct from Tenant/Mourner/Crawler/Darkness
-- readable chest/core feature
-- mobile LOD
-- simple collision proxy
-
-Animations:
-
-- idle/listen
-- heavy patrol
-- pursuit
-- isolated-target acceleration
-- safe-light hesitation
-- attack/recovery
-- evacuation faster pursuit
-- aggressive turn/corner response
+- first-person flashlight model;
+- world/remote-player flashlight model;
+- switch animation;
+- battery replacement animation;
+- idle/walk/sprint handling compatible with current procedural motion;
+- jump/landing response;
+- low-cost beam/dust presentation suitable for mobile.
 
 Audio:
 
-- heavy footsteps
-- body/mechanical creak
-- breathing/growl
-- chest/core pulse
-- attack impact
-- safe-light discomfort
-- evacuation re-entry cue
+- switch on/off;
+- battery insert/remove;
+- electrical buzz/flicker variants;
+- monster-interference layer.
 
-## P0 — Isolation / Lockdown / Evacuation kit
+---
 
-Isolation Nodes:
+# P0 — Core Environment Kit
 
-- Maintenance/Flooded/Archive variants
-- sealed/active/shutdown/fault states
-- industrial housing
-- lever/rotary handle
-- breaker/core bank
-- conduit + warning labels
-- shutdown animation/audio
+## Labyrinth
 
-Lockdown interlock:
+Status: **PROTOTYPE / MISSING production kit**
 
-- physical cover larger than final console
-- 0/3 → 3/3 state display
-- mechanical lock bars
-- release animation
-- mechanical release SFX
+Required:
 
-Temporary shutters:
+- concrete/plaster/tile wall set;
+- floor and ceiling materials;
+- normal/roughness maps;
+- industrial trims/conduit;
+- dirty fluorescent/caged light fixtures;
+- safe-light visual language;
+- evacuation/fault lighting variants;
+- apartment door;
+- labyrinth metal/security door;
+- exit/security gate.
 
-- industrial drop/sliding shutter
-- rails/frame
-- actuator
-- simple collision proxy
-- close/open animation
-- slam/motor/rattle/open SFX
-- optional low-cost dust/sparks
+## Mine
 
-Evacuation Override A/F:
+Status: **PARTIAL / PROTOTYPE**
 
-- distinct wall-mount control body
-- heavy switch/handle
-- waiting/red state
-- restored/green state
-- sector labels
-- reconnect surge + relay audio
+Required production integration/dressing:
 
-M-01 extraction beacon:
+- reinforced shaft walls;
+- timber/metal support variants;
+- mine doors/gates;
+- rail/cart/industrial clutter where useful;
+- signage and warning decals;
+- production light fixtures;
+- interaction props matching evidence route.
 
-- strong green/white emergency fixture
-- extraction floor marking
-- EXIT/SURFACE/EVAC signage
-- armed state
-- stable powered hum
-- transition sting into Forest
+Use authored scene anchors for gameplay-critical placement instead of baking important coordinates into code.
 
-## P0 — Labyrinth environment/readability
+---
 
-Sector kit:
+# P0 — Core Audio
 
-- M-01 Maintenance signage
-- F-02 Flooded Service signage
-- A-03 Archive signage
-- L-04 Lockdown signage
-- M-07/F-09/A-12 optional room plates
-- directional arrows
-- worn stencils/decals
-
-Conduit navigation:
-
-- straight/elbow/T modules
-- cable trays/brackets
-- damaged variants
-- yellow/blue/green/red route variants
-
-Environment modules:
-
-- concrete/plaster/tile wall/floor/ceiling textures
-- normal + roughness maps
-- pipes
-- utility doors
-- fuse/valve/breaker props
-- archive shelves/boxes
-- wet concrete/shallow water materials
-- drainage grates
-- debris/clutter
-
-Service shortcut doors:
-
-- hatch/industrial service door
-- latch
-- locked/open state
-- latch release + scrape/clunk audio
-
-## P0 — Core monsters
-
-The Tenant:
-
-- final rigged humanoid horror model
-- freeze/unseen movement/panic-scaled chase/search/attack
-- near-player emergence support
-- flashlight reaction + 3-second kill/banish
-- turn animation support
-- distortion/shadow treatment
-- movement/breath/proximity/attack/death SFX
-
-Darkness Creature:
-
-- unique silhouette
-- crawl/search/attack
-- light recoil/retreat
-- dissolve/disappear
-- darkness forming/retreat SFX
-
-The Mourner:
-
-- tall narrow production model
-- mobile LOD
-- listen/stalk/investigate/light-slow/attack
-- dragging footsteps/breathing/attack audio
-
-The Crawler:
-
-- low distorted rig
-- crawl/fast pursuit/light hesitation/search/lunge
-- crawl/contact/lunge audio
-
-## P0 — Survivor/co-op presentation
-
-One production survivor base with 3–4 visual variants.
-
-Need:
-
-- rigged survivor
-- outfit/material variants
-- first-person arms
-- world flashlight attachment
-- backpack/utility points
-- idle/walk/run/strafe
-- jump/fall/landing
-- hit reaction
-- downed idle/crawl
-- revive teammate/being revived
-- death/team-wipe pose
-
-Co-op UI/audio:
-
-- Ready/Host/Ping icons
-- teammate/downed/revive indicators
-- reconnect icon
-- SYNC panel state icons
-- subtle team-separation/static cue
-- regroup relief cue
-
-## P0 — Hazards and horror-event assets
-
-Steam:
-
-- damaged vent/pipe fixture
-- mobile-safe steam VFX
-- buildup cue + burst hiss
-
-Electrical:
-
-- electrified puddle material
-- exposed cable/junction box
-- arc/spark VFX
-- buzz/discharge audio
-
-Horror event audio/visuals:
-
-- 4–6 metal slam variants
-- fake footsteps by surface
-- fluorescent flicker
-- blackout down/recovery
-- fake shadow silhouette
-- scrape/cloth/movement cues
-
-## P0 — General player/audio
+Status: **PARTIAL / MISSING**
 
 Footsteps:
 
-- concrete walk/sprint
-- wet concrete
-- metal
-- wood
-- dirt/grass
-- jump/landing
-- downed crawl
+- concrete;
+- wood;
+- dirt/grass;
+- metal.
+
+Monster audio:
+
+- Tenant movement/breath/proximity/attack/reaction;
+- Darkness emergence/proximity/attack/retreat;
+- Warden/Mourner/Crawler as those systems receive production presentation.
 
 Player:
 
-- breathing
-- sprint breathing
-- movement-driven panic heartbeat
-- multiple hurt variants
-- bleeding/downed/revive
+- hurt variants;
+- downed/revive feedback;
+- death;
+- interaction rejects/blocked action may reuse current UI feedback initially.
 
-Interaction:
+Pending committed-file targets still noted by the current runtime docs:
 
-- doors
-- locked door
-- heavy gate
-- fuse
-- valve
-- breaker
-- isolation node
-- evacuation override
-- SYNC
-- pickup
-- generator/workbench/water pump
+- `res://assets/audio/forest_night.mp3`
+- `res://assets/audio/draw.mp3`
+- `res://assets/audio/shoot.mp3`
+- `res://assets/audio/impact.mp3`
 
-## P1 — Forest / exterior
+---
 
-- visible sun/moon discs
-- dawn/day/dusk/night sky
-- stars optional
-- lightweight clouds/fog
-- cabin production kit
-- gas station kit
-- warehouse props
-- abandoned house props
-- generator/workbench/storage/campfire
-- forest ambience layers
-- dirt/grass foliage modules with mobile LOD
+# P1 — Ranger Cabin / Safe-Zone Production Pass
 
-## P1 — Front-end / localization
+Status: **PROTOTYPE / MISSING polish**
 
-- final DON'T LOOK BACK logo
-- title art + mobile crop
-- menu background
-- final buttons/icons
-- loading/save/checkpoint indicators
-- Indonesian/English typography QA
-- terminology sheet for co-op callouts
-- curated Indonesian translation for long Journal lore
+Required/recommended:
 
-## P2 — VFX polish
+- generator start/idle/failure/repair audio;
+- generator production model states if current procedural representation remains temporary;
+- campfire loop/extinguish audio;
+- powered/unpowered cabin exterior light fixtures;
+- protected/exposed shelter status emissive indicator;
+- cabin dressing and survival storage props;
+- low-cost night readability suitable for mobile.
 
-- flashlight dust
-- Warden core pulse/distortion
-- Darkness dissolve
-- Tenant emergence/flashlight-death distortion
-- evacuation dust/debris
-- shutter sparks
-- shallow-water ripple/splash
-- pipe leaks
-- blackout recovery sparks
-- Lockdown pulse
-- extraction bloom
-- cold breath
-- campfire smoke/sparks
+---
 
-## Mobile + desktop constraints
+# P1 — Forest Production Pass
 
-- prioritize `.ogg` compression for long BGM/ambience
-- verify SFX remain audible on phone speakers without clipping
-- keep most decorative realtime lights shadowless
-- use shared materials/atlases
-- avoid volumetric fog as a required gameplay effect
-- low-overdraw particles
-- simple collision proxies
-- monster/survivor mobile LODs
-- avoid 4K textures except hero/menu art
-- test red/orange/green state readability at low phone brightness
-- high-panic Tenant attack animation must remain readable at 30 FPS
-- Tenant animation/root motion must not fight host-authoritative navigation
-- rapid Tenant flashlight flicker must be tested at 30/60 FPS and receive a Reduce Flashing accessibility pass before public release
-- profile runtime CSG and OmniLights on actual Android hardware
+Status: **PROTOTYPE / PARTIAL**
 
-## Recommended production order after v0.24.3
+Required/recommended:
 
-1. Commit/verify the five audio files (`music`, `hurt`, `monster`, `battery`, `tenant death`)
-2. Tenant emergence + flashlight death/banish animation/VFX/audio
-3. Tenant panic-scaled locomotion + fast attack/recovery variants
-4. First-person flashlight + hand rig + battery animation/SFX
-5. Warden production model/animations/audio
-6. Isolation Node + Lockdown interlock production kit
-7. Evacuation Override + extraction beacon + shutter kit
-8. Sector signage/conduit/environment materials
-9. Mourner production pass
-10. Crawler production pass
-11. Survivor model + co-op animations
-12. Hazard VFX/audio
-13. Darkness Creature production pass
-14. Full spatial ambience/footstep mix
-15. Forest/exterior production art
-16. Front-end branding + localization polish
+- final Ranger Cabin exterior/interior dressing;
+- Abandoned House production pass;
+- Old Gas Station production pass;
+- Warehouse production pass;
+- Water Pump anomaly dressing;
+- tree/foliage variants with mobile LOD;
+- terrain/ground material variants;
+- fog/rain/storm presentation with performance tiers;
+- ambient wildlife/forest audio.
 
-See `ASSET_DELTA_V024.md` for the original audio integration contract, `ASSET_DELTA_V0242.md` for PANIC/Tenant behavior, and `ASSET_DELTA_V0243.md` for Tenant flashlight/death feedback.
+---
+
+# P1 — Hunting / Wildlife
+
+Status: **PROTOTYPE / MISSING production content**
+
+Required/recommended:
+
+- first-person/world Hunting Bow;
+- Arrow model;
+- draw/release/impact presentation;
+- Hunting Knife;
+- harvest animation;
+- wildlife locomotion;
+- hit/flee/death animations;
+- wildlife audio;
+- low-cost mobile LODs.
+
+---
+
+# P1 — Isolation / Lockdown / Evacuation
+
+Status: **PROTOTYPE / MISSING production kit**
+
+Recommended:
+
+- Maintenance/Flooded/Archive Isolation Node variants;
+- active/shutdown/fault states;
+- industrial housing/lever/breaker/core bank;
+- conduit/warning labels;
+- shutdown animation/audio;
+- Lockdown interlock cover and release mechanism;
+- temporary shutter model + animation/audio;
+- evacuation-specific signage/lighting.
+
+---
+
+# P1 — Other Monsters
+
+## Warden
+
+Status: **PROTOTYPE / MISSING production set**
+
+- broad/heavy industrial humanoid silhouette;
+- patrol/pursuit/isolated-target acceleration;
+- safe-light hesitation;
+- attack/recovery;
+- evacuation pursuit;
+- heavy footsteps/body creak/breath/core pulse/attack audio.
+
+## Mourner / Crawler
+
+Status: **PROTOTYPE / MISSING production set**
+
+Production work should begin only after current horror/authority foundation is stable and their gameplay identity is locked.
+
+---
+
+# P2 — Co-op / Loot Dressing
+
+Status: **MISSING polish variants**
+
+- POI loot-container variants;
+- shared supply crates;
+- stash variants;
+- evidence containers;
+- 3–4 player bonus-resource dressing;
+- readable interaction emissive/decals that do not rely only on text.
+
+---
+
+# P2 — Narrative / Research Network
+
+Status: **PLANNED**
+
+- survey-team personal items;
+- Foreman/miner story dressing;
+- T-03 archive props;
+- Research Facility routing-terminal production model/UI;
+- evidence folders, tapes, samples, signage;
+- future Hospital/Museum/Laboratory/Cave asset sets only when those maps enter active production.
+
+---
+
+# v0.57 Asset Delta
+
+New required assets: **NONE**.
+
+New recommended assets: **NONE required by code**.
+
+The update changes stability, input ownership, and host validation. Existing production backlog remains the priority after technical validation.
+
+See `ASSET_DELTA_V057_STABILITY_AUTHORITY.md` for the exact v0.57 validation checklist.

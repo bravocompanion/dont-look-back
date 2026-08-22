@@ -1,52 +1,109 @@
-# Don't Look Back — Gameplay Canon
+# DON'T LOOK BACK — Gameplay Canon v0.57
 
-Dokumen ini adalah arah gameplay utama. Semua update berikutnya harus mengikuti struktur ini.
+Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama atau catatan versi lama bertentangan dengan file ini dan runtime aktif, gunakan canon ini.
 
-## Premis Utama
+## Premis utama
 
-Player terjebak di sebuah Labyrinth yang pada awalnya terlihat seperti tempat yang harus ditinggalkan secepat mungkin. Selama mencari jalan keluar, player menemukan jurnal, rekaman, data fasilitas, dan bukti bahwa Labyrinth bukan kejadian tunggal. Fenomena yang sama telah muncul di berbagai tempat dan menjadi ancaman bagi umat manusia.
+Player adalah seorang ranger yang menyelidiki hilangnya tim survey di wilayah hutan terpencil. Ranger Cabin menjadi base operasi pertama. Investigasi di permukaan membuka jejak menuju Old Mine, kemudian fasilitas bawah tanah Level 03 / Labyrinth, lalu Restricted Research Facility.
 
-Tujuan game kemudian berubah:
+Game bukan cerita tentang menemukan satu pintu keluar. Player bertahan hidup agar bisa terus mengumpulkan bukti, memahami fenomena, dan membuka jaringan lokasi anomali yang lebih besar.
 
-1. keluar dari Labyrinth;
-2. bertahan hidup di dunia luar;
-3. membangun base yang cukup stabil untuk melakukan ekspedisi;
-4. memasuki lokasi-lokasi berbahaya untuk mencari jurnal, data, artefak, sampel, dan perangkat;
-5. menghubungkan semua petunjuk untuk menemukan cara menyelamatkan umat manusia.
+## Loop utama
 
-Game tidak berakhir saat player keluar dari Labyrinth. Keluar dari Labyrinth adalah akhir tutorial besar dan awal survival sandbox + expedition loop.
+**Prepare → Investigate → Expose yourself to danger → Recover evidence/resources → Survive encounter → Unlock deeper anomaly.**
+
+Setiap sistem survival harus mendukung keputusan horror. Jika sebuah sistem hanya menambah pekerjaan administratif tanpa menambah risiko, pilihan, atau tension, sistem tersebut harus disederhanakan.
 
 ---
 
-# LOOP BESAR GAME
+# 1. RANGER FOREST — BASE + INVESTIGATION
 
-## 1. ESCAPE LOOP — LABYRINTH PERTAMA
+Forest adalah titik awal campaign aktif dan base survival utama.
 
-### Perasaan yang diinginkan
-- tersesat;
-- takut bergerak;
-- tidak tahu aturan monster;
-- resource sangat terbatas;
-- setiap jurnal memberi sedikit pemahaman baru.
+### Tujuan awal
 
-### Yang dilakukan player
-- mencari key, relay, fuse, valve, breaker, dan exit;
-- belajar Darkness, Panic, The Tenant, Mourner, Crawler, dan ancaman fasilitas;
-- mengumpulkan makanan, air, baterai, cloth, bandage, medkit;
-- membaca jurnal staf;
-- menemukan bukti bahwa ada lokasi insiden lain;
-- membawa data keluar.
+- stabilkan Ranger Cabin;
+- kelola generator/campfire;
+- cari food, water, medicine, battery, fuel, dan material;
+- pahami weather/night pressure;
+- selidiki hilangnya survey team.
 
-### Hadiah utama
-Bukan hanya akses ke map berikutnya. Player memperoleh alasan untuk tetap hidup: ada kemungkinan fenomena ini bisa dipahami dan dilawan.
+### Jalur bukti utama
+
+1. Abandoned House → Survey Manifest
+2. Old Gas Station → Radio Trace
+3. Warehouse → Maintenance Map
+4. Water Pump → optional anomaly evidence
+5. Old Mine unlocked
+
+### Aturan horror
+
+Safe space tidak permanen. Ranger Yard hanya mendapat perlindungan penuh ketika generator hidup atau campfire masih menyala. Kehabisan fuel berarti base dapat kembali terekspos.
 
 ---
 
-# 2. FOREST SURVIVAL LOOP
+# 2. OLD MINE — DESCENT
 
-Hutan adalah open survival area dan base layer utama.
+Mine adalah jembatan antara kasus permukaan dan fasilitas bawah tanah.
 
-## Kebutuhan dasar
+### Jalur bukti
+
+1. Foreman's Log
+2. Sealed Shaft Report
+3. Facility Access Badge
+4. Gate menuju Level 03 / Labyrinth
+
+Mine harus terasa lebih sempit, industrial, dan tidak stabil daripada Forest. Resource run tetap penting, tetapi tujuan utamanya adalah investigasi dan descent.
+
+---
+
+# 3. LABYRINTH / FACILITY LEVEL 03
+
+Labyrinth adalah fasilitas horror utama, bukan titik awal campaign saat ini.
+
+### Tujuan
+
+- aktifkan emergency relays;
+- pulihkan sistem Maintenance/Flooded/Archive;
+- temukan hubungan T-03 dengan kasus survey;
+- kelola Darkness Exposure dan panic;
+- survive Lockdown;
+- bawa data menuju Restricted Research Facility.
+
+### Prinsip desain
+
+Labyrinth harus membuat player takut bergerak cepat sekaligus takut terlalu lama diam. Cahaya, panic, orientasi, stamina, dan suara harus saling menekan.
+
+---
+
+# 4. RESTRICTED RESEARCH FACILITY
+
+Facility berfungsi sebagai node investigasi yang menunjukkan bahwa kasus ini lebih besar daripada satu Forest/Mine/Labyrinth.
+
+### Tujuan
+
+- inspect routing terminal;
+- hubungkan data T-03 dengan insiden lain;
+- buka daftar ekspedisi masa depan.
+
+Potential future routes:
+
+- Hospital
+- Museum
+- Laboratory
+- Cave
+- other Labyrinth/anomaly nodes
+
+Lokasi baru tidak boleh ditambahkan hanya untuk memperbesar map. Setiap ekspedisi harus memberi jawaban baru, aturan horror baru, atau keputusan survival baru.
+
+---
+
+# 5. SURVIVAL RULE
+
+Survival adalah tekanan yang memperkuat horror.
+
+Current / intended pressure includes:
+
 - Health
 - Hunger
 - Thirst
@@ -56,431 +113,141 @@ Hutan adalah open survival area dan base layer utama.
 - Temperature / Cold
 - Bleeding
 - Infection
-- Fatigue (planned)
-- Wetness (planned)
+- Weather
+- Generator/campfire upkeep
+- Hunting/fishing/resource economy
 
-## Survival harian
+### Contoh keputusan horror yang benar
 
-### Pagi
-- cek kondisi tubuh;
-- cek cuaca;
-- isi air;
-- masak makanan;
-- cek fuel dan battery;
-- tentukan rute eksplorasi.
+- Fishing membuat player diam dan terekspos.
+- Hunting/harvesting menghasilkan noise.
+- Generator membutuhkan fuel sehingga player harus meninggalkan base.
+- Medkit/bandage membutuhkan waktu dan menciptakan vulnerability.
+- Crafting dilakukan saat player memilih berhenti bergerak.
+- Resource bernilai ditempatkan di luar protected light.
 
-### Siang
-- forage;
-- hunting;
-- fishing;
-- cari kayu dan material;
-- resource run;
-- scouting lokasi baru;
-- eksplorasi POI ringan.
+### Yang harus dihindari
 
-### Menjelang malam
-- kembali ke shelter;
-- isi generator/campfire;
-- masak hasil buruan/ikan;
-- rebus air;
-- crafting;
-- perbaiki perlengkapan;
-- pilih apakah malam digunakan untuk bertahan atau ekspedisi berisiko tinggi.
-
-### Malam
-- monster lebih aktif;
-- temperatur turun;
-- jarak pandang rendah;
-- suara lebih berbahaya;
-- protective light menjadi penting;
-- hunting/fishing malam dapat memberi reward tertentu tetapi jauh lebih berisiko.
+- grind tanpa risiko;
+- crafting tree besar yang tidak mengubah keputusan horror;
+- resource management yang hanya menjadi spreadsheet;
+- monster HP scaling sebagai pengganti co-op tension.
 
 ---
 
-# 3. HUNTING
+# 6. MONSTER IDENTITIES
 
-## Tujuan
-Hunting harus menjadi pilihan survival, bukan mini-game terpisah tanpa hubungan ke dunia.
+## The Tenant
 
-## Target awal
-- deer / rusa;
-- rabbit / kelinci;
-- boar / babi hutan;
-- wolf / serigala sebagai predator.
+Identity: **panic + observation**.
 
-## Hasil
-- raw meat;
-- hide;
-- bone;
-- fat;
-- rare material.
+- Stillness dapat memicu kemunculannya.
+- Gerakan/look agresif menaikkan panic.
+- Panic meningkatkan pressure pursuit/attack.
+- Watched/freeze rule harus tetap terbaca.
+- Flashlight dapat digunakan untuk banish setelah continuous contact yang valid.
 
-## Risiko
-- noise dari senjata/perburuan menarik monster;
-- predator dapat mengikuti darah;
-- bangkai dapat menarik makhluk malam;
-- player harus memilih apakah membawa semua hasil atau pulang cepat.
+Tenant tidak boleh berubah menjadi generic sprinting enemy.
 
----
+## Darkness Creature
 
-# 4. FISHING
+Identity: **fear of losing light**.
 
-## Fungsi
-Fishing memberikan sumber makanan yang lebih stabil daripada hunting tetapi memerlukan waktu, lokasi aman, dan alat.
+- Darkness Exposure dan area tanpa protective light memicu ancaman.
+- Cahaya adalah counter utama.
+- Creature harus terlihat dan terdengar berbeda dari Tenant.
 
-## Sistem yang direncanakan
-- fishing rod;
-- bait;
-- freshwater fish;
-- rare fish saat kondisi cuaca/waktu tertentu;
-- ikan mentah harus dimasak;
-- ikan busuk jika storage buruk (later phase).
+## Ancaman lain
 
-## Risiko
-- player diam cukup lama sehingga rentan;
-- suara air dapat menutupi suara monster;
-- fishing malam memberi reward lebih tinggi tetapi visibility buruk.
+Warden/Mourner/Crawler/hazard boleh tetap memiliki aturan masing-masing, tetapi major encounter harus tunduk pada pacing horror global agar beberapa subsystem tidak menghasilkan spike bersamaan tanpa recovery.
 
 ---
 
-# 5. WEATHER
+# 7. HORROR PACING
 
-Weather harus memengaruhi keputusan gameplay.
+Target jangka berikutnya adalah high-level threat budget, bukan AI super-controller.
 
-## Cuaca awal
-- clear;
-- rain;
-- heavy rain;
-- fog;
-- thunderstorm;
-- cold night.
+Suggested pacing states:
 
-## Dampak
+- CALM
+- UNEASE
+- STALK
+- THREAT
+- HUNT
+- RECOVERY
 
-### Rain
-- wetness naik;
-- temperatur turun;
-- campfire lebih sulit dijaga;
-- suara langkah player tersamarkan sebagian.
-
-### Fog
-- visibility turun;
-- monster lebih sulit dilihat;
-- navigasi lebih sulit.
-
-### Thunderstorm
-- lightning memberi flash visibility sesaat;
-- thunder menutupi suara tertentu;
-- risiko kehilangan orientasi meningkat.
-
-### Cold night
-- kebutuhan shelter/fire meningkat;
-- perjalanan jauh menjadi mahal.
+Setelah chase/lockdown/major hit, player membutuhkan recovery window. Horror yang terus menerus aktif kehilangan kekuatan.
 
 ---
 
-# 6. BASE / SHELTER
+# 8. CO-OP CANON
 
-Cabin adalah base pertama, bukan base terakhir.
+Target party: **2–4 survivors**.
 
-## Fungsi
-- checkpoint;
-- storage;
-- generator;
-- protective light;
-- campfire;
-- cooking;
-- water boiling;
-- crafting;
-- medical treatment;
-- expedition planning;
-- journal archive.
+Co-op harus menambah keputusan, bukan hanya menaikkan monster HP.
 
-## Upgrade planned
-- storage expansion;
-- rain collector;
-- drying rack;
-- workbench tier;
-- battery charging / power management;
-- stronger perimeter lighting;
-- traps;
-- map board;
-- radio receiver.
+### 2 player
 
----
+- classic coordination;
+- revive pressure;
+- limited simultaneous objectives.
 
-# 7. EXPEDITION LOOP
+### 3 player
 
-Setelah kebutuhan dasar stabil, tujuan utama player adalah melakukan ekspedisi.
+- lebih banyak target switching;
+- separation pressure;
+- resource demand meningkat.
 
-## Struktur
+### 4 player
 
-Base → Persiapan → Perjalanan → POI/Dungeon → Journal/Data → Escape → Kembali ke Base → Analisis → Lokasi Baru
+- multi-location decisions;
+- secondary pressure;
+- regroup decisions;
+- resource scaling agar survival tetap playable.
 
-Player tidak harus membersihkan semua lokasi sekaligus. Beberapa ekspedisi boleh berakhir dengan retreat karena resource habis, injury, weather, atau malam.
+World/objective/monster state yang penting harus host-authoritative. Client boleh meminta interaction, tetapi host harus memvalidasi scene, target, distance, state, dan ownership sebelum world state berubah.
 
 ---
 
-# 8. LOKASI INVESTIGASI UTAMA
+# 9. INPUT / PLATFORM CANON
 
-## A. Rumah Sakit
+Game harus playable pada:
 
-### Tema
-Medical horror, emergency ward, basement morgue, generator blackout.
+- Desktop keyboard/mouse
+- Native Android touch
+- Web demo where supported
 
-### Tujuan
-- hidupkan emergency power;
-- buka pharmacy/storage;
-- cari patient records;
-- cari journal dokter;
-- ambil sample atau medical research;
-- cari catatan korban fenomena awal.
+UI harus responsive terhadap ukuran viewport. Gameplay menu yang memblokir kontrol harus menggunakan `GameplayInputLock` atau abstraction yang sama, bukan menambahkan dependency menu khusus ke MovementSystem satu per satu.
 
-### Ancaman
-- darkness;
-- infected creatures;
-- narrow wards;
-- suara monitor/alarms;
-- limited safe light.
-
-### Reward
-- medicine;
-- advanced medical supplies;
-- lore tentang efek fenomena pada tubuh manusia;
-- clue ke Laboratory.
+Mobile performance target minimum: stable 30 FPS pada target hardware yang realistis. Desktop target normal: 60 FPS.
 
 ---
 
-## B. Museum
+# 10. PRODUCTION PRIORITY
 
-### Tema
-Artefak, sejarah lokal, ruang pamer gelap, storage bawah tanah.
+Sebelum map/monster besar berikutnya:
 
-### Tujuan
-- cari artefak yang berhubungan dengan fenomena;
-- baca jurnal kurator;
-- buka archive museum;
-- cocokkan simbol lama dengan data fasilitas modern.
+1. multiplayer authority;
+2. save/checkpoint/finite-loot consistency;
+3. input ownership;
+4. native platform export + CI smoke tests;
+5. mobile performance;
+6. monster ownership cleanup;
+7. horror pacing;
+8. production assets;
+9. content expansion.
 
-### Twist lore
-Fenomena mungkin sudah ada jauh sebelum fasilitas T-03 dibangun.
-
-### Reward
-- historical lore;
-- rare artifact;
-- map/clue menuju Cave;
-- bagian penting teori asal fenomena.
+Gameplay foundation harus stabil sebelum breadth bertambah.
 
 ---
 
-## C. Laboratory
+# 11. ASSET POLICY
 
-### Tema
-Scientific horror, containment breach, eksperimen gagal.
+Setiap update harus mencatat:
 
-### Tujuan
-- restore power;
-- akses terminal;
-- kumpulkan research journal;
-- ambil sample;
-- buka containment wing;
-- dapatkan formula/prototype yang dapat melawan fenomena.
+- New required assets
+- New recommended assets
+- Existing pending assets
+- Status: available / prototype / missing
 
-### Ancaman
-- experimental monsters;
-- automated security;
-- radiation/chemical hazard jika dikembangkan nanti;
-- darkness containment failure.
-
-### Reward
-- strongest scientific clue;
-- crafting teknologi baru;
-- komponen endgame.
-
----
-
-## D. Cave System
-
-### Tema
-Tidak ada listrik. Natural darkness sepenuhnya.
-
-### Tujuan
-- eksplorasi dengan flashlight/torch/lantern;
-- tandai jalan;
-- cari survey journal;
-- ambil mineral/sampel;
-- temukan struktur atau fenomena yang lebih tua dari fasilitas manusia.
-
-### Ancaman
-- darkness;
-- cave predators;
-- falling/terrain hazard;
-- battery management;
-- kehilangan orientasi.
-
-### Reward
-- geological clue;
-- crafting minerals;
-- sumber atau jalur menuju lokasi endgame.
-
----
-
-## E. Labyrinth Lain
-
-Setiap Labyrinth harus memiliki aturan ruang atau monster berbeda agar tidak terasa copy-paste.
-
-Contoh:
-- Labyrinth yang berubah saat lampu mati;
-- Labyrinth yang bereaksi terhadap suara;
-- Labyrinth dengan flooded floors;
-- Labyrinth dengan mirror mechanic;
-- Labyrinth multiplayer yang memisahkan anggota tim.
-
-Reward adalah fragment data/perangkat yang dibutuhkan untuk final solution.
-
----
-
-# 9. JOURNAL SEBAGAI PROGRESSION
-
-Journal bukan collectible kosmetik.
-
-Setiap journal harus memiliki minimal satu fungsi:
-- menjelaskan aturan monster;
-- memberi koordinat/lokasi baru;
-- memberi recipe;
-- memberi kode/password;
-- membuka objective;
-- mengubah pemahaman lore;
-- mengungkap kelemahan fenomena;
-- memberi bagian solusi endgame.
-
-Journal chain dari lokasi berbeda harus saling melengkapi.
-
-Contoh:
-- Hospital menunjukkan efek pada manusia.
-- Museum menunjukkan fenomena sudah tua.
-- Cave menunjukkan sumber fisik/geologis.
-- Laboratory menjelaskan mekanisme ilmiah.
-- Labyrinth memberi bukti tentang perilaku ruang/darkness.
-
-Ketika semua data digabung, player memahami solusi.
-
----
-
-# 10. ENDGAME — MENYELAMATKAN UMAT MANUSIA
-
-Endgame tidak boleh berupa sekadar boss fight.
-
-Player harus menggunakan hasil seluruh perjalanan:
-- data T-03;
-- historical artifact;
-- medical sample;
-- cave sample;
-- laboratory prototype;
-- journal survivors;
-- perangkat dari Labyrinth lain.
-
-Dari sini bisa ada beberapa ending berdasarkan informasi dan keputusan player:
-
-## Containment Ending
-Fenomena dikurung tetapi tidak dihancurkan.
-
-## Suppression Ending
-Jaringan cahaya/perangkat baru memungkinkan manusia mengambil kembali wilayah.
-
-## Origin Ending
-Player menemukan sumber dan mencoba menghentikannya secara permanen.
-
-## Failed Humanity Ending
-Player menyelesaikan terlalu sedikit journal chain atau memilih solusi salah.
-
-Multiplayer dapat memberi variasi berdasarkan siapa yang selamat dan data apa yang berhasil dibawa pulang.
-
----
-
-# 11. MULTIPLAYER PRINCIPLES
-
-- 2–4 survivor.
-- Resource tetap terbatas agar co-op membutuhkan pembagian tugas.
-- Satu player bisa fishing sementara yang lain mencari wood atau menjaga area.
-- Hunting dapat dilakukan berkelompok.
-- Expedition memungkinkan role sementara: scout, carrier, light holder, medic.
-- Downed/revive lebih penting daripada instant death.
-- Death tetap punya konsekuensi tetapi tidak langsung menghapus seluruh session.
-- Journal/data progression harus host-authoritative dan tersinkron.
-
----
-
-# 12. MOBILE + DESKTOP
-
-Semua gameplay utama harus dapat dilakukan di desktop dan mobile.
-
-## Desktop
-- keyboard/mouse;
-- hotkeys;
-- drag/selection inventory jika dikembangkan.
-
-## Mobile
-- touch controls;
-- tombol kontekstual;
-- inventory besar dan mudah disentuh;
-- fishing/hunting interaction tidak boleh membutuhkan presisi mouse yang mustahil di layar kecil.
-
-UI harus responsif dan gameplay tidak boleh memberikan keuntungan ekstrem hanya karena platform input.
-
----
-
-# IMPLEMENTATION ORDER
-
-## P0 — Current foundation
-- Labyrinth escape;
-- core monsters;
-- health/hunger/thirst/stamina;
-- panic/darkness;
-- forest map;
-- shelter;
-- inventory;
-- journal;
-- multiplayer foundation.
-
-## P1 — Forest Survival Expansion
-- weather;
-- wildlife base AI;
-- hunting;
-- fishing;
-- cooking;
-- expanded crafting;
-- resource respawn ecology;
-- shelter storage improvements.
-
-## P2 — Expedition Framework
-- world map / POI discovery;
-- expedition state;
-- journal-driven unlocks;
-- travel transitions;
-- extraction/return-to-base loop.
-
-## P3 — First New Dungeon
-Recommended: Hospital.
-
-## P4
-Museum + Cave.
-
-## P5
-Laboratory + second Labyrinth.
-
-## P6
-Endgame solution chain + endings.
-
----
-
-# Rule Untuk Update Berikutnya
-
-Setiap fitur baru harus menjawab salah satu pertanyaan:
-
-1. Apakah fitur ini membuat survival lebih dalam?
-2. Apakah fitur ini membantu ekspedisi?
-3. Apakah fitur ini memberi informasi tentang cara menyelamatkan manusia?
-4. Apakah fitur ini membuat dunia terasa lebih hidup?
-
-Jika tidak menjawab salah satunya, fitur tersebut bukan prioritas utama.
+v0.57 sendiri tidak membutuhkan asset production baru; update ini berfokus pada stability dan authority. Lihat `ASSET_DELTA_V057_STABILITY_AUTHORITY.md`.

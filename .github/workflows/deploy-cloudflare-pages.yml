@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
-  group: dont-look-back-cloudflare-pages-production
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -33,7 +36,7 @@ jobs:
       - name: Install CI utilities
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip jq
+          sudo apt-get install -y unzip jq brotli
 
       - name: Download Godot editor
         shell: bash
@@ -50,6 +53,12 @@ jobs:
           chmod +x "$GODOT_BIN"
           sudo ln -sf "$GODOT_BIN" /usr/local/bin/godot
           godot --version
+
+      - name: Headless Godot project smoke check
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90 godot --headless --path . --editor --quit
 
       - name: Install Godot Web export templates
         shell: bash
@@ -74,11 +83,40 @@ jobs:
           set -euo pipefail
           rm -rf build
           mkdir -p build/web
-          godot --headless --path . --export-release "Web" build/index.zip
-          test -f build/index.zip
-          unzip -q build/index.zip -d build/web
+          godot --headless --path . --export-release "Web" build/web/index.html
           test -f build/web/index.html
-          echo "Web build files:"
+          test -f build/web/index.wasm
+          test -f build/web/index.pck
+          echo "Raw Web build files:"
+          find build/web -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+
+      - name: Precompress Godot WASM for Cloudflare Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          RAW_WASM="build/web/index.wasm"
+          COMPRESSED_WASM="${RAW_WASM}.br"
+          RAW_SHA="$(sha256sum "$RAW_WASM" | awk '{print $1}')"
+
+          brotli -q 9 -f -o "$COMPRESSED_WASM" "$RAW_WASM"
+          brotli -t "$COMPRESSED_WASM"
+          RESTORED_SHA="$(brotli -d -c "$COMPRESSED_WASM" | sha256sum | awk '{print $1}')"
+          if [[ "$RAW_SHA" != "$RESTORED_SHA" ]]; then
+            echo "Brotli WASM verification failed."
+            exit 1
+          fi
+
+          rm "$RAW_WASM"
+          mv "$COMPRESSED_WASM" "$RAW_WASM"
+
+          cat > build/web/_headers <<'EOF'
+          /index.wasm
+            Content-Type: application/wasm
+            Content-Encoding: br
+            Cache-Control: public, max-age=31536000, immutable, no-transform
+          EOF
+
+          echo "Deploy-ready Web build files:"
           find build/web -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
 
       - name: Upload Web build artifact
@@ -115,6 +153,7 @@ jobs:
 
       - name: Check Cloudflare credentials
         id: cloudflare-auth
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -128,7 +167,7 @@ jobs:
           fi
 
       - name: Ensure Cloudflare Pages project exists
-        if: steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -160,7 +199,7 @@ jobs:
           PY
 
       - name: Deploy to Cloudflare Pages
-        if: steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
