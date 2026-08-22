@@ -3,12 +3,12 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.48"
+config/name="Don't Look Back v0.49"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
 ItemIconRegistry="*res://scripts/item_icon_registry_v43.gd"
-SurvivalSystem="*res://scripts/survival_system_ranger_v5.gd"
+SurvivalSystem="*res://scripts/survival_system_ranger_v6.gd"
 DarknessDirector="*res://scripts/darkness_director.gd"
 CheckpointSystem="*res://scripts/checkpoint_system.gd"
 LabyrinthDirector="*res://scripts/labyrinth_director_v181.gd"
