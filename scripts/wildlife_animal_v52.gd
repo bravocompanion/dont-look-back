@@ -6,11 +6,11 @@ const CORPSE_INTERACT_SCRIPT_V52: String = "res://scripts/wildlife_corpse_intera
 # - wounded flee is straight-away steering with a hard 1.20x speed cap
 # - no lateral orbit term while wounded
 # - dead animals fall onto their side instead of remaining upright
-# - dead-body collision remains non-blocking while a separate Area3D handles harvest
+# - dead-body collision remains non-blocking while a dedicated layer-2 body handles harvest
 
 var flee_escape_direction_v52: Vector3 = Vector3.ZERO
 var corpse_collected_v52: bool = false
-var corpse_interaction_v52: Area3D
+var corpse_interaction_v52: StaticBody3D
 
 func _finish_setup() -> void:
     super._finish_setup()
@@ -184,7 +184,7 @@ func _ensure_corpse_interaction_v52() -> void:
     if corpse_interaction_v52 != null and is_instance_valid(corpse_interaction_v52):
         return
 
-    corpse_interaction_v52 = get_node_or_null("CorpseInteractionV52") as Area3D
+    corpse_interaction_v52 = get_node_or_null("CorpseInteractionV52") as StaticBody3D
     if corpse_interaction_v52 != null:
         return
 
@@ -192,13 +192,11 @@ func _ensure_corpse_interaction_v52() -> void:
     if interact_script == null:
         return
 
-    corpse_interaction_v52 = Area3D.new()
+    corpse_interaction_v52 = StaticBody3D.new()
     corpse_interaction_v52.name = "CorpseInteractionV52"
     corpse_interaction_v52.set_script(interact_script)
     corpse_interaction_v52.collision_layer = 0
     corpse_interaction_v52.collision_mask = 0
-    corpse_interaction_v52.monitoring = false
-    corpse_interaction_v52.monitorable = true
     add_child(corpse_interaction_v52)
 
     var shape_node: CollisionShape3D = CollisionShape3D.new()
@@ -215,6 +213,6 @@ func _set_corpse_interaction_enabled_v52(enabled: bool) -> void:
     _ensure_corpse_interaction_v52()
     if corpse_interaction_v52 == null:
         return
-    # Layer switching is deferred so a lethal arrow impact cannot modify query
-    # participation while the physics server is still flushing the hit.
-    corpse_interaction_v52.set_deferred("collision_layer", 1 if enabled else 0)
+    # Collision layer 2 is included by the interaction ray but excluded from the
+    # player's normal movement collision mask. Deferred switching avoids physics flush issues.
+    corpse_interaction_v52.set_deferred("collision_layer", 2 if enabled else 0)
