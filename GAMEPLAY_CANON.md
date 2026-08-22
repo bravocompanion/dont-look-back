@@ -1,6 +1,6 @@
-# DON'T LOOK BACK — Gameplay Canon v0.60
+# DON'T LOOK BACK — Gameplay Canon v0.63
 
-Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama bertentangan dengan runtime aktif dan file ini, gunakan runtime + canon v0.60 sebagai sumber utama.
+Dokumen ini adalah arah gameplay utama untuk runtime Ranger-first. Jika dokumen lama bertentangan dengan runtime aktif dan file ini, gunakan runtime + canon terbaru sebagai sumber utama.
 
 ## Premis
 
@@ -30,7 +30,7 @@ Water Sample tetap optional tetapi memberi stabilized junction light di Mine.
 
 Ranger Yard bukan safe zone permanen. Yard hanya protected jika generator hidup atau campfire masih menyala.
 
-### v0.60 shelter authority rule
+### Shelter authority rule
 
 Dalam co-op, resource untuk shared shelter tidak boleh dikonsumsi client sebelum host menerima transaksi.
 
@@ -44,7 +44,7 @@ Flow canonical:
 6. host mengirim authoritative item count kembali;
 7. client mengoreksi inventory ke hasil host.
 
-Target v0.60:
+Target authority saat ini:
 
 - generator fuel;
 - campfire Firewood Bundle;
@@ -91,7 +91,7 @@ Tujuan:
 
 Current Arc 1 memiliki fuse, valves, breaker sequence, alarm/fault pressure, checkpoints, enemies, dan 120-second Lockdown.
 
-Next design rule: tiap stage Labyrinth harus mengubah cara bermain, bukan hanya mengganti checklist objective. Contoh perubahan rule: visibility, sound masking, split-team requirement, route safety, atau power allocation.
+Tiap stage Labyrinth harus mengubah cara bermain, bukan hanya mengganti checklist objective. Contoh perubahan rule: visibility, sound masking, split-team requirement, route safety, atau power allocation.
 
 ---
 
@@ -99,15 +99,12 @@ Next design rule: tiap stage Labyrinth harus mengubah cara bermain, bukan hanya 
 
 Facility adalah investigation node yang menghubungkan kasus ini ke jaringan anomaly routes.
 
-Future routes dapat mencakup:
+Setelah routing response selesai, keputusan menjadi persistent gameplay consequence:
 
-- Hospital
-- Museum
-- Laboratory
-- Cave
-- other anomaly/Labyrinth nodes
+- **RESCUE PRIORITY**: recovery major-threat 45% lebih cepat hanya ketika survivor benar-benar kembali ke Ranger shelter yang powered/protected; dalam co-op minimal separuh party harus regroup di shelter.
+- **ANOMALY PRIORITY**: tidak memberi damage/defense/recovery buff; party mendapat intel state UNEASE/STALK/HUNT/RECOVERY.
 
-Jangan membuka major map baru hanya untuk breadth. Facility terlebih dahulu membutuhkan payoff encounter/choice yang benar-benar menyelesaikan satu beat campaign.
+Future routes dapat mencakup Hospital, Museum, Laboratory, Cave, dan anomaly/Labyrinth nodes lain, tetapi major map baru tidak boleh dibuka hanya untuk breadth.
 
 ---
 
@@ -123,9 +120,9 @@ Primary horror resources:
 Secondary expedition pressure:
 
 - Stamina
-- Bleeding
 - Temperature
 - Radiation
+- Bleeding (planned status; belum aktif sebagai runtime status di Player v0.63)
 
 Background survival:
 
@@ -137,9 +134,11 @@ Background survival tidak boleh mengambil perhatian lebih besar daripada horror 
 
 FOOD/WATER/MED adalah vulnerable timed actions. Item baru dikonsumsi saat action selesai. Menu/gameplay action menggunakan central input lock agar input tidak tembus di belakang UI.
 
+**Bandage belum menjadi timed action canon** sampai bleeding memiliki runtime state/API nyata. Jangan mengimplementasikan Bandage sebagai heal-HP palsu hanya untuk mengisi slot item.
+
 ---
 
-# 6. MONSTER IDENTITIES
+# 6. MONSTER IDENTITIES + LIGHT CONTRACT
 
 ## The Tenant
 
@@ -148,7 +147,9 @@ Identity: **panic + observation**.
 - stillness/panic dapat memicu kemunculan;
 - watched/freeze harus tetap terbaca;
 - panic menaikkan pursuit pressure;
-- flashlight contact adalah counter/banish route.
+- authored/world protective light dapat mencegah spawn/target;
+- flashlight **bukan** world protection/safe zone untuk Tenant;
+- flashlight contact dapat tetap menjadi bagian counter/banish presentation tanpa mengubahnya menjadi safe-zone bubble.
 
 Tenant tidak boleh menjadi generic chaser.
 
@@ -156,9 +157,22 @@ Tenant tidak boleh menjadi generic chaser.
 
 Identity: **fear of losing protective light**.
 
-- Darkness Exposure memicu pressure;
-- protective light adalah counter utama;
+- Darkness Exposure memicu UNEASE/STALK menuju encounter;
+- flashlight aktif adalah protective light;
+- authored/world protective light juga menjadi counter;
 - visual/audio/behavior harus berbeda jelas dari Tenant.
+
+## v0.63 LightRegistry contract
+
+Semua co-op threat decisions menggunakan kontrak bersama:
+
+- Darkness protection = flashlight **atau** world/protected light;
+- Tenant protection = world/protected light saja;
+- powered Ranger Yard termasuk world protection;
+- active OmniLight3D world lights mempertahankan radius proteksi legacy sebesar 82% dari `omni_range`;
+- lampu kosmetik dapat dikeluarkan dari proteksi melalui group `non_protective_light` atau metadata `non_protective_light_v63`.
+
+Tujuan registry adalah mencegah sistem berbeda memberi arti berbeda pada lampu yang sama dan menyediakan jalur untuk authored protection volumes berikutnya.
 
 ## Horror pacing
 
@@ -169,9 +183,19 @@ Major Tenant dan Darkness encounters menggunakan shared threat budget:
 - subsystem kecil boleh tetap memberi unease selama recovery;
 - major chase baru tidak boleh langsung bertumpuk.
 
-Target states:
+Canonical states v0.62+:
 
-CALM → UNEASE → STALK → THREAT → HUNT → RECOVERY
+**CALM → UNEASE → STALK → HUNT → RECOVERY**
+
+## v0.63 monster ownership
+
+Monster ownership harus tunggal:
+
+- **offline Darkness**: hanya `DarknessDirector` yang boleh spawn/mengelola encounter;
+- **online Darkness**: local DarknessDirector tidak menjalankan spawn loop sama sekali; hanya host `CoopHorrorSystem` yang memiliki shared Darkness state/damage;
+- **online Tenant**: tetap host-owned melalui `CoopHorrorSystem`.
+
+Tidak boleh ada local solo director dan host co-op director yang mengontrol Darkness bersamaan.
 
 ---
 
@@ -228,7 +252,9 @@ Current authority layers mencakup:
 - Mine power routing;
 - main co-op monster state/damage;
 - checkpoint/team-wipe world restore;
-- v0.60 shelter resource transaction ordering.
+- shelter resource transaction ordering;
+- v0.63 shared co-op light contract;
+- v0.63 single-owner Darkness rule.
 
 ---
 
@@ -248,7 +274,7 @@ Responsive target:
 - mobile target minimum stable 30 FPS pada hardware realistis;
 - desktop target normal 60 FPS.
 
-v0.60 committed export presets:
+Committed export presets:
 
 - Web
 - Windows Desktop
@@ -257,65 +283,3 @@ v0.60 committed export presets:
 - Android Release
 
 Native CI harus boot canonical scenes sebelum build dan menghasilkan Linux release, Windows release, dan Android Debug APK. Android Release signing credential tidak boleh disimpan di repository.
-
----
-
-# 10. REGRESSION POLICY
-
-Mulai v0.60, update gameplay besar harus menjaga automated smoke berikut:
-
-- Forest loads + player + shelter targets;
-- Mine loads;
-- Labyrinth loads + Arc 1 runtime;
-- Research Facility loads;
-- v0.59 checkpoint snapshot API tetap ada;
-- Mine power persistence API tetap ada;
-- v0.60 shelter authority API aktif;
-- required export presets tersedia.
-
-Regression smoke bukan pengganti manual co-op test. Manual matrix tetap wajib untuk:
-
-- host + 1 client;
-- host + 3 clients;
-- team wipe;
-- simultaneous interaction;
-- network latency/race-sensitive shelter spending;
-- Android touch + thermals/performance.
-
----
-
-# 11. PRODUCTION PRIORITY AFTER v0.60
-
-1. manual co-op verification untuk shelter authority;
-2. remote Shared Stash transaction authority;
-3. automated checkpoint/finite-loot transaction tests;
-4. Android real-device profiling + safe-area polish;
-5. deeper Labyrinth rule changes;
-6. 3–4 player split/regroup objective design;
-7. Research Facility payoff encounter/choice;
-8. monster brain/navigation/motor/network consolidation;
-9. LightRegistry / authored protection volumes;
-10. production character/monster/environment/audio pass;
-11. major content expansion.
-
----
-
-# 12. ASSET POLICY
-
-Setiap update harus mencatat:
-
-- new required assets;
-- new recommended assets;
-- existing pending assets;
-- status: available / prototype / missing.
-
-v0.60 membutuhkan **0 mandatory runtime asset baru**.
-
-Recommended baru:
-
-- Android launcher/adaptive/monochrome icon set;
-- Windows app `.ico`;
-- Linux app icon;
-- optional shelter transaction accepted/rejected feedback.
-
-Lihat `ASSET_DELTA_V060_AUTHORITY_NATIVE_TESTS.md` dan `ASSET_BACKLOG.md`.

@@ -29,8 +29,9 @@ func _initialize() -> void:
     call_deferred("_run_regression")
 
 func _run_regression() -> void:
-    print("[REGRESSION] Don't Look Back v0.62 scene smoke starting...")
+    print("[REGRESSION] Don't Look Back v0.63 scene smoke starting...")
     _check_runtime_contracts()
+    _check_v63_light_ownership_contracts()
 
     for case_data: Dictionary in CASES:
         await _boot_case(case_data)
@@ -38,7 +39,7 @@ func _run_regression() -> void:
     _check_export_presets()
 
     if failures.is_empty():
-        print("[REGRESSION] PASS — canonical maps, v0.62 pacing/consequences, and native presets are ready.")
+        print("[REGRESSION] PASS — canonical maps, v0.63 light/ownership rules, pacing, and native presets are ready.")
         quit(0)
         return
 
@@ -85,6 +86,21 @@ func _check_runtime_contracts() -> void:
             "get_pressure_v62",
             "get_safe_recovery_multiplier_v62",
             "reset_pacing_v62"
+        ],
+        "LightRegistry": [
+            "is_player_protected_from_darkness_v63",
+            "is_player_world_protected_v63",
+            "is_position_world_protected_v63",
+            "get_light_contract_v63",
+            "invalidate_cache_v63"
+        ],
+        "DarknessDirector": [
+            "get_runtime_owner_v63",
+            "resolve_owner_for_mode_v63",
+            "solo_spawn_allowed_for_mode_v63"
+        ],
+        "CoopHorrorSystem": [
+            "get_light_authority_contract_v63"
         ]
     }
 
@@ -98,6 +114,32 @@ func _check_runtime_contracts() -> void:
             var method_name: String = str(method_variant)
             if not node.has_method(method_name):
                 failures.append("%s missing method %s" % [autoload_name, method_name])
+
+func _check_v63_light_ownership_contracts() -> void:
+    var registry: Node = root.get_node_or_null("LightRegistry")
+    var darkness: Node = root.get_node_or_null("DarknessDirector")
+    var coop: Node = root.get_node_or_null("CoopHorrorSystem")
+    if registry == null or darkness == null or coop == null:
+        return
+
+    var light_contract: Dictionary = Dictionary(registry.call("get_light_contract_v63"))
+    if not bool(light_contract.get("darkness_accepts_flashlight", false)):
+        failures.append("v0.63 light contract: Darkness must accept flashlight protection")
+    if bool(light_contract.get("tenant_accepts_flashlight", true)):
+        failures.append("v0.63 light contract: Tenant must reject flashlight as world protection")
+
+    if not bool(darkness.call("solo_spawn_allowed_for_mode_v63", false)):
+        failures.append("v0.63 ownership: offline Darkness director must own solo spawn")
+    if bool(darkness.call("solo_spawn_allowed_for_mode_v63", true)):
+        failures.append("v0.63 ownership: local Darkness director must stop spawning online")
+    if str(darkness.call("resolve_owner_for_mode_v63", true)) != "coop_host":
+        failures.append("v0.63 ownership: online Darkness owner must resolve to coop_host")
+
+    var coop_contract: Dictionary = Dictionary(coop.call("get_light_authority_contract_v63"))
+    if bool(coop_contract.get("tenant_uses_flashlight", true)):
+        failures.append("v0.63 co-op contract: Tenant cannot use flashlight as protection")
+    if not bool(coop_contract.get("darkness_uses_flashlight_or_world", false)):
+        failures.append("v0.63 co-op contract: Darkness must use flashlight-or-world protection")
 
 func _boot_case(case_data: Dictionary) -> void:
     var path: String = str(case_data.get("path", ""))
