@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.53  •  ANIMAL SPEED CAPS  •  STRONG BOW SWAY"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wildlife now has hard horizontal movement caps in every AI state and remote interpolation; harvestable lying corpses and Tenant night/light rules remain active."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Draw sway is 150% while still, 200% while walking, and 350% while sprinting, using one smooth camera layer with the existing jump kick and 30% full-draw zoom."
-    host_button.tooltip_text = "Host co-op enforces species movement caps, wildlife HP, carcass harvest claims, arrow state, and Tenant night/light rules authoritatively."
-    join_button.tooltip_text = "Join the native ENet host. Remote wildlife interpolation is also capped so animals cannot visually surge between synchronized positions."
+    version_label.text = "v0.54  •  SURVIVAL ECONOMY  •  SLEEP REWORK"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Core supplies now have carry limits, stash logistics matter, and sleeping advances real survival/radiation costs instead of cheaply skipping the night."
+    new_game_button.tooltip_text = "The ranger cache no longer gives a free Hunting Bow or Hunting Knife. Scavenge Wood, Cloth and Scrap, then craft hunting gear at the workbench. Bow sway remains 150% still, 200% walking, 350% sprinting."
+    host_button.tooltip_text = "Host co-op keeps wildlife HP, carcass claims, shared pickups, arrow state, Tenant rules and survival infrastructure authoritative. Carry limits apply to pickups, crafting, fishing, harvest and recovered arrows."
+    join_button.tooltip_text = "Join the native ENet host. Store excess supplies at the cabin; sleep consumes sustained generator/campfire fuel and Day-3+ radiation continues during time skip."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
