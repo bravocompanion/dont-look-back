@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
-  group: dont-look-back-cloudflare-pages-production
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -50,6 +53,12 @@ jobs:
           chmod +x "$GODOT_BIN"
           sudo ln -sf "$GODOT_BIN" /usr/local/bin/godot
           godot --version
+
+      - name: Headless Godot project smoke check
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90 godot --headless --path . --editor --quit
 
       - name: Install Godot Web export templates
         shell: bash
@@ -115,6 +124,7 @@ jobs:
 
       - name: Check Cloudflare credentials
         id: cloudflare-auth
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -128,7 +138,7 @@ jobs:
           fi
 
       - name: Ensure Cloudflare Pages project exists
-        if: steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -160,7 +170,7 @@ jobs:
           PY
 
       - name: Deploy to Cloudflare Pages
-        if: steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && steps.cloudflare-auth.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
