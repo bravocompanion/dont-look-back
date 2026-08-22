@@ -29,7 +29,7 @@ func _initialize() -> void:
     call_deferred("_run_regression")
 
 func _run_regression() -> void:
-    print("[REGRESSION] Don't Look Back v0.61 scene smoke starting...")
+    print("[REGRESSION] Don't Look Back v0.62 scene smoke starting...")
     _check_runtime_contracts()
 
     for case_data: Dictionary in CASES:
@@ -38,7 +38,7 @@ func _run_regression() -> void:
     _check_export_presets()
 
     if failures.is_empty():
-        print("[REGRESSION] PASS — canonical maps, v0.61 gameplay rules, and native presets are ready.")
+        print("[REGRESSION] PASS — canonical maps, v0.62 pacing/consequences, and native presets are ready.")
         quit(0)
         return
 
@@ -73,7 +73,18 @@ func _check_runtime_contracts() -> void:
             "request_choice_v61",
             "get_save_state",
             "restore_save_state",
-            "get_campaign_outcome_v61"
+            "get_campaign_outcome_v61",
+            "has_rescue_priority_v62",
+            "has_anomaly_priority_v62",
+            "get_consequence_summary_v62"
+        ],
+        "HorrorPacingSystem": [
+            "request_unease_v62",
+            "request_stalk_v62",
+            "get_state_name_v62",
+            "get_pressure_v62",
+            "get_safe_recovery_multiplier_v62",
+            "reset_pacing_v62"
         ]
     }
 
@@ -118,6 +129,7 @@ func _boot_case(case_data: Dictionary) -> void:
 
     if path == "res://scenes/forest.tscn":
         _check_forest_authority_targets()
+        _check_v62_pacing_runtime()
     elif path == "res://scenes/main.tscn":
         _check_checkpoint_snapshot_contract()
         await _check_labyrinth_rules_runtime()
@@ -138,6 +150,19 @@ func _check_forest_authority_targets() -> void:
     for target: String in ["OutsideWorld/ShelterGenerator", "OutsideWorld/ShelterCampfire"]:
         if scene.get_node_or_null(NodePath(target)) == null:
             failures.append("Forest authority target missing: %s" % target)
+
+func _check_v62_pacing_runtime() -> void:
+    var pacing: Node = root.get_node_or_null("HorrorPacingSystem")
+    if pacing == null:
+        return
+    pacing.call("reset_pacing_v62")
+    pacing.call("request_unease_v62", "regression", 0.40, 2.0)
+    if float(pacing.call("get_pressure_v62")) < 0.39:
+        failures.append("v0.62 HorrorPacingSystem did not accept UNEASE pressure")
+    pacing.call("request_stalk_v62", "regression", 2.0, 0.72)
+    if float(pacing.call("get_pressure_v62")) < 0.70:
+        failures.append("v0.62 HorrorPacingSystem did not accept STALK pressure")
+    pacing.call("reset_pacing_v62")
 
 func _check_checkpoint_snapshot_contract() -> void:
     var save: Node = root.get_node_or_null("SaveSystem")
