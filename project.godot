@@ -3,14 +3,15 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.62"
+config/name="Don't Look Back v0.63"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
 ItemIconRegistry="*res://scripts/item_icon_registry_v43.gd"
 CarryLimitSystem="*res://scripts/carry_limit_system_v54.gd"
 SurvivalSystem="*res://scripts/survival_system_ranger_v12.gd"
-DarknessDirector="*res://scripts/darkness_director_v62.gd"
+LightRegistry="*res://scripts/light_registry_v63.gd"
+DarknessDirector="*res://scripts/darkness_director_v63.gd"
 CheckpointSystem="*res://scripts/checkpoint_system_v59.gd"
 LabyrinthDirector="*res://scripts/labyrinth_director_v181.gd"
 OutsideDirector="*res://scripts/outside_director_ranger_v6.gd"
@@ -38,7 +39,7 @@ SceneIsolationSystem="*res://scripts/scene_isolation_system.gd"
 AINavigationSystem="*res://scripts/ai_navigation_system_v181.gd"
 AINavigationRebuildGuard="*res://scripts/ai_navigation_rebuild_guard_v181.gd"
 HorrorPacingSystem="*res://scripts/horror_pacing_system_v62.gd"
-CoopHorrorSystem="*res://scripts/coop_horror_system_v59.gd"
+CoopHorrorSystem="*res://scripts/coop_horror_system_v63.gd"
 RangerSafeZone="*res://scripts/ranger_safe_zone_v3.gd"
 FieldResourceSystem="*res://scripts/field_resource_system_v42.gd"
 RenewableResourceSystem="*res://scripts/renewable_resource_system_v55.gd"
@@ -54,7 +55,7 @@ SurvivalDepthSystem="*res://scripts/survival_depth_system_v54.gd"
 JournalSystem="*res://scripts/journal_system_ranger_v6.gd"
 SaveSystem="*res://scripts/save_system_ranger_v7.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system_v191.gd"
+FrontEndSystem="*res://scripts/front_end_system_v192.gd"
 MineAssetSystem="*res://scripts/mine_asset_system.gd"
 
 [display]
