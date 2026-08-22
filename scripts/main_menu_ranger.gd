@@ -4,11 +4,11 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.52  •  HARVESTABLE CORPSES  •  STRONGER BOW SWAY"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wounded wildlife now flees straight away at a hard +20% speed cap; dead wildlife falls onto its side and can be harvested with a Hunting Knife."
-    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Draw sway is now +40% while still, +80% while walking, and +120% while sprinting, with the existing smooth jump kick and 30% full-draw zoom."
-    host_button.tooltip_text = "Host co-op keeps wildlife HP, wounded flee direction, carcass harvest claims, loot grants, arrow state and Tenant night/light rules authoritative."
-    join_button.tooltip_text = "Join the native ENet host. Aim at a dead carcass and use E / USE with a Hunting Knife to harvest it."
+    version_label.text = "v0.53  •  ANIMAL SPEED CAPS  •  STRONG BOW SWAY"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wildlife now has hard horizontal movement caps in every AI state and remote interpolation; harvestable lying corpses and Tenant night/light rules remain active."
+    new_game_button.tooltip_text = "Hold left mouse / HOLD HUNT to draw. Draw sway is 150% while still, 200% while walking, and 350% while sprinting, using one smooth camera layer with the existing jump kick and 30% full-draw zoom."
+    host_button.tooltip_text = "Host co-op enforces species movement caps, wildlife HP, carcass harvest claims, arrow state, and Tenant night/light rules authoritatively."
+    join_button.tooltip_text = "Join the native ENet host. Remote wildlife interpolation is also capped so animals cannot visually surge between synchronized positions."
     _set_status("RANGER CASE 07 — Survive, investigate, prepare for Day 3 radiation, then follow the evidence underground.")
 
 func _start_new_game() -> void:
