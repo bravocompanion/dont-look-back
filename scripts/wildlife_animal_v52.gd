@@ -38,7 +38,8 @@ func take_hunting_damage(amount: float, hunter_peer_id: int) -> void:
     if alive:
         var threat_value: Variant = _hunter_position(hunter_peer_id)
         if threat_value is Vector3:
-            var away: Vector3 = global_position - Vector3(threat_value)
+            var threat_position: Vector3 = threat_value
+            var away: Vector3 = global_position - threat_position
             away.y = 0.0
             if away.length_squared() > 0.0025:
                 flee_escape_direction_v52 = away.normalized()
@@ -64,9 +65,12 @@ func _physics_process(delta: float) -> void:
 
     var away_direction: Vector3 = flee_escape_direction_v52
     var threat_value: Variant = _hunter_position(flee_hunter_peer_id)
+    var threat_position: Vector3 = Vector3.ZERO
+    var has_threat: bool = threat_value is Vector3
     var threat_distance_before: float = -1.0
-    if threat_value is Vector3:
-        var away_now: Vector3 = global_position - Vector3(threat_value)
+    if has_threat:
+        threat_position = threat_value
+        var away_now: Vector3 = global_position - threat_position
         away_now.y = 0.0
         threat_distance_before = away_now.length()
         if threat_distance_before > 0.05:
@@ -102,8 +106,8 @@ func _physics_process(delta: float) -> void:
 
     # A collision slide must never turn wounded flee into an orbit around the
     # shooter. If distance shrank, force the next velocity directly outward.
-    if threat_value is Vector3 and threat_distance_before >= 0.0:
-        var post_offset: Vector3 = global_position - Vector3(threat_value)
+    if has_threat and threat_distance_before >= 0.0:
+        var post_offset: Vector3 = global_position - threat_position
         post_offset.y = 0.0
         var post_distance: float = post_offset.length()
         if post_distance + 0.02 < threat_distance_before and post_distance > 0.05:
