@@ -234,21 +234,27 @@ func _peer_position_v52(peer_id: int) -> Variant:
     if network != null:
         var targets_value: Variant = network.get("remote_targets")
         if targets_value is Dictionary:
-            var peer_state_value: Variant = Dictionary(targets_value).get(peer_id, null)
+            var targets: Dictionary = targets_value
+            var peer_state_value: Variant = targets.get(peer_id, null)
             if peer_state_value is Dictionary:
-                var transform_value: Variant = Dictionary(peer_state_value).get("transform", null)
+                var peer_state: Dictionary = peer_state_value
+                var transform_value: Variant = peer_state.get("transform", null)
                 if transform_value is Transform3D:
-                    return Transform3D(transform_value).origin
+                    var peer_transform: Transform3D = transform_value
+                    return peer_transform.origin
 
     var coop: Node = get_node_or_null("/root/CoopHorrorSystem")
     if coop != null:
         var survivor_states_value: Variant = coop.get("survivor_states")
         if survivor_states_value is Dictionary:
-            var state_value: Variant = Dictionary(survivor_states_value).get(peer_id, null)
+            var survivor_states: Dictionary = survivor_states_value
+            var state_value: Variant = survivor_states.get(peer_id, null)
             if state_value is Dictionary:
-                var state_transform_value: Variant = Dictionary(state_value).get("transform", null)
+                var state: Dictionary = state_value
+                var state_transform_value: Variant = state.get("transform", null)
                 if state_transform_value is Transform3D:
-                    return Transform3D(state_transform_value).origin
+                    var state_transform: Transform3D = state_transform_value
+                    return state_transform.origin
     return null
 
 func _tick_respawns(delta: float) -> void:
