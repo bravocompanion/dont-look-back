@@ -4,12 +4,12 @@ const RANGER_START_SCENE_PATH: String = "res://scenes/forest.tscn"
 
 func _ready() -> void:
     super._ready()
-    version_label.text = "v0.55  •  RENEWABLE SURVIVAL  •  LATE-GAME UPKEEP"
-    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Wildlife and fishing recover more slowly, fallen branches provide renewable Wood, and Day-3+ infrastructure now needs maintenance."
-    new_game_button.tooltip_text = "Scavenge and craft the Hunting Bow / Hunting Knife, plan around carry limits, gather renewable fallen branches, and use the cabin stash between expeditions. Bow sway remains 150% still, 200% walking, 350% sprinting."
-    host_button.tooltip_text = "HOST owns renewable branch cooldowns, wildlife, carcass claims and shared generator state. Larger 3–4 player teams receive slightly more Wood per branch site and faster branch recovery."
-    join_button.tooltip_text = "Radiation Suit filters degrade only while exposed to Day-3+ radiation. Replace them from Inventory with Industrial Filters; generator repairs remain HOST-controlled."
-    _set_status("RANGER CASE 07 — Survive, investigate, maintain your equipment, and follow the evidence underground.")
+    version_label.text = "v0.56  •  CO-OP SUPPLY SCALING  •  POWERED SAFE ZONE"
+    save_summary.tooltip_text = "Ranger Forest starts at 12:00. Larger co-op parties gain extra shared POI supplies, while the ranger yard is only threat-safe when the generator or campfire is active."
+    new_game_button.tooltip_text = "Solo and duo keep the tighter base economy. Scavenge, craft, gather renewable Wood, maintain generator condition, and keep real shelter light available before relying on the yard at night."
+    host_button.tooltip_text = "HOST keeps shared pickups authoritative. Parties of 3 and 4 dynamically receive extra deterministic materials at House, Gas Station, Warehouse and Mine; unclaimed bonus supplies disappear if party size drops."
+    join_button.tooltip_text = "The yard fence alone no longer stops threats. Generator power or an active campfire enables full Ranger Yard protection; player flashlights do not count as shelter protection."
+    _set_status("RANGER CASE 07 — Survive, share supplies, maintain shelter power, and follow the evidence underground.")
 
 func _start_new_game() -> void:
     if scene_booting:
@@ -80,4 +80,4 @@ func _process_join(delta: float) -> void:
 func _show_main() -> void:
     super._show_main()
     if not scene_booting:
-        _set_status("NEW GAME: 12:00 Ranger Forest → Day 3 radiation → Old Mine → Labyrinth → Research Facility.")
+        _set_status("NEW GAME: 12:00 Ranger Forest → powered shelter nights → Day 3 radiation → Old Mine → Labyrinth → Research Facility.")
