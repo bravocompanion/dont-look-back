@@ -10,11 +10,22 @@ func _ready() -> void:
 
 func get_interaction_text() -> String:
     var system: Node = get_node_or_null("/root/ShelterSystem")
-    if system != null and system.has_method("get_generator_percent"):
-        var percent: int = int(system.call("get_generator_percent"))
-        if powered:
-            return "Refuel generator (%d%%)" % percent
-    return "Start " + display_name + " (Fuel Can)"
+    if system == null:
+        return display_name
+
+    var broken: bool = system.has_method("is_generator_broken_v55") and bool(system.call("is_generator_broken_v55"))
+    if broken:
+        var network: Node = get_node_or_null("/root/NetworkManager")
+        var client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
+        return "Generator broken — HOST repair" if client else "Repair generator (2 Scrap + 1 Electronics)"
+
+    var fuel_percent: int = int(system.call("get_generator_percent")) if system.has_method("get_generator_percent") else 0
+    var condition_percent: int = int(system.call("get_generator_condition_percent_v55")) if system.has_method("get_generator_condition_percent_v55") else 100
+    if powered:
+        return "Refuel generator (Fuel %d%% • Condition %d%%)" % [fuel_percent, condition_percent]
+    if fuel_percent > 0:
+        return "Restart generator (Fuel %d%% • Condition %d%%)" % [fuel_percent, condition_percent]
+    return "Start %s (Fuel Can • Condition %d%%)" % [display_name, condition_percent]
 
 func interact() -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -25,24 +36,31 @@ func interact() -> void:
     if system == null:
         return
 
-    var was_powered: bool = powered
     var network: Node = get_node_or_null("/root/NetworkManager")
     var network_client: bool = network != null and network.has_method("is_client") and bool(network.call("is_client"))
+    var broken: bool = system.has_method("is_generator_broken_v55") and bool(system.call("is_generator_broken_v55"))
+    if broken:
+        if network_client:
+            _set_objective_v55(player, "Only the HOST can repair the shared generator. Repair cost: 2 Scrap + 1 Electronics.")
+            return
+        if system.has_method("repair_generator_v55") and bool(system.call("repair_generator_v55", player)):
+            powered = false
+            _set_indicator(false)
+            _report_ai_noise(1.05, "generator repair")
+        return
+
+    var was_powered: bool = powered
     if network_client:
         var percent: int = int(system.call("get_generator_percent")) if system.has_method("get_generator_percent") else 0
-        var objective: Label = player.get_node_or_null("HUD/Objective") as Label
         if percent >= 99:
-            if objective != null:
-                objective.text = "Generator fuel tank is full."
+            _set_objective_v55(player, "Generator fuel tank is full.")
             return
         if not player.has_method("remove_item") or not bool(player.call("remove_item", "generator_fuel")):
-            if objective != null:
-                objective.text = "You have no Fuel Can."
+            _set_objective_v55(player, "You have no Fuel Can.")
             return
         if network.has_method("request_shared_shelter_action"):
             network.call("request_shared_shelter_action", "generator_fuel")
-        if objective != null:
-            objective.text = "Fuel request sent to host."
+        _set_objective_v55(player, "Fuel request sent to host.")
         _report_ai_noise(0.62 if was_powered else 1.20, "generator fuel" if was_powered else "generator start")
         return
 
@@ -72,6 +90,11 @@ func _set_indicator(value: bool) -> void:
         indicator_material.albedo_color = Color(0.55, 0.10, 0.07, 1.0)
         indicator_material.emission = Color(0.42, 0.03, 0.02, 1.0)
         indicator_material.emission_energy_multiplier = 1.5
+
+func _set_objective_v55(player: CharacterBody3D, text: String) -> void:
+    var objective: Label = player.get_node_or_null("HUD/Objective") as Label
+    if objective != null:
+        objective.text = text
 
 func _report_ai_noise(strength: float, label: String) -> void:
     var noise_relay: Node = get_node_or_null("/root/AINoiseRelaySystem")
