@@ -3,18 +3,18 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.64"
+config/name="Don't Look Back v0.65"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
 ItemIconRegistry="*res://scripts/item_icon_registry_v43.gd"
 CarryLimitSystem="*res://scripts/carry_limit_system_v54.gd"
-SurvivalSystem="*res://scripts/survival_system_ranger_v13.gd"
+SurvivalSystem="*res://scripts/survival_system_ranger_v14.gd"
 LightRegistry="*res://scripts/light_registry_v63.gd"
 DarknessDirector="*res://scripts/darkness_director_v63.gd"
 CheckpointSystem="*res://scripts/checkpoint_system_v59.gd"
 LabyrinthDirector="*res://scripts/labyrinth_director_v181.gd"
-OutsideDirector="*res://scripts/outside_director_ranger_v6.gd"
+OutsideDirector="*res://scripts/outside_director_ranger_v7.gd"
 ShelterSystem="*res://scripts/shelter_system_ranger_v10.gd"
 StashMenuSystem="*res://scripts/stash_menu_system_v54.gd"
 RadiationSystem="*res://scripts/radiation_survival_system_v43.gd"
@@ -51,11 +51,11 @@ LightingBalanceSystem="*res://scripts/lighting_balance_system_v40.gd"
 HUDLayoutSystem="*res://scripts/hud_layout_system_v41.gd"
 FieldStatusMenuSystem="*res://scripts/field_status_menu_system_v41.gd"
 ForestNightAudioSystem="*res://scripts/forest_night_audio_system.gd"
-SurvivalDepthSystem="*res://scripts/survival_depth_system_v54.gd"
+SurvivalDepthSystem="*res://scripts/survival_depth_system_v55.gd"
 JournalSystem="*res://scripts/journal_system_ranger_v6.gd"
 SaveSystem="*res://scripts/save_system_ranger_v7.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system_v193.gd"
+FrontEndSystem="*res://scripts/front_end_system_v194.gd"
 MineAssetSystem="*res://scripts/mine_asset_system.gd"
 
 [display]
