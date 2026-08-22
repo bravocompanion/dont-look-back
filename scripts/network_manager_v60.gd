@@ -2,18 +2,18 @@ extends "res://scripts/network_manager_v41.gd"
 
 # v0.60 shelter authority foundation.
 #
-# Normal inventory changes still originate from gameplay on each peer, but every
-# successful add/remove is mirrored to the host with an ordered revision. Shared
-# shelter mutations (generator fuel/repair and campfire fuel) are then decided,
-# consumed, and applied by the host. Clients never pre-consume the resource.
+# Inventory mutations still originate from normal gameplay on each peer, but the
+# client keeps an ordered inventory mirror on the host. Before a shared shelter
+# action, pending inventory diffs are flushed on the same reliable RPC channel.
+# The host validates resource ownership, consumes the mirrored resource, mutates
+# the shared shelter, and sends authoritative touched-item counts back.
 #
-# This closes duplicate/race-prone shelter transactions for normal clients. It
-# is not competitive anti-cheat yet because the first remote inventory snapshot
-# is still supplied by that peer.
+# This closes normal-client double spend/race behavior and removes client-side
+# pre-consumption. It is not competitive anti-cheat yet because a peer supplies
+# its initial inventory snapshot when joining the session.
 
 const FOREST_SCENE_PATH_V60: String = "res://scenes/forest.tscn"
 const SHELTER_INTERACTION_DISTANCE_V60: float = 4.2
-const SHELTER_RPC_CHANNEL_V60: int = 63
 const SHELTER_ACTION_REQUIREMENTS_V60: Dictionary = {
     "generator_fuel": {"generator_fuel": 1},
     "campfire_bundle": {"firewood_bundle": 1},
@@ -22,15 +22,36 @@ const SHELTER_ACTION_REQUIREMENTS_V60: Dictionary = {
 }
 
 var local_inventory_revision_v60: int = 0
+var local_inventory_shadow_v60: Dictionary = {}
+var local_inventory_name_shadow_v60: Dictionary = {}
+var local_inventory_sync_timer_v60: float = 0.0
+var initial_inventory_snapshot_sent_v60: bool = false
+
 var remote_inventory_revision_v60: Dictionary = {}
 var remote_inventory_counts_v60: Dictionary = {}
 var remote_inventory_names_v60: Dictionary = {}
 var inventory_resync_requested_v60: Dictionary = {}
+
 var shelter_request_nonce_v60: int = 0
 var shelter_pending_actions_v60: Dictionary = {}
 
+func _process(delta: float) -> void:
+    super._process(delta)
+    if not online or hosting:
+        return
+    if not shelter_pending_actions_v60.is_empty():
+        return
+    local_inventory_sync_timer_v60 -= delta
+    if local_inventory_sync_timer_v60 <= 0.0:
+        local_inventory_sync_timer_v60 = 0.15
+        _flush_inventory_diff_v60()
+
 func disconnect_game(show_message: bool = true) -> void:
     local_inventory_revision_v60 = 0
+    local_inventory_shadow_v60.clear()
+    local_inventory_name_shadow_v60.clear()
+    local_inventory_sync_timer_v60 = 0.0
+    initial_inventory_snapshot_sent_v60 = false
     remote_inventory_revision_v60.clear()
     remote_inventory_counts_v60.clear()
     remote_inventory_names_v60.clear()
@@ -42,6 +63,9 @@ func disconnect_game(show_message: bool = true) -> void:
 func _on_connected_to_server() -> void:
     super._on_connected_to_server()
     local_inventory_revision_v60 = 0
+    local_inventory_shadow_v60.clear()
+    local_inventory_name_shadow_v60.clear()
+    initial_inventory_snapshot_sent_v60 = false
     call_deferred("_send_inventory_snapshot_when_ready_v60")
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -59,24 +83,14 @@ func _on_peer_disconnected(peer_id: int) -> void:
     inventory_resync_requested_v60.erase(peer_id)
     super._on_peer_disconnected(peer_id)
 
-func notify_local_inventory_delta_v60(item_id: String, delta: int, display_name: String = "") -> void:
-    if not online or hosting:
-        return
-    if item_id.is_empty() or (delta != 1 and delta != -1):
-        return
-    local_inventory_revision_v60 += 1
-    _report_inventory_delta_v60.rpc_id(
-        1,
-        item_id,
-        delta,
-        display_name.left(96),
-        local_inventory_revision_v60
-    )
+# Compatibility hook for future inventory callers. Current v0.60 runtime uses
+# shadow diffing so legacy player/crafting scripts do not need invasive edits.
+func notify_local_inventory_delta_v60(_item_id: String, _delta: int, _display_name: String = "") -> void:
+    if online and not hosting and shelter_pending_actions_v60.is_empty():
+        _flush_inventory_diff_v60()
 
 func request_shared_shelter_action(action: String) -> void:
-    if not online:
-        return
-    if action not in SHELTER_ACTION_REQUIREMENTS_V60:
+    if not online or action not in SHELTER_ACTION_REQUIREMENTS_V60:
         return
 
     if hosting:
@@ -86,6 +100,13 @@ func request_shared_shelter_action(action: String) -> void:
     if shelter_pending_actions_v60.has(action):
         _objective("Shelter request already pending.")
         return
+
+    if not initial_inventory_snapshot_sent_v60:
+        var local_player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+        if local_player != null:
+            _send_inventory_snapshot_now_v60(local_player)
+    else:
+        _flush_inventory_diff_v60()
 
     shelter_request_nonce_v60 = (shelter_request_nonce_v60 + 1) & 0x7fffffff
     if shelter_request_nonce_v60 <= 0:
@@ -99,8 +120,8 @@ func request_shared_shelter_action(action: String) -> void:
     )
     _objective("Shelter request sent to host...")
 
-# Disable the legacy v0.57 RPC path. v0.60 clients must use the ordered
-# transaction protocol below, otherwise resource ownership is not validated.
+# Disable the legacy v0.57 RPC path. A client using it would otherwise mutate
+# the shared shelter without the v0.60 resource ledger transaction.
 @rpc("any_peer", "call_remote", "reliable", 1)
 func _request_shelter(_action: String) -> void:
     if not hosting:
@@ -147,14 +168,11 @@ func _report_inventory_delta_v60(item_id: String, delta: int, display_name: Stri
     var counts: Dictionary = Dictionary(remote_inventory_counts_v60.get(sender_id, {})).duplicate(true)
     var names: Dictionary = Dictionary(remote_inventory_names_v60.get(sender_id, {})).duplicate(true)
     var current: int = clampi(int(counts.get(item_id, 0)), 0, 999)
-    var next_count: int = clampi(current + delta, 0, 999)
-
-    # A removal from zero is inconsistent with the host mirror. Resync rather
-    # than accepting negative inventory or silently desynchronizing.
     if delta < 0 and current <= 0:
         _request_inventory_resync_for_peer_v60(sender_id)
         return
 
+    var next_count: int = clampi(current + delta, 0, 999)
     if next_count <= 0:
         counts.erase(item_id)
         names.erase(item_id)
@@ -298,10 +316,59 @@ func _send_inventory_snapshot_when_ready_v60() -> void:
             break
     if player == null:
         return
+    _send_inventory_snapshot_now_v60(player)
 
+func _send_inventory_snapshot_now_v60(player: CharacterBody3D) -> void:
+    if player == null or not online or hosting:
+        return
     var counts: Dictionary = Dictionary(player.get("inventory_counts")).duplicate(true)
     var names: Dictionary = Dictionary(player.get("inventory_names")).duplicate(true)
+    local_inventory_shadow_v60 = _sanitize_inventory_counts_v60(counts)
+    local_inventory_name_shadow_v60 = _sanitize_inventory_names_v60(names)
+    initial_inventory_snapshot_sent_v60 = true
     _receive_inventory_snapshot_v60.rpc_id(1, counts, names, local_inventory_revision_v60)
+
+func _flush_inventory_diff_v60() -> void:
+    if not online or hosting or not shelter_pending_actions_v60.is_empty():
+        return
+    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    if player == null:
+        return
+    if not initial_inventory_snapshot_sent_v60:
+        _send_inventory_snapshot_now_v60(player)
+        return
+
+    var current_counts: Dictionary = _sanitize_inventory_counts_v60(Dictionary(player.get("inventory_counts")))
+    var current_names: Dictionary = _sanitize_inventory_names_v60(Dictionary(player.get("inventory_names")))
+    var all_keys: Dictionary = {}
+    for key_variant: Variant in local_inventory_shadow_v60.keys():
+        all_keys[str(key_variant)] = true
+    for key_variant: Variant in current_counts.keys():
+        all_keys[str(key_variant)] = true
+
+    var keys: Array = all_keys.keys()
+    keys.sort()
+    for key_variant: Variant in keys:
+        var item_id: String = str(key_variant)
+        var before: int = int(local_inventory_shadow_v60.get(item_id, 0))
+        var after: int = int(current_counts.get(item_id, 0))
+        var delta: int = after - before
+        if delta == 0:
+            continue
+        var direction: int = 1 if delta > 0 else -1
+        var display_name: String = str(current_names.get(item_id, local_inventory_name_shadow_v60.get(item_id, item_id)))
+        for _index: int in range(absi(delta)):
+            local_inventory_revision_v60 += 1
+            _report_inventory_delta_v60.rpc_id(
+                1,
+                item_id,
+                direction,
+                display_name.left(96),
+                local_inventory_revision_v60
+            )
+
+    local_inventory_shadow_v60 = current_counts.duplicate(true)
+    local_inventory_name_shadow_v60 = current_names.duplicate(true)
 
 func _request_inventory_resync_for_peer_v60(peer_id: int) -> void:
     if peer_id <= 1 or not hosting:
@@ -360,10 +427,14 @@ func _apply_transaction_item_counts_v60(player: CharacterBody3D, item_counts: Di
         if value <= 0:
             counts.erase(item_id)
             names.erase(item_id)
+            local_inventory_shadow_v60.erase(item_id)
+            local_inventory_name_shadow_v60.erase(item_id)
         else:
             counts[item_id] = value
+            local_inventory_shadow_v60[item_id] = value
             if not names.has(item_id):
                 names[item_id] = _default_item_name_v60(item_id)
+            local_inventory_name_shadow_v60[item_id] = str(names[item_id])
     player.set("inventory_counts", counts)
     player.set("inventory_names", names)
     if player.has_method("_update_inventory_hud"):
@@ -372,11 +443,12 @@ func _apply_transaction_item_counts_v60(player: CharacterBody3D, item_counts: Di
 func _apply_shelter_world_action_v60(shelter: Node, action: String) -> void:
     match action:
         "generator_fuel":
-            var max_fuel: float = float(shelter.get("generator_max_fuel_seconds"))
-            var per_can: float = float(shelter.get("generator_fuel_per_can"))
             shelter.set(
                 "generator_fuel_seconds",
-                minf(max_fuel, float(shelter.get("generator_fuel_seconds")) + per_can)
+                minf(
+                    float(shelter.get("generator_max_fuel_seconds")),
+                    float(shelter.get("generator_fuel_seconds")) + float(shelter.get("generator_fuel_per_can"))
+                )
             )
             shelter.set("generator_running", true)
         "campfire_bundle":
@@ -453,8 +525,8 @@ func _report_shelter_noise_v60(action: String) -> void:
         strength = 1.05
         label = "generator repair"
     elif action == "generator_fuel":
-        strength = 1.20 if not bool(get_node("/root/ShelterSystem").get("generator_running")) else 0.62
-        label = "generator fuel"
+        strength = 0.90
+        label = "generator fuel/start"
     noise.call("report_noise", target.global_position, strength, label)
 
 func _accepted_shelter_message_v60(action: String) -> String:
