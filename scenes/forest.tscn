@@ -97,7 +97,7 @@ shadow_enabled = true
 
 [node name="InteractionRay" type="RayCast3D" parent="Player/Camera3D"]
 target_position = Vector3(0, 0, -2.4)
-collide_with_areas = false
+collide_with_areas = true
 collide_with_bodies = true
 
 [node name="FootstepAudio" type="AudioStreamPlayer" parent="Player"]
