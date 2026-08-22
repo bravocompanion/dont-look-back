@@ -33,6 +33,10 @@ func appear_near_player() -> void:
     var player: CharacterBody3D = get_node_or_null(player_path) as CharacterBody3D
     if player == null:
         return
+    # v0.51 closes legacy/direct single-player spawn paths too. Online Tenant
+    # authority is validated separately by CoopHorrorSystem v0.51.
+    if not _network_online() and not _offline_environment_allowed_v51(player):
+        return
 
     global_position = _find_near_spawn(player)
     visible = true
@@ -76,6 +80,12 @@ func _process(delta: float) -> void:
     _update_hud()
 
     if _network_online():
+        return
+
+    # Tenant cannot remain active during daytime or while the survivor is inside
+    # a real world-light radius. Flashlight is intentionally excluded.
+    if not _offline_environment_allowed_v51(player):
+        stop_stalking()
         return
 
     var camera: Camera3D = player.get_node_or_null("Camera3D") as Camera3D
@@ -197,12 +207,32 @@ func _clamp_tenant_position(world_position: Vector3) -> Vector3:
             return clamped_value
     return world_position
 
-func _collider_belongs_to_tenant(collider: Node) -> bool:
+func _collider_belongs_to_tenant(collider: Node, tenant: Node3D = self) -> bool:
     var current: Node = collider
     while current != null:
-        if current == self:
+        if current == tenant:
             return true
         current = current.get_parent()
+    return false
+
+func _offline_environment_allowed_v51(player: CharacterBody3D) -> bool:
+    if not _night_allowed_v51():
+        return false
+    return not _player_near_world_light_v51(player)
+
+func _night_allowed_v51() -> bool:
+    var outside: Node = get_node_or_null("/root/OutsideDirector")
+    if outside == null or not outside.has_method("get_time_minutes"):
+        return false
+    var minutes: float = fposmod(float(outside.call("get_time_minutes")), 1440.0)
+    return minutes >= 1200.0 or minutes < 300.0
+
+func _player_near_world_light_v51(player: CharacterBody3D) -> bool:
+    var scene: Node = get_tree().current_scene
+    if player == null or scene == null:
+        return false
+    if player.has_method("_has_nearby_world_light"):
+        return bool(player.call("_has_nearby_world_light", scene))
     return false
 
 func _ensure_prototype_visual() -> void:
