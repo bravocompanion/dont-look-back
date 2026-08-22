@@ -24,9 +24,15 @@ func interact() -> void:
         _set_objective(player, "The hand pump needs a moment before more water can be collected.")
         return
 
-    var accepted: bool = bool(player.call("add_item", "dirty_water", "Dirty Water"))
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    var accepted: bool = false
+    if carry != null and carry.has_method("grant_item"):
+        accepted = bool(carry.call("grant_item", player, "dirty_water", "Dirty Water", 1))
+    else:
+        accepted = bool(player.call("add_item", "dirty_water", "Dirty Water"))
+
     if not accepted:
-        _set_objective(player, "Inventory full. Make room before collecting water.")
+        _set_objective(player, "Dirty Water carry limit reached. Store or process water before collecting more.")
         return
 
     next_refill_time = now + refill_cooldown_seconds
