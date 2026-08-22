@@ -1,15 +1,13 @@
 extends "res://scripts/horror_pacing_system.gd"
 
-# v0.62 adds readable high-level pacing without owning monster movement/combat.
-# The existing major-threat lock remains authoritative; these states only
-# describe tension budget and expose consequence hooks for the Research choice.
+# v0.62: readable CALM -> UNEASE -> STALK -> HUNT -> RECOVERY budget.
+# Monster movement/combat remains owned by the existing threat systems.
 
 const STATE_CALM: String = "CALM"
 const STATE_UNEASE: String = "UNEASE"
 const STATE_STALK: String = "STALK"
 const STATE_HUNT: String = "HUNT"
 const STATE_RECOVERY: String = "RECOVERY"
-
 const RESCUE_SAFE_RECOVERY_MULTIPLIER: float = 1.45
 const ANOMALY_HINT_COOLDOWN: float = 10.0
 
@@ -23,18 +21,17 @@ var last_reason_v62: String = ""
 func _process(delta: float) -> void:
     var recovery_before: float = recovery_remaining
     super._process(delta)
-
     unease_remaining_v62 = maxf(0.0, unease_remaining_v62 - delta)
     stalk_remaining_v62 = maxf(0.0, stalk_remaining_v62 - delta)
     anomaly_hint_cooldown_v62 = maxf(0.0, anomaly_hint_cooldown_v62 - delta)
 
-    # RESCUE PRIORITY turns a powered Ranger shelter into a better decompression
-    # space. Base recovery already ticks once in super; subtract only the bonus.
+    # Rescue Priority rewards actually returning to a powered shelter instead
+    # of granting a global stat buff.
     if recovery_before > 0.0 and recovery_remaining > 0.0 and _rescue_priority_active_v62() and _local_player_in_protected_shelter_v62():
         recovery_remaining = maxf(0.0, recovery_remaining - delta * (RESCUE_SAFE_RECOVERY_MULTIPLIER - 1.0))
 
     var desired: String = STATE_CALM
-    if not active_threat.is_empty():
+    if not current_major_threat.is_empty():
         desired = STATE_HUNT
         pressure_v62 = 1.0
     elif recovery_remaining > 0.0:
@@ -52,11 +49,10 @@ func _process(delta: float) -> void:
             desired = STATE_STALK
         elif pressure_v62 >= 0.18:
             desired = STATE_UNEASE
-
     _set_state_v62(desired)
 
 func request_unease_v62(source: String, strength: float = 0.30, duration: float = 6.0) -> void:
-    if not active_threat.is_empty() or recovery_remaining > 0.0:
+    if not current_major_threat.is_empty() or recovery_remaining > 0.0:
         return
     pressure_v62 = maxf(pressure_v62, clampf(strength, 0.0, 0.64))
     unease_remaining_v62 = maxf(unease_remaining_v62, maxf(0.0, duration))
@@ -64,7 +60,7 @@ func request_unease_v62(source: String, strength: float = 0.30, duration: float 
         last_reason_v62 = source
 
 func request_stalk_v62(source: String, duration: float = 7.0, pressure: float = 0.72) -> void:
-    if not active_threat.is_empty() or recovery_remaining > 0.0:
+    if not current_major_threat.is_empty() or recovery_remaining > 0.0:
         return
     pressure_v62 = maxf(pressure_v62, clampf(pressure, 0.55, 0.94))
     stalk_remaining_v62 = maxf(stalk_remaining_v62, maxf(0.0, duration))
@@ -82,22 +78,25 @@ func begin_major_threat(threat_id: String) -> bool:
         _set_state_v62(STATE_HUNT)
     return accepted
 
-func end_major_threat(threat_id: String, recovery_override: float = -1.0) -> void:
-    super.end_major_threat(threat_id, recovery_override)
-    pressure_v62 = maxf(pressure_v62, 0.72)
-    _set_state_v62(STATE_RECOVERY)
+func end_major_threat(threat_id: String, recovery_seconds: float = -1.0) -> void:
+    var was_active: bool = current_major_threat == threat_id
+    super.end_major_threat(threat_id, recovery_seconds)
+    if was_active:
+        pressure_v62 = maxf(pressure_v62, 0.72)
+        _set_state_v62(STATE_RECOVERY)
 
-func force_recovery(seconds: float, reason: String = "") -> void:
-    super.force_recovery(seconds, reason)
+func force_recovery(seconds: float, source: String = "system") -> void:
+    super.force_recovery(seconds, source)
     pressure_v62 = maxf(pressure_v62, 0.56)
     unease_remaining_v62 = 0.0
     stalk_remaining_v62 = 0.0
-    if not reason.is_empty():
-        last_reason_v62 = reason
+    last_reason_v62 = source
     _set_state_v62(STATE_RECOVERY)
 
-func reset_pacing() -> void:
-    super.reset_pacing()
+func reset_pacing_v62() -> void:
+    current_major_threat = ""
+    recovery_remaining = 0.0
+    recovery_source = ""
     pacing_state_v62 = STATE_CALM
     pressure_v62 = 0.0
     unease_remaining_v62 = 0.0
@@ -124,13 +123,14 @@ func _set_state_v62(next_state: String) -> void:
     if next_state == pacing_state_v62:
         return
     pacing_state_v62 = next_state
+    # Containment Data is an information reward, not a damage buff.
     if _anomaly_priority_active_v62() and anomaly_hint_cooldown_v62 <= 0.0:
         anomaly_hint_cooldown_v62 = ANOMALY_HINT_COOLDOWN
         match next_state:
             STATE_UNEASE:
                 _objective_v62("ANOMALY ANALYSIS: environmental pressure rising — no confirmed entity.")
             STATE_STALK:
-                _objective_v62("ANOMALY ANALYSIS: stalking pattern probable. Secure a light route before exposure peaks.")
+                _objective_v62("ANOMALY ANALYSIS: stalking pattern probable. Secure a light route.")
             STATE_HUNT:
                 _objective_v62("ANOMALY ANALYSIS: major threat signature CONFIRMED.")
             STATE_RECOVERY:
