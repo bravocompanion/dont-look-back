@@ -60,7 +60,8 @@ Sleep still advances to 07:00, but it is no longer a cheap night skip:
 - Hunger and Thirst are advanced using the current day survival escalation curve;
 - Day-3+ Radiation is simulated during sleep;
 - generator-covered sleep segments protect the ranger yard from radiation;
-- campfire-only sleep segments do not provide radiation protection.
+- campfire-only sleep segments do not provide radiation protection;
+- in co-op, only HOST starts sleep, but the resulting Hunger / Thirst / Radiation time-skip costs are sent to every connected survivor instead of applying only to HOST.
 
 At 20:00 with the default 720-second game day, a full 11-hour sleep represents about 330 simulated real seconds. With the 1.35× sleep overhead, one 360-second Fuel Can no longer covers the full night by itself. With the radiation tower active, generator demand is higher again.
 
@@ -94,4 +95,4 @@ None. v0.54 is a code/balance update and uses the existing UI/icon/resource set.
 9. Add enough generator/campfire fuel and sleep; verify Hunger/Thirst advance.
 10. On Day 3+, sleep with generator protection and compare radiation against campfire-only sleep.
 11. Build the anti-radiation tower, sleep with generator running, and verify the extra tower generator draw is included.
-12. Co-op: confirm only HOST can sleep and client inventory grants still obey local carry limits.
+12. Co-op: only HOST should be able to start sleep; every connected survivor must receive the shared Hunger/Thirst/Radiation time-skip cost and end at 07:00.
