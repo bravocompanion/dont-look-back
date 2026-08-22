@@ -46,12 +46,26 @@ func interact() -> void:
             objective.text = "You have no Raw Meat or Raw Fish to cook."
         return
 
+    var carry: Node = get_node_or_null("/root/CarryLimitSystem")
+    if carry != null and carry.has_method("can_accept_item"):
+        if not bool(carry.call("can_accept_item", player, cooked_id, 1)):
+            if objective != null:
+                objective.text = "%s carry limit reached. Store food before cooking more." % cooked_name
+            return
+
     if not bool(player.call("remove_item", source_id)):
         return
-    if not bool(player.call("add_item", cooked_id, cooked_name)):
+
+    var granted: bool = false
+    if carry != null and carry.has_method("grant_item"):
+        granted = bool(carry.call("grant_item", player, cooked_id, cooked_name, 1))
+    else:
+        granted = bool(player.call("add_item", cooked_id, cooked_name))
+
+    if not granted:
         player.call("add_item", source_id, "Raw Meat" if source_id == "raw_meat" else "Raw Fish")
         if objective != null:
-            objective.text = "Inventory full. The raw food stays on the cooking rack."
+            objective.text = "No room for cooked food. The raw food was returned."
         return
 
     if objective != null:
