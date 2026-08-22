@@ -61,8 +61,8 @@ func _check_runtime_contracts() -> void:
             "restore_checkpoint_shared_snapshot"
         ],
         "MinePowerSystem": [
-            "get_save_state_v59",
-            "restore_save_state_v59"
+            "get_save_state",
+            "restore_save_state"
         ]
     }
 
