@@ -3,7 +3,7 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.56"
+config/name="Don't Look Back v0.57"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
@@ -18,6 +18,7 @@ ShelterSystem="*res://scripts/shelter_system_ranger_v10.gd"
 StashMenuSystem="*res://scripts/stash_menu_system_v54.gd"
 RadiationSystem="*res://scripts/radiation_survival_system_v43.gd"
 CraftingSystem="*res://scripts/crafting_system_v54.gd"
+GameplayInputLock="*res://scripts/gameplay_input_lock.gd"
 NetworkManager="*res://scripts/network_manager_v41.gd"
 MobileControls="*res://scripts/mobile_controls_v183.gd"
 MovementSystem="*res://scripts/movement_system_v41.gd"
