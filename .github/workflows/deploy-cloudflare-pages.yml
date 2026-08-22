@@ -36,7 +36,7 @@ jobs:
       - name: Install CI utilities
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip jq
+          sudo apt-get install -y unzip jq brotli
 
       - name: Download Godot editor
         shell: bash
@@ -87,7 +87,33 @@ jobs:
           test -f build/web/index.html
           test -f build/web/index.wasm
           test -f build/web/index.pck
-          echo "Web build files:"
+          echo "Raw Web build files:"
+          find build/web -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+
+      - name: Precompress Godot WASM for Cloudflare Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          RAW_WASM="build/web/index.wasm"
+          RAW_SHA="$(sha256sum "$RAW_WASM" | awk '{print $1}')"
+          brotli --quality=11 --force --output "${RAW_WASM}.br" "$RAW_WASM"
+          rm "$RAW_WASM"
+          mv "${RAW_WASM}.br" "$RAW_WASM"
+
+          RESTORED_SHA="$(brotli --decompress --stdout "$RAW_WASM" | sha256sum | awk '{print $1}')"
+          if [[ "$RAW_SHA" != "$RESTORED_SHA" ]]; then
+            echo "Brotli WASM verification failed."
+            exit 1
+          fi
+
+          cat > build/web/_headers <<'EOF'
+          /index.wasm
+            Content-Type: application/wasm
+            Content-Encoding: br
+            Cache-Control: public, max-age=31536000, immutable, no-transform
+          EOF
+
+          echo "Deploy-ready Web build files:"
           find build/web -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
 
       - name: Upload Web build artifact
