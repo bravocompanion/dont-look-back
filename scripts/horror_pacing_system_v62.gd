@@ -25,9 +25,9 @@ func _process(delta: float) -> void:
     stalk_remaining_v62 = maxf(0.0, stalk_remaining_v62 - delta)
     anomaly_hint_cooldown_v62 = maxf(0.0, anomaly_hint_cooldown_v62 - delta)
 
-    # Rescue Priority rewards actually returning to a powered shelter instead
-    # of granting a global stat buff. Host pacing remains the co-op authority.
-    if recovery_before > 0.0 and recovery_remaining > 0.0 and _rescue_priority_active_v62() and _local_player_in_protected_shelter_v62():
+    # Rescue Priority rewards returning/regrouping at a powered shelter instead
+    # of granting a global stat buff. Host pacing remains co-op authority.
+    if recovery_before > 0.0 and recovery_remaining > 0.0 and _rescue_priority_active_v62() and _recovery_party_sheltered_v62():
         recovery_remaining = maxf(0.0, recovery_remaining - delta * (RESCUE_SAFE_RECOVERY_MULTIPLIER - 1.0))
 
     var desired: String = STATE_CALM
@@ -151,15 +151,34 @@ func _anomaly_priority_active_v62() -> bool:
     var payoff: Node = _research_payoff_v62()
     return payoff != null and payoff.has_method("has_anomaly_priority_v62") and bool(payoff.call("has_anomaly_priority_v62"))
 
-func _local_player_in_protected_shelter_v62() -> bool:
+func _recovery_party_sheltered_v62() -> bool:
     var scene: Node = get_tree().current_scene
     if scene == null or scene.scene_file_path != "res://scenes/forest.tscn":
         return false
-    var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
-    if player == null:
-        return false
     var safe_zone: Node = get_node_or_null("/root/RangerSafeZone")
-    return safe_zone != null and safe_zone.has_method("is_position_safe") and bool(safe_zone.call("is_position_safe", player.global_position))
+    if safe_zone == null or not safe_zone.has_method("is_position_safe"):
+        return false
+
+    var local_player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
+    if local_player == null:
+        return false
+    if not _network_online_v62() or not _is_host_v62():
+        return bool(safe_zone.call("is_position_safe", local_player.global_position))
+
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    var peer_ids: Array[int] = [1]
+    for peer_id: int in multiplayer.get_peers():
+        if peer_id > 1:
+            peer_ids.append(peer_id)
+    var required: int = maxi(1, int(ceil(float(peer_ids.size()) * 0.5)))
+    var sheltered: int = 0
+    for peer_id: int in peer_ids:
+        var position_value: Variant = local_player.global_position if peer_id == 1 else null
+        if peer_id != 1 and network != null and network.has_method("_peer_position_v57"):
+            position_value = network.call("_peer_position_v57", peer_id)
+        if position_value is Vector3 and bool(safe_zone.call("is_position_safe", position_value)):
+            sheltered += 1
+    return sheltered >= required
 
 func _objective_v62(text: String) -> void:
     _set_local_objective_v62(text)
