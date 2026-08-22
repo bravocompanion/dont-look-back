@@ -26,7 +26,7 @@ func _process(delta: float) -> void:
     anomaly_hint_cooldown_v62 = maxf(0.0, anomaly_hint_cooldown_v62 - delta)
 
     # Rescue Priority rewards actually returning to a powered shelter instead
-    # of granting a global stat buff.
+    # of granting a global stat buff. Host pacing remains the co-op authority.
     if recovery_before > 0.0 and recovery_remaining > 0.0 and _rescue_priority_active_v62() and _local_player_in_protected_shelter_v62():
         recovery_remaining = maxf(0.0, recovery_remaining - delta * (RESCUE_SAFE_RECOVERY_MULTIPLIER - 1.0))
 
@@ -136,6 +136,10 @@ func _set_state_v62(next_state: String) -> void:
             STATE_RECOVERY:
                 _objective_v62("ANOMALY ANALYSIS: threat signature falling. Recovery window open.")
 
+@rpc("authority", "call_remote", "reliable", 66)
+func _objective_remote_v62(text: String) -> void:
+    _set_local_objective_v62(text)
+
 func _research_payoff_v62() -> Node:
     return get_node_or_null("/root/ResearchFacilityPayoffSystem")
 
@@ -158,9 +162,22 @@ func _local_player_in_protected_shelter_v62() -> bool:
     return safe_zone != null and safe_zone.has_method("is_position_safe") and bool(safe_zone.call("is_position_safe", player.global_position))
 
 func _objective_v62(text: String) -> void:
+    _set_local_objective_v62(text)
+    if _network_online_v62() and _is_host_v62():
+        _objective_remote_v62.rpc(text)
+
+func _set_local_objective_v62(text: String) -> void:
     var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
     if player == null:
         return
     var objective: Label = player.get_node_or_null("HUD/Objective") as Label
     if objective != null:
         objective.text = text
+
+func _network_online_v62() -> bool:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    return network != null and network.has_method("is_online") and bool(network.call("is_online"))
+
+func _is_host_v62() -> bool:
+    var network: Node = get_node_or_null("/root/NetworkManager")
+    return network != null and network.has_method("is_server") and bool(network.call("is_server"))
