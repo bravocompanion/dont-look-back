@@ -47,7 +47,7 @@ SurvivalDepthSystem="*res://scripts/survival_depth_system_v54.gd"
 JournalSystem="*res://scripts/journal_system_ranger_v6.gd"
 SaveSystem="*res://scripts/save_system_ranger_v5.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system_v185.gd"
+FrontEndSystem="*res://scripts/front_end_system_v186.gd"
 MineAssetSystem="*res://scripts/mine_asset_system.gd"
 
 [display]
