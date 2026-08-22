@@ -224,6 +224,10 @@ func _complete_branch_grant_v55_remote(resource_id: String, success: bool, wood_
 func _set_branch_state_v55_remote(resource_id: String, available: bool) -> void:
     if available:
         respawn_remaining.erase(resource_id)
+    elif _network_online_v55() and not _is_authoritative_v55():
+        # Clients keep an unavailable visual sentinel across scene changes.
+        # The HOST owns the real countdown and clears this marker when ready.
+        respawn_remaining[resource_id] = 999999.0
     var branch: Node = branch_nodes.get(resource_id, null) as Node
     if branch != null and is_instance_valid(branch) and branch.has_method("set_available_v55"):
         branch.call("set_available_v55", available)
