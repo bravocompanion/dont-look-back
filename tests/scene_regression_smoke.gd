@@ -29,7 +29,7 @@ func _initialize() -> void:
     call_deferred("_run_regression")
 
 func _run_regression() -> void:
-    print("[REGRESSION] Don't Look Back v0.60 scene smoke starting...")
+    print("[REGRESSION] Don't Look Back v0.61 scene smoke starting...")
     _check_runtime_contracts()
 
     for case_data: Dictionary in CASES:
@@ -38,7 +38,7 @@ func _run_regression() -> void:
     _check_export_presets()
 
     if failures.is_empty():
-        print("[REGRESSION] PASS — all canonical maps and v0.60 contracts are ready.")
+        print("[REGRESSION] PASS — canonical maps, v0.61 gameplay rules, and native presets are ready.")
         quit(0)
         return
 
@@ -63,6 +63,17 @@ func _check_runtime_contracts() -> void:
         "MinePowerSystem": [
             "get_save_state",
             "restore_save_state"
+        ],
+        "LabyrinthGameplayRules": [
+            "request_stabilizer_v61",
+            "can_use_breakers_v61",
+            "get_enemy_pressure_bonus_v61"
+        ],
+        "ResearchFacilityPayoffSystem": [
+            "request_choice_v61",
+            "get_save_state",
+            "restore_save_state",
+            "get_campaign_outcome_v61"
         ]
     }
 
@@ -109,6 +120,9 @@ func _boot_case(case_data: Dictionary) -> void:
         _check_forest_authority_targets()
     elif path == "res://scenes/main.tscn":
         _check_checkpoint_snapshot_contract()
+        await _check_labyrinth_rules_runtime()
+    elif path == "res://scenes/research_facility.tscn":
+        await _check_research_payoff_runtime()
 
 func _anchors_ready(scene: Node, anchors: Array) -> bool:
     for anchor_variant: Variant in anchors:
@@ -135,9 +149,30 @@ func _check_checkpoint_snapshot_contract() -> void:
         failures.append("SaveSystem checkpoint snapshot did not return Dictionary")
         return
     var snapshot: Dictionary = Dictionary(snapshot_value)
-    for required_key: String in ["world", "claimed_pickups", "investigation", "arc1", "mine_power_v59"]:
+    for required_key: String in ["world", "claimed_pickups", "investigation", "arc1", "mine_power_v59", "research_payoff_v61"]:
         if not snapshot.has(required_key):
             failures.append("checkpoint snapshot missing key: %s" % required_key)
+
+func _check_labyrinth_rules_runtime() -> void:
+    for _frame_index: int in range(180):
+        await process_frame
+        var scene: Node = current_scene
+        if scene != null and scene.get_node_or_null("LabyrinthGameplayRulesV61/ArchiveStabilizer1") != null and scene.get_node_or_null("LabyrinthGameplayRulesV61/LockdownBeacon1") != null:
+            return
+    failures.append("v0.61 Labyrinth gameplay-rule runtime did not spawn stabilizers/beacons")
+
+func _check_research_payoff_runtime() -> void:
+    for _frame_index: int in range(240):
+        await process_frame
+        var scene: Node = current_scene
+        if scene == null:
+            continue
+        var distress: Node = scene.get_node_or_null("ResearchPayoffV61/DistressChoiceTerminal")
+        var containment: Node = scene.get_node_or_null("ResearchPayoffV61/ContainmentChoiceTerminal")
+        var beacon: Node = scene.get_node_or_null("ResearchPayoffV61/ResponseBeacon1")
+        if distress != null and containment != null and beacon != null:
+            return
+    failures.append("v0.61 Research Facility choice/payoff runtime did not spawn")
 
 func _check_export_presets() -> void:
     var file: FileAccess = FileAccess.open("res://export_presets.cfg", FileAccess.READ)
