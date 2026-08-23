@@ -1,4 +1,4 @@
-name: Progression Regression v0.68
+name: Progression Regression v0.69
 
 on:
   push:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   progression-regression:
-    name: Level Talent Knowledge Stats
+    name: Level Talent Knowledge Gameplay
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -52,8 +52,14 @@ jobs:
           set -euo pipefail
           timeout 90 godot --headless --path . --editor --quit
 
-      - name: Progression regression v0.68
+      - name: Progression core regression v0.68
         shell: bash
         run: |
           set -euo pipefail
           timeout 120 godot --headless --path . --script res://tests/progression_regression_v68.gd
+
+      - name: Progression gameplay regression v0.69
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/progression_gameplay_regression_v69.gd
