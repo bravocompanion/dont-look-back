@@ -24,6 +24,21 @@ func delete_local_profile_v68() -> bool:
             return false
     return true
 
+func get_stat_ids_v68() -> Array[String]:
+    return STAT_IDS.duplicate()
+
+func get_talent_order_v68() -> Array[String]:
+    return TALENT_ORDER.duplicate()
+
+func get_knowledge_order_v68() -> Array[String]:
+    return KNOWLEDGE_ORDER.duplicate()
+
+func get_max_stat_value_v68() -> int:
+    return MAX_STAT_VALUE
+
+func get_max_level_v68() -> int:
+    return MAX_LEVEL
+
 func _save_local_profile_v68() -> bool:
     var file: FileAccess = FileAccess.open(PROFILE_PATH_V68, FileAccess.WRITE)
     if file == null:
