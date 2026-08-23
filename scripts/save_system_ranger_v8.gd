@@ -30,8 +30,11 @@ func delete_save() -> bool:
     var success: bool = super.delete_save()
     if success:
         var progression: Node = get_node_or_null("/root/ProgressionSystem")
-        if progression != null and progression.has_method("reset_progression_v68"):
-            progression.call("reset_progression_v68")
+        if progression != null:
+            if progression.has_method("reset_progression_v68"):
+                progression.call("reset_progression_v68")
+            if progression.has_method("delete_local_profile_v68"):
+                progression.call("delete_local_profile_v68")
     return success
 
 func get_progression_save_contract_v68() -> Dictionary:
@@ -39,5 +42,7 @@ func get_progression_save_contract_v68() -> Dictionary:
         "normal_save_persists_progression": true,
         "checkpoint_death_rolls_progression_back": false,
         "delete_save_resets_progression": true,
-        "legacy_save_without_progression_supported": true
+        "delete_save_removes_local_profile": true,
+        "legacy_save_without_progression_supported": true,
+        "multiplayer_client_profile_supported": true
     }
