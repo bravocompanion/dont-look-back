@@ -1,4 +1,4 @@
-name: Progression + UI Collision Regression v0.71
+name: Progression + Talent Tree Regression v0.72
 
 on:
   push:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   progression-regression:
-    name: Progression and UI Ownership
+    name: Progression, UI Ownership and Talent Tree
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -75,3 +75,9 @@ jobs:
         run: |
           set -euo pipefail
           timeout 120 godot --headless --path . --script res://tests/ui_code_collision_regression_v71.gd
+
+      - name: Talent tree regression v0.72
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/talent_tree_regression_v72.gd
