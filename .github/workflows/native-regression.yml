@@ -86,6 +86,12 @@ jobs:
           set -euo pipefail
           timeout 180 godot --headless --path . --script res://tests/scene_regression_smoke.gd
 
+      - name: Weight inventory regression v0.67
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90 godot --headless --path . --script res://tests/weight_inventory_regression_v67.gd
+
       - name: Export Linux release
         shell: bash
         run: |
