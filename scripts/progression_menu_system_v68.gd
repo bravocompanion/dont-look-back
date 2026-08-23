@@ -12,9 +12,7 @@ var overlay: ColorRect
 var panel: PanelContainer
 var title_label: Label
 var subtitle_label: Label
-var close_button: Button
 var tab_row: HBoxContainer
-var scroll: ScrollContainer
 var content: VBoxContainer
 var open_button: Button
 var menu_open: bool = false
@@ -28,10 +26,12 @@ func _ready() -> void:
     process_priority = 620
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
     if progression != null:
-        if progression.has_signal("progression_changed") and not progression.progression_changed.is_connected(_on_progression_changed_v68):
-            progression.progression_changed.connect(_on_progression_changed_v68)
-        if progression.has_signal("progression_feedback") and not progression.progression_feedback.is_connected(_on_progression_feedback_v68):
-            progression.progression_feedback.connect(_on_progression_feedback_v68)
+        var change_callback: Callable = Callable(self, "_on_progression_changed_v68")
+        var feedback_callback: Callable = Callable(self, "_on_progression_feedback_v68")
+        if progression.has_signal("progression_changed") and not progression.is_connected("progression_changed", change_callback):
+            progression.connect("progression_changed", change_callback)
+        if progression.has_signal("progression_feedback") and not progression.is_connected("progression_feedback", feedback_callback):
+            progression.connect("progression_feedback", feedback_callback)
     call_deferred("_bind_player_v68")
 
 func _process(delta: float) -> void:
@@ -59,7 +59,13 @@ func _input(event: InputEvent) -> void:
     if not (event is InputEventKey):
         return
     var key_event: InputEventKey = event as InputEventKey
-    if not key_event.pressed or key_event.echo or key_event.physical_keycode != KEY_K:
+    if not key_event.pressed or key_event.echo:
+        return
+    if menu_open and key_event.physical_keycode == KEY_ESCAPE:
+        _set_open_v68(false)
+        get_viewport().set_input_as_handled()
+        return
+    if key_event.physical_keycode != KEY_P:
         return
     if menu_open:
         _set_open_v68(false)
@@ -85,9 +91,8 @@ func _bind_player_v68() -> void:
     panel = null
     open_button = null
     content = null
-    if active_player == null:
-        return
-    _build_ui_v68()
+    if active_player != null:
+        _build_ui_v68()
 
 func _build_ui_v68() -> void:
     layer = CanvasLayer.new()
@@ -104,7 +109,7 @@ func _build_ui_v68() -> void:
 
     open_button = Button.new()
     open_button.name = "ProgressionButton"
-    open_button.text = "PROG" if _mobile_v68() else "K"
+    open_button.text = "PROG" if _mobile_v68() else "P"
     open_button.tooltip_text = "Level / Stats / Talents / Knowledge"
     open_button.focus_mode = Control.FOCUS_NONE
     open_button.pressed.connect(_open_pressed_v68)
@@ -134,7 +139,7 @@ func _build_ui_v68() -> void:
     title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     title_label.add_theme_font_size_override("font_size", 25)
     header.add_child(title_label)
-    close_button = Button.new()
+    var close_button: Button = Button.new()
     close_button.text = "CLOSE"
     close_button.custom_minimum_size = Vector2(92, 40)
     close_button.focus_mode = Control.FOCUS_NONE
@@ -150,7 +155,8 @@ func _build_ui_v68() -> void:
     tab_row = HBoxContainer.new()
     tab_row.add_theme_constant_override("separation", 6)
     root_box.add_child(tab_row)
-    for tab_name: String in [TAB_OVERVIEW, TAB_STATS, TAB_TALENTS, TAB_KNOWLEDGE]:
+    var tabs: Array[String] = [TAB_OVERVIEW, TAB_STATS, TAB_TALENTS, TAB_KNOWLEDGE]
+    for tab_name: String in tabs:
         var tab_button: Button = Button.new()
         tab_button.text = tab_name
         tab_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -158,10 +164,8 @@ func _build_ui_v68() -> void:
         tab_button.pressed.connect(_select_tab_v68.bind(tab_name))
         tab_row.add_child(tab_button)
 
-    var separator: HSeparator = HSeparator.new()
-    root_box.add_child(separator)
-
-    scroll = ScrollContainer.new()
+    root_box.add_child(HSeparator.new())
+    var scroll: ScrollContainer = ScrollContainer.new()
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -189,7 +193,7 @@ func _refresh_v68() -> void:
     for child: Node in content.get_children():
         child.queue_free()
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
-    if progression == null:
+    if progression == null or not progression.has_method("get_progression_summary_v68"):
         _add_info_v68("Progression system unavailable.", 16)
         return
     var summary: Dictionary = Dictionary(progression.call("get_progression_summary_v68"))
@@ -199,7 +203,6 @@ func _refresh_v68() -> void:
     var tp: int = int(summary.get("talent_points", 0))
     var sp: int = int(summary.get("stat_points", 0))
     subtitle_label.text = "LEVEL %d  •  XP %s  •  TALENT POINTS %d  •  STAT POINTS %d" % [level, "MAX" if next_xp <= 0 else "%d/%d" % [xp, next_xp], tp, sp]
-
     match active_tab:
         TAB_STATS:
             _build_stats_tab_v68(progression, sp)
@@ -228,7 +231,9 @@ func _build_overview_tab_v68(progression: Node, summary: Dictionary) -> void:
     _add_section_v68("BUILD SUMMARY")
     var stats_dict: Dictionary = Dictionary(summary.get("stats", {}))
     var stat_parts: PackedStringArray = PackedStringArray()
-    for stat_id: String in progression.STAT_IDS:
+    var stat_ids: Array = Array(progression.call("get_stat_ids_v68")) if progression.has_method("get_stat_ids_v68") else []
+    for stat_variant: Variant in stat_ids:
+        var stat_id: String = str(stat_variant)
         stat_parts.append("%s %d" % [str(progression.call("get_stat_name_v68", stat_id)), int(stats_dict.get(stat_id, 0))])
     _add_info_v68(" • ".join(stat_parts), 14)
 
@@ -239,20 +244,21 @@ func _build_overview_tab_v68(progression: Node, summary: Dictionary) -> void:
     _add_info_v68("Talent ranks invested: %d\nKnowledge: %d / %d" % [invested, int(summary.get("knowledge_count", 0)), int(summary.get("knowledge_total", 0))], 14)
 
     _add_section_v68("XP SOURCES")
-    _add_info_v68("Explore new maps • log evidence • synthesize clues • first-time crafting • restore shelter power • survive nights.\nNo XP is awarded for repeatedly farming normal resources or killing threats.", 14)
+    _add_info_v68("Explore new maps • log evidence • synthesize clues • first-time crafting • repair/start shelter power • revive teammates • survive nights.\nNormal resource farming and threat kills do not generate repeatable XP.", 14)
 
-func _build_stats_tab_v68(progression: Node, stat_points_available: int) -> void:
-    _add_section_v68("CORE STATS — %d POINTS AVAILABLE" % stat_points_available)
-    for stat_id: String in progression.STAT_IDS:
-        var row_panel: PanelContainer = PanelContainer.new()
-        row_panel.add_theme_stylebox_override("panel", _row_style_v68())
-        content.add_child(row_panel)
+func _build_stats_tab_v68(progression: Node, points_available: int) -> void:
+    _add_section_v68("CORE STATS — %d POINTS AVAILABLE" % points_available)
+    var stat_ids: Array = Array(progression.call("get_stat_ids_v68")) if progression.has_method("get_stat_ids_v68") else []
+    var max_stat: int = int(progression.call("get_max_stat_value_v68")) if progression.has_method("get_max_stat_value_v68") else 15
+    for stat_variant: Variant in stat_ids:
+        var stat_id: String = str(stat_variant)
+        var value: int = int(progression.call("get_stat_v68", stat_id))
+        var row_panel: PanelContainer = _new_row_panel_v68()
         var row: HBoxContainer = HBoxContainer.new()
         row.add_theme_constant_override("separation", 10)
         row_panel.add_child(row)
-        var value: int = int(progression.call("get_stat_v68", stat_id))
         var info: Label = Label.new()
-        info.text = "%s  %d/15\n%s" % [str(progression.call("get_stat_name_v68", stat_id)).to_upper(), value, str(progression.call("get_stat_description_v68", stat_id))]
+        info.text = "%s  %d/%d\n%s" % [str(progression.call("get_stat_name_v68", stat_id)).to_upper(), value, max_stat, str(progression.call("get_stat_description_v68", stat_id))]
         info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         row.add_child(info)
@@ -260,33 +266,33 @@ func _build_stats_tab_v68(progression: Node, stat_points_available: int) -> void
         add_button.text = "+1"
         add_button.custom_minimum_size = Vector2(64, 42)
         add_button.focus_mode = Control.FOCUS_NONE
-        add_button.disabled = stat_points_available <= 0 or value >= 15
+        add_button.disabled = points_available <= 0 or value >= max_stat
         add_button.pressed.connect(_spend_stat_v68.bind(stat_id))
         row.add_child(add_button)
 
 func _build_talents_tab_v68(progression: Node, player_level: int, points_available: int) -> void:
     _add_section_v68("TALENT TREES — %d POINTS AVAILABLE" % points_available)
-    for tree_name: String in ["SURVIVAL", "SCOUT", "TECHNICIAN", "INVESTIGATOR"]:
+    var talent_order: Array = Array(progression.call("get_talent_order_v68")) if progression.has_method("get_talent_order_v68") else []
+    var trees: Array[String] = ["SURVIVAL", "SCOUT", "TECHNICIAN", "INVESTIGATOR"]
+    for tree_name: String in trees:
         _add_subsection_v68(tree_name)
-        for talent_id: String in progression.TALENT_ORDER:
+        for talent_variant: Variant in talent_order:
+            var talent_id: String = str(talent_variant)
             var data: Dictionary = Dictionary(progression.call("get_talent_definition_v68", talent_id))
             if str(data.get("tree", "")) != tree_name:
                 continue
             var rank: int = int(progression.call("get_talent_rank_v68", talent_id))
             var max_rank: int = int(data.get("max_rank", 1))
             var min_level: int = int(data.get("min_level", 1))
-            var required: String = str(data.get("requires", ""))
             var requirement_ok: bool = true
             var requirement_text: String = ""
+            var required: String = str(data.get("requires", ""))
             if not required.is_empty():
                 var needed_rank: int = int(data.get("requires_rank", 1))
                 var required_data: Dictionary = Dictionary(progression.call("get_talent_definition_v68", required))
                 requirement_ok = int(progression.call("get_talent_rank_v68", required)) >= needed_rank
                 requirement_text = " • requires %s %d" % [str(required_data.get("name", required)), needed_rank]
-
-            var row_panel: PanelContainer = PanelContainer.new()
-            row_panel.add_theme_stylebox_override("panel", _row_style_v68())
-            content.add_child(row_panel)
+            var row_panel: PanelContainer = _new_row_panel_v68()
             var row: HBoxContainer = HBoxContainer.new()
             row.add_theme_constant_override("separation", 10)
             row_panel.add_child(row)
@@ -295,40 +301,44 @@ func _build_talents_tab_v68(progression: Node, player_level: int, points_availab
             info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
             info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
             row.add_child(info)
-            var unlock: Button = Button.new()
-            unlock.text = "MAX" if rank >= max_rank else "UNLOCK"
-            unlock.custom_minimum_size = Vector2(92, 44)
-            unlock.focus_mode = Control.FOCUS_NONE
-            unlock.disabled = rank >= max_rank or points_available <= 0 or player_level < min_level or not requirement_ok
-            unlock.pressed.connect(_unlock_talent_v68.bind(talent_id))
-            row.add_child(unlock)
+            var unlock_button: Button = Button.new()
+            unlock_button.text = "MAX" if rank >= max_rank else "UNLOCK"
+            unlock_button.custom_minimum_size = Vector2(92, 44)
+            unlock_button.focus_mode = Control.FOCUS_NONE
+            unlock_button.disabled = rank >= max_rank or points_available <= 0 or player_level < min_level or not requirement_ok
+            unlock_button.pressed.connect(_unlock_talent_v68.bind(talent_id))
+            row.add_child(unlock_button)
 
 func _build_knowledge_tab_v68(progression: Node) -> void:
     var unlocked: Dictionary = Dictionary(progression.call("get_knowledge_v68"))
-    _add_section_v68("KNOWLEDGE JOURNAL — %d / %d" % [unlocked.size(), progression.KNOWLEDGE_ORDER.size()])
+    var knowledge_order: Array = Array(progression.call("get_knowledge_order_v68")) if progression.has_method("get_knowledge_order_v68") else []
+    _add_section_v68("KNOWLEDGE JOURNAL — %d / %d" % [unlocked.size(), knowledge_order.size()])
     var hint_level: int = int(progression.call("get_knowledge_hint_level_v68"))
-    for category: String in ["SURVIVAL", "TECHNOLOGY", "WILDLIFE", "WORLD", "THREAT", "ANOMALY"]:
-        var has_any: bool = false
-        for knowledge_id: String in progression.KNOWLEDGE_ORDER:
-            if not bool(unlocked.get(knowledge_id, false)):
-                continue
-            var check_data: Dictionary = Dictionary(progression.call("get_knowledge_definition_v68", knowledge_id))
-            if str(check_data.get("category", "")) == category:
-                has_any = true
-                break
-        if not has_any:
-            continue
-        _add_subsection_v68(category)
-        for knowledge_id: String in progression.KNOWLEDGE_ORDER:
+    var categories: Array[String] = ["SURVIVAL", "TECHNOLOGY", "WILDLIFE", "WORLD", "THREAT", "ANOMALY"]
+    for category: String in categories:
+        var matching: Array[String] = []
+        for knowledge_variant: Variant in knowledge_order:
+            var knowledge_id: String = str(knowledge_variant)
             if not bool(unlocked.get(knowledge_id, false)):
                 continue
             var data: Dictionary = Dictionary(progression.call("get_knowledge_definition_v68", knowledge_id))
-            if str(data.get("category", "")) != category:
-                continue
+            if str(data.get("category", "")) == category:
+                matching.append(knowledge_id)
+        if matching.is_empty():
+            continue
+        _add_subsection_v68(category)
+        for knowledge_id: String in matching:
+            var data: Dictionary = Dictionary(progression.call("get_knowledge_definition_v68", knowledge_id))
             var text: String = "%s\n%s" % [str(data.get("title", knowledge_id)).to_upper(), str(data.get("body", ""))]
             if hint_level >= 2:
                 text += "\nANALYSIS: %s" % str(data.get("advanced", ""))
             _add_card_v68(text)
+
+func _new_row_panel_v68() -> PanelContainer:
+    var row_panel: PanelContainer = PanelContainer.new()
+    row_panel.add_theme_stylebox_override("panel", _row_style_v68())
+    content.add_child(row_panel)
+    return row_panel
 
 func _add_section_v68(text: String) -> void:
     var label: Label = Label.new()
@@ -374,13 +384,13 @@ func _select_tab_v68(tab_name: String) -> void:
 
 func _spend_stat_v68(stat_id: String) -> void:
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
-    if progression != null and bool(progression.call("spend_stat_point_v68", stat_id)):
+    if progression != null and progression.has_method("spend_stat_point_v68") and bool(progression.call("spend_stat_point_v68", stat_id)):
         last_signature = ""
         _refresh_v68()
 
 func _unlock_talent_v68(talent_id: String) -> void:
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
-    if progression != null and bool(progression.call("unlock_talent_v68", talent_id)):
+    if progression != null and progression.has_method("unlock_talent_v68") and bool(progression.call("unlock_talent_v68", talent_id)):
         last_signature = ""
         _refresh_v68()
 
@@ -444,7 +454,7 @@ func _blocked_elsewhere_v68() -> bool:
     return false
 
 func _layout_v68() -> void:
-    if panel == null or open_button == null:
+    if panel == null or open_button == null or title_label == null:
         return
     var viewport: Vector2 = get_viewport().get_visible_rect().size
     var compact: bool = viewport.x < 800.0 or _mobile_v68()
@@ -460,15 +470,24 @@ func _layout_v68() -> void:
         panel.position = (viewport - panel.size) * 0.5
         open_button.size = Vector2(52, 42)
         open_button.position = Vector2(28, 222)
-        open_button.text = "K"
+        open_button.text = "P"
         title_label.add_theme_font_size_override("font_size", 25)
 
 func _signature_v68() -> String:
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
-    if progression == null:
+    if progression == null or not progression.has_method("get_progression_summary_v68"):
         return "none"
     var summary: Dictionary = Dictionary(progression.call("get_progression_summary_v68"))
-    return "%s|%s|%s|%s|%s|%s|%s" % [active_tab, str(summary.get("level", 1)), str(summary.get("xp", 0)), str(summary.get("talent_points", 0)), str(summary.get("stat_points", 0)), str(summary.get("stats", {})), str(summary.get("talents", {})) + str(summary.get("knowledge", {}))]
+    return "%s|%s|%s|%s|%s|%s|%s|%s" % [
+        active_tab,
+        str(summary.get("level", 1)),
+        str(summary.get("xp", 0)),
+        str(summary.get("talent_points", 0)),
+        str(summary.get("stat_points", 0)),
+        str(summary.get("stats", {})),
+        str(summary.get("talents", {})),
+        str(summary.get("knowledge", {}))
+    ]
 
 func _on_progression_changed_v68() -> void:
     last_signature = ""
