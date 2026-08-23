@@ -1,0 +1,59 @@
+name: Progression Regression v0.68
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: progression-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT_STATUS: "stable"
+
+jobs:
+  progression-regression:
+    name: Level Talent Knowledge Stats
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT_TAG="${GODOT_VERSION}-${GODOT_STATUS}"
+          GODOT_ZIP="Godot_v${GODOT_TAG}_linux.x86_64.zip"
+          curl -fL --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/${GODOT_ZIP}" \
+            -o /tmp/godot.zip
+          mkdir -p "$HOME/godot"
+          unzip -q /tmp/godot.zip -d "$HOME/godot"
+          GODOT_BIN="$HOME/godot/Godot_v${GODOT_TAG}_linux.x86_64"
+          chmod +x "$GODOT_BIN"
+          sudo ln -sf "$GODOT_BIN" /usr/local/bin/godot
+          godot --version
+
+      - name: Headless project parse and autoload smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90 godot --headless --path . --editor --quit
+
+      - name: Progression regression v0.68
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/progression_regression_v68.gd
