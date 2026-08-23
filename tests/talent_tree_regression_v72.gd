@@ -81,7 +81,7 @@ func _run_v72() -> void:
             _check(bool(menu_contract.get("desktop_horizontal", false)), "desktop tree orientation enabled")
             _check(bool(menu_contract.get("input_lock_retained", false)), "v0.71 central input lock retained")
 
-    _check(str(ProjectSettings.get_setting("application/config/name", "")).contains("v0.72"), "project version is v0.72")
+    _check(str(ProjectSettings.get_setting("application/config/name", "")).begins_with("Don't Look Back v0."), "v0.72 behavior regression remains valid in later releases")
     progression.call("reset_progression_v68", false)
     _finish_v72()
 
