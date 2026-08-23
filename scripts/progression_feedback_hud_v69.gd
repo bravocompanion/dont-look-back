@@ -19,10 +19,12 @@ func _ready() -> void:
     _build_ui_v69()
     var progression: Node = get_node_or_null("/root/ProgressionSystem")
     if progression != null:
-        if progression.has_signal("progression_feedback") and not progression.progression_feedback.is_connected(_on_progression_feedback_v69):
-            progression.progression_feedback.connect(_on_progression_feedback_v69)
-        if progression.has_signal("progression_changed") and not progression.progression_changed.is_connected(_refresh_now_v69):
-            progression.progression_changed.connect(_refresh_now_v69)
+        var feedback_callable: Callable = Callable(self, "_on_progression_feedback_v69")
+        if progression.has_signal("progression_feedback") and not progression.is_connected("progression_feedback", feedback_callable):
+            progression.connect("progression_feedback", feedback_callable)
+        var changed_callable: Callable = Callable(self, "_refresh_now_v69")
+        if progression.has_signal("progression_changed") and not progression.is_connected("progression_changed", changed_callable):
+            progression.connect("progression_changed", changed_callable)
 
 func _process(delta: float) -> void:
     var player: CharacterBody3D = _local_player_v69()
