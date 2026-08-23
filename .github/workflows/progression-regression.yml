@@ -81,3 +81,9 @@ jobs:
         run: |
           set -euo pipefail
           timeout 120 godot --headless --path . --script res://tests/talent_tree_regression_v72.gd
+
+      - name: Talent tree responsive regression v0.72
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/talent_tree_responsive_regression_v72.gd
