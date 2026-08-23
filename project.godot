@@ -3,13 +3,14 @@
 config_version=5
 
 [application]
-config/name="Don't Look Back v0.72"
+config/name="Don't Look Back v0.73"
 run/main_scene="res://scenes/main_menu_ranger.tscn"
 
 [autoload]
 ItemIconRegistry="*res://scripts/item_icon_registry_v43.gd"
+TalentIconRegistry="*res://scripts/talent_icon_registry_v73.gd"
 UIRuntimeCoordinator="*res://scripts/ui_runtime_coordinator_v71.gd"
-ProgressionSystem="*res://scripts/progression_system_v72.gd"
+ProgressionSystem="*res://scripts/progression_system_v73.gd"
 ProgressionFeedbackHUD="*res://scripts/progression_feedback_hud_v71.gd"
 ProgressionIntelHUD="*res://scripts/progression_intel_hud_v71.gd"
 CarryLimitSystem="*res://scripts/carry_limit_system_v68.gd"
@@ -28,7 +29,7 @@ GameplayActionGuard="*res://scripts/gameplay_action_guard.gd"
 ConsumableActionSystem="*res://scripts/consumable_action_system_v60.gd"
 NetworkManager="*res://scripts/network_manager_v60.gd"
 MobileControls="*res://scripts/mobile_controls_v184.gd"
-ProgressionMenuSystem="*res://scripts/progression_menu_system_v72_runtime.gd"
+ProgressionMenuSystem="*res://scripts/progression_menu_system_v73.gd"
 MovementSystem="*res://scripts/movement_system_v43.gd"
 MapTransitionSystem="*res://scripts/map_transition_system_v2.gd"
 InvestigationSystem="*res://scripts/investigation_system_v8_progression.gd"
@@ -60,7 +61,7 @@ SurvivalDepthSystem="*res://scripts/survival_depth_system_v56.gd"
 JournalSystem="*res://scripts/journal_system_ranger_v7.gd"
 SaveSystem="*res://scripts/save_system_ranger_v8.gd"
 MultiplayerPolishSystem="*res://scripts/multiplayer_polish_system.gd"
-FrontEndSystem="*res://scripts/front_end_system_v201.gd"
+FrontEndSystem="*res://scripts/front_end_system_v202.gd"
 MineAssetSystem="*res://scripts/mine_asset_system.gd"
 
 [display]

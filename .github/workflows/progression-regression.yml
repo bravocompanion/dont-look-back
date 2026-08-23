@@ -1,4 +1,4 @@
-name: Progression + Talent Tree Regression v0.72
+name: Progression + Visual Talent Tree Regression v0.73
 
 on:
   push:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   progression-regression:
-    name: Progression, UI Ownership and Talent Tree
+    name: Progression, UI Ownership and Visual Talent Tree
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -87,3 +87,9 @@ jobs:
         run: |
           set -euo pipefail
           timeout 120 godot --headless --path . --script res://tests/talent_tree_responsive_regression_v72.gd
+
+      - name: Visual talent tree regression v0.73
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/talent_tree_visual_regression_v73.gd
