@@ -86,7 +86,7 @@ func _run_v71() -> void:
         var profile_contract: Dictionary = Dictionary(progression.call("get_profile_contract_v68"))
         _check(str(profile_contract.get("path", "")).contains("progression_v68"), "local progression profile remains compatible")
 
-    _check(str(ProjectSettings.get_setting("application/config/name", "")).contains("v0.71"), "project version is v0.71")
+    _check(str(ProjectSettings.get_setting("application/config/name", "")).begins_with("Don't Look Back v0."), "v0.71 behavior regression remains valid in later releases")
     _finish_v71()
 
 func _check_layout_v71(coordinator: Node, size: Vector2, compact: bool, label: String) -> void:
