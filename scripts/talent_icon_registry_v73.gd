@@ -47,12 +47,15 @@ func get_talent_icon_ids_v73() -> Array[String]:
     return ids
 
 func get_talent_icon_cell_v73(talent_id: String) -> Vector2i:
-    return TALENT_ICON_CELLS_V73.get(talent_id, Vector2i(-1, -1)) as Vector2i
+    var value: Variant = TALENT_ICON_CELLS_V73.get(talent_id, Vector2i(-1, -1))
+    if value is Vector2i:
+        return value
+    return Vector2i(-1, -1)
 
 func get_atlas_size_v73() -> Vector2i:
     if atlas_texture_v73 == null:
         return Vector2i.ZERO
-    return atlas_texture_v73.get_size()
+    return Vector2i(atlas_texture_v73.get_size())
 
 func is_ready_v73() -> bool:
     return decode_ok_v73 and atlas_texture_v73 != null and talent_icons_v73.size() == TALENT_ICON_CELLS_V73.size()
@@ -110,7 +113,7 @@ func _load_generated_atlas_v73() -> void:
 
     for talent_value: Variant in TALENT_ICON_CELLS_V73.keys():
         var talent_id: String = str(talent_value)
-        var cell: Vector2i = TALENT_ICON_CELLS_V73[talent_id] as Vector2i
+        var cell: Vector2i = get_talent_icon_cell_v73(talent_id)
         var icon: AtlasTexture = AtlasTexture.new()
         icon.atlas = atlas_texture_v73
         icon.region = Rect2(
