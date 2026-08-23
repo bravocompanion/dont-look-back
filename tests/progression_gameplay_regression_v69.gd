@@ -95,7 +95,7 @@ func _run_v69() -> void:
         var medical_contract: Dictionary = Dictionary(consumable.call("get_medical_progression_contract_v69"))
         _check(int(medical_contract.get("interrupted_medkit_xp", -1)) == 0, "interrupted medkit gives zero XP")
 
-    _check(str(ProjectSettings.get_setting("application/config/name", "")).contains("v0.69"), "project version is v0.69")
+    _check(str(ProjectSettings.get_setting("application/config/name", "")).begins_with("Don't Look Back v0."), "project version naming remains valid in later releases")
     _finish_v69()
 
 func _check(condition: bool, description: String) -> void:
