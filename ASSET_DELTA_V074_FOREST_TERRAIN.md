@@ -1,15 +1,20 @@
-# Asset Delta — v0.74 Forest Terrain Expansion
+# Asset Delta — v0.74.1 Forest Terrain Refinement
 
 ## Implemented without new external assets
 
-- Forest dimensions doubled from **224 × 304 m** to **448 × 608 m**.
-- Runtime terrain is now a deterministic low-poly ArrayMesh with collision.
-- Terrain relief is intentionally gentle: broad hills/valleys, roughly **-2.8 m to +3.6 m**.
-- Existing ranger yard, mission POIs, quest interactables, loot clusters, and primary/optional trail corridors are flattened with soft shoulders so authored Y positions remain safe.
-- Legacy flat `ForestGround` / `ExpansionGround` collisions are disabled when the v0.74 terrain is built.
-- Main quest route is clarified as Cabin → Abandoned House → Old Gas Station → Warehouse → Old Mine, with an optional Old Mine → Water Pump branch.
-- Forest visual scatter uses one trunk MultiMesh + one crown MultiMesh. Budget: **620 desktop**, **380 mobile/web-mobile**.
-- Map boundaries now cover the full **448 × 608 m** footprint.
+- Forest dimensions remain **448 × 608 m**.
+- Runtime terrain remains a deterministic low-poly ArrayMesh with collision.
+- Broad hills/valleys from v0.74 are preserved at roughly **-2.8 m to +3.6 m**.
+- **Only authored yards / building pads are fully flat now.** Open forest and quest trails have gentle low-frequency natural relief.
+- Ranger fenced yard remains flat for shelter, checkpoint, multiplayer regrouping, and base interactions.
+- Abandoned House, Old Gas Station, Warehouse, Water Pump, and Old Mine keep only compact flat pads around their authored structures/interactables.
+- Main and optional trail visuals now conform to terrain height instead of using horizontal floating box strips.
+- Tree clearance from trails is preserved, so the more natural route surface does not create tree blockers.
+- Legacy flat `ForestGround` / `ExpansionGround` collisions stay disabled when the expanded terrain is built.
+- Forest visual scatter remains one trunk MultiMesh + one crown MultiMesh. Budget: **620 desktop**, **380 mobile/web-mobile**.
+- Map boundary collision is strengthened to **24 m high**, extending down to **Y -8 m**, to prevent slipping under the terrain edge.
+- A local fall-recovery guard restores the player to the most recent grounded in-bounds position if they drop below **Y -5.2 m** or escape the hard map bounds.
+- Recovery is deliberately short-range during normal falls so it remains compatible with the current multiplayer remote-step validation.
 - No new required gameplay asset is needed for the project to boot or for multiplayer/mobile/desktop logic to run.
 
 ## Assets still recommended
@@ -64,8 +69,14 @@ Optional props to help navigation in the larger map without adding HUD clutter:
 - Avoid per-tree collision on decorative far forest; only gameplay-blocking trunks should get collision.
 - Keep transparent foliage overdraw conservative for mobile.
 - Prefer atlases and shared materials over one material per prop.
-- Do not place large collision meshes inside the flattened mission corridors.
+- Do not place large collision meshes inside authored flat yards or across the conforming trail ribbons.
+
+## Runtime safety notes
+
+- Flat-yard policy is for interactables/structures only; routes should retain small natural elevation changes.
+- Do not lower the fall-recovery threshold above the legitimate terrain floor without rechecking the minimum terrain elevation.
+- If future terrain relief exceeds the current **-2.8 m** minimum, update the fall guard and boundary depth together.
 
 ## Preview / documentation asset
 
-The annotated v0.74 map preview is generated separately as JPG from the same terrain-height function and gameplay coordinate table. It is documentation/debug output, not required at runtime.
+The annotated map preview should reflect the v0.74.1 height function: yards flat, routes/open forest lightly uneven, and the larger hills/valleys unchanged. It is documentation/debug output, not required at runtime.
