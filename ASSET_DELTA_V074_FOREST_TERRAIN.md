@@ -1,21 +1,21 @@
-# Asset Delta — v0.74.1 Forest Terrain Refinement
+# Asset Delta — v0.74.2 Forest Terrain + Falloff Hardening
 
 ## Implemented without new external assets
 
 - Forest dimensions remain **448 × 608 m**.
 - Runtime terrain remains a deterministic low-poly ArrayMesh with collision.
-- Broad hills/valleys from v0.74 are preserved at roughly **-2.8 m to +3.6 m**.
-- **Only authored yards / building pads are fully flat now.** Open forest and quest trails have gentle low-frequency natural relief.
-- Ranger fenced yard remains flat for shelter, checkpoint, multiplayer regrouping, and base interactions.
-- Abandoned House, Old Gas Station, Warehouse, Water Pump, and Old Mine keep only compact flat pads around their authored structures/interactables.
-- Main and optional trail visuals now conform to terrain height instead of using horizontal floating box strips.
-- Tree clearance from trails is preserved, so the more natural route surface does not create tree blockers.
-- Legacy flat `ForestGround` / `ExpansionGround` collisions stay disabled when the expanded terrain is built.
+- Terrain relief remains gentle/natural; only authored yards/building pads are fully flat.
+- Trails and open forest follow the terrain instead of being globally flattened.
+- Existing hills/valleys are preserved.
+- `ForestTerrainV74` collision is explicitly kept on collision layer 1 and its `ConcavePolygonShape3D` uses backface collision as an additional fail-safe.
+- New invisible `TerrainSafetyUnderlayV742` sits below the legal terrain range and catches bodies only if the terrain contact ever fails.
+- Player containment is enforced after the locomotion `move_and_slide()` tick and again by the Forest safety fallback.
+- Recovery now compares the player against the expected terrain height instead of relying only on a global Y threshold.
+- Horizontal positions are hard-clamped inside the full map bounds if a physics edge contact is missed.
+- Forest map transitions now wait for the expanded terrain collision + safety underlay before releasing the player. The old cabin-only `ForestGround` is no longer considered sufficient world readiness.
+- Multiplayer host validation rejects Forest transforms that are outside bounds or implausibly below the terrain.
 - Forest visual scatter remains one trunk MultiMesh + one crown MultiMesh. Budget: **620 desktop**, **380 mobile/web-mobile**.
-- Map boundary collision is strengthened to **24 m high**, extending down to **Y -8 m**, to prevent slipping under the terrain edge.
-- A local fall-recovery guard restores the player to the most recent grounded in-bounds position if they drop below **Y -5.2 m** or escape the hard map bounds.
-- Recovery is deliberately short-range during normal falls so it remains compatible with the current multiplayer remote-step validation.
-- No new required gameplay asset is needed for the project to boot or for multiplayer/mobile/desktop logic to run.
+- No new required gameplay asset is needed for the project to boot or for the falloff fix to function.
 
 ## Assets still recommended
 
@@ -69,14 +69,17 @@ Optional props to help navigation in the larger map without adding HUD clutter:
 - Avoid per-tree collision on decorative far forest; only gameplay-blocking trunks should get collision.
 - Keep transparent foliage overdraw conservative for mobile.
 - Prefer atlases and shared materials over one material per prop.
-- Do not place large collision meshes inside authored flat yards or across the conforming trail ribbons.
+- Do not place large collision meshes inside mission yards or directly across quest trails.
+- Do not attach decorative meshes to `TerrainSafetyUnderlayV742`; it is collision-only and must remain invisible.
 
-## Runtime safety notes
+## Regression coverage added in v0.74.2
 
-- Flat-yard policy is for interactables/structures only; routes should retain small natural elevation changes.
-- Do not lower the fall-recovery threshold above the legitimate terrain floor without rechecking the minimum terrain elevation.
-- If future terrain relief exceeds the current **-2.8 m** minimum, update the fall guard and boundary depth together.
+- `tests/forest_falloff_regression_v742.gd`
+- Native CI runs the dedicated falloff test with Godot 4.7.2.
+- Test covers terrain collision readiness, backface collision, safety underlay, all four map edges, vertical recovery, deep mine-return position, locomotion safety integration, transition readiness, and multiplayer transform validation.
 
-## Preview / documentation asset
+## Asset requirement after this update
 
-The annotated map preview should reflect the v0.74.1 height function: yards flat, routes/open forest lightly uneven, and the larger hills/valleys unchanged. It is documentation/debug output, not required at runtime.
+**New mandatory assets: none.**
+
+The falloff fix is entirely code/collision/runtime logic. Recommended terrain/vegetation assets above remain unchanged in priority.
