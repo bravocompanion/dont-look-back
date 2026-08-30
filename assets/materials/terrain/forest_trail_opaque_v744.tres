@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "ForestTrailOpaqueV744"
+transparency = 0
+cull_mode = 2
+albedo_color = Color(0.30, 0.235, 0.145, 1)
+metallic = 0.0
+metallic_specular = 0.10
+roughness = 0.98
+vertex_color_use_as_albedo = false
