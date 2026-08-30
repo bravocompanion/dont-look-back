@@ -98,6 +98,12 @@ jobs:
           set -euo pipefail
           timeout 120 godot --headless --path . --script res://tests/forest_terrain_traversal_regression_v743.gd
 
+      - name: Forest terrain material regression v0.74.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path . --script res://tests/forest_terrain_material_regression_v744.gd
+
       - name: Weight inventory regression v0.67
         shell: bash
         run: |
