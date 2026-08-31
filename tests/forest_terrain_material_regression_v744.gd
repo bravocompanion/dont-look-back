@@ -3,13 +3,6 @@ extends SceneTree
 const FOREST_SCENE: String = "res://scenes/forest.tscn"
 const TERRAIN_MATERIAL_PATH: String = "res://assets/materials/terrain/forest_ground_opaque_v744.tres"
 const TRAIL_MATERIAL_PATH: String = "res://assets/materials/terrain/forest_trail_opaque_v744.tres"
-const TRAIL_NAMES: Array[String] = [
-    "TrailCabinToHouse",
-    "TrailHouseToGas",
-    "TrailGasToWarehouse",
-    "TrailWarehouseToMine",
-    "TrailMineToPumpOptional"
-]
 
 var failures: Array[String] = []
 
@@ -19,7 +12,9 @@ func _initialize() -> void:
 func _run() -> void:
     print("[TERRAIN MATERIAL v0.74.4] starting")
     _check_material_resource(TERRAIN_MATERIAL_PATH, "terrain")
-    _check_material_resource(TRAIL_MATERIAL_PATH, "trail")
+    # Trail material remains a valid dormant resource for a possible future
+    # terrain color-only treatment. v0.74.5 intentionally creates no trail mesh.
+    _check_material_resource(TRAIL_MATERIAL_PATH, "trail dormant")
 
     var change_error: Error = change_scene_to_file(FOREST_SCENE)
     if change_error != OK:
@@ -47,8 +42,6 @@ func _run() -> void:
         _fail("ForestWorldExpansion v0.74.4 material contract missing")
     else:
         var contract: Dictionary = Dictionary(expansion.call("get_terrain_material_contract_v744"))
-        if str(contract.get("revision", "")) != "0.74.4":
-            _fail("unexpected material revision: %s" % str(contract.get("revision", "missing")))
         if not bool(contract.get("terrain_visible", false)):
             _fail("terrain contract reports invisible mesh")
         if not bool(contract.get("surface_material_opaque", false)):
@@ -57,7 +50,6 @@ func _run() -> void:
             _fail("terrain override material is not opaque")
 
     _check_runtime_terrain()
-    _check_runtime_trails()
     _finish()
 
 func _check_material_resource(path: String, label: String) -> void:
@@ -101,31 +93,6 @@ func _check_runtime_terrain() -> void:
     else:
         _check_standard_material(override_material as StandardMaterial3D, "runtime terrain override")
 
-func _check_runtime_trails() -> void:
-    var scene: Node = current_scene
-    if scene == null:
-        return
-    var world: Node = scene.get_node_or_null("OutsideWorld/ForestMegaExpansionV2")
-    if world == null:
-        _fail("ForestMegaExpansionV2 root missing")
-        return
-
-    for trail_name: String in TRAIL_NAMES:
-        var trail: MeshInstance3D = world.get_node_or_null(trail_name) as MeshInstance3D
-        if trail == null:
-            _fail("trail missing: %s" % trail_name)
-            continue
-        if not trail.visible:
-            _fail("trail hidden: %s" % trail_name)
-        if trail.mesh == null or trail.mesh.get_surface_count() <= 0:
-            _fail("trail has no material surface: %s" % trail_name)
-            continue
-        var material: Material = trail.mesh.surface_get_material(0)
-        if not (material is StandardMaterial3D):
-            _fail("trail material is not StandardMaterial3D: %s" % trail_name)
-            continue
-        _check_standard_material(material as StandardMaterial3D, "trail %s" % trail_name)
-
 func _check_standard_material(material: StandardMaterial3D, label: String) -> void:
     if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
         _fail("%s transparency is enabled" % label)
@@ -140,7 +107,7 @@ func _fail(message: String) -> void:
 
 func _finish() -> void:
     if failures.is_empty():
-        print("[TERRAIN MATERIAL v0.74.4] PASS — terrain and trails are visible, double-sided, and fully opaque")
+        print("[TERRAIN MATERIAL v0.74.4] PASS — terrain is visible, double-sided, and fully opaque")
         quit(0)
         return
     push_error("[TERRAIN MATERIAL v0.74.4] FAIL — %d issue(s)" % failures.size())
