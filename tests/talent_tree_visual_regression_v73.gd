@@ -107,8 +107,23 @@ func _run_v73() -> void:
 
     var front: Node = root.get_node_or_null("FrontEndSystem")
     _check(front != null and front.has_method("get_front_end_visual_talent_tree_contract_v73"), "front-end v0.73 runtime active")
-    _check(str(ProjectSettings.get_setting("application/config/name", "")).contains("v0.73"), "project version is v0.73")
+    _check(_project_version_at_least_v73(), "project version remains v0.73 or later")
     _finish_v73()
+
+func _project_version_at_least_v73() -> bool:
+    var project_name: String = str(ProjectSettings.get_setting("application/config/name", ""))
+    var marker: int = project_name.rfind("v")
+    if marker < 0 or marker + 1 >= project_name.length():
+        return false
+    var version_text: String = project_name.substr(marker + 1)
+    var parts: PackedStringArray = version_text.split(".")
+    if parts.size() < 2:
+        return false
+    var major: int = int(parts[0])
+    var minor: int = int(parts[1])
+    if major > 0:
+        return true
+    return major == 0 and minor >= 73
 
 func _check(condition: bool, description: String) -> void:
     if condition:
